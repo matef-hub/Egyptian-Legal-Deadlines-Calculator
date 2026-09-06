@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">حاسبة المواعيد القانونية</string>
+    <string name="nav_calculator">الحاسبة</string>
+    <string name="nav_saved">المحفوظات</string>
+
+    <string name="today_label">اليوم</string>
+    <string name="official_working_day">يوم عمل رسمي</string>
+    <string name="official_holiday">عطلة رسمية</string>
+    <string name="database_holidays_count">قاعدة بيانات العطلات الرسمية المعتمدة: %1$d عطلة مسجلة</string>
+
+    <string name="form_title">بيانات احتساب الميعاد</string>
+    <string name="legal_action_label">الإجراء القانوني</string>
+    <string name="select_legal_action_hint">اختر الإجراء القضائي...</string>
+    <string name="announcement_date_label">تاريخ الإعلان / صدور الحكم</string>
+    <string name="additional_distance_days_label">ميعاد المسافة الإضافي (بالأيام - اختياري)</string>
+    <string name="case_number_label">رقم القضية / الدعوى (اختياري)</string>
+    <string name="client_name_label">اسم الموكل / الخصم (اختياري)</string>
+    <string name="btn_calculate">احسب</string>
+    <string name="btn_save">حفظ</string>
+    <string name="btn_saved">تم الحفظ</string>
+    <string name="btn_back">رجوع</string>
+    <string name="btn_confirm">تأكيد</string>
+    <string name="btn_cancel">إلغاء</string>
+    <string name="btn_delete">حذف</string>
+
+    <string name="result_title">نتيجة احتساب الميعاد الإجرائي</string>
+    <string name="final_deadline_label">الميعاد القانوني النهائي</string>
+    <string name="law_article_label">السند القانوني:</string>
+    <string name="explanation_label">بيان تفاصيل الاحتساب الإجرائي:</string>
+    <string name="notes_label">ملاحظات قانونية:</string>
+
+    <string name="saved_deadlines_title">المواعيد المسجلة (%1$d)</string>
+    <string name="no_saved_deadlines">لا توجد مواعيد محفوظة حالياً</string>
+    <string name="no_saved_deadlines_desc">يمكنك احتساب أي ميعاد قانوني من شاشة الحاسبة والضغط على زر \'حفظ\' لإضافته إلى هنا.</string>
+    <string name="confirm_delete_title">تأكيد حذف الميعاد</string>
+    <string name="confirm_delete_message">هل أنت متأكد من رغبتك في حذف هذا الميعاد بشكل نهائي من قاعدة البيانات؟</string>
+
+    <string name="error_select_rule">يرجى اختيار الإجراء القانوني أولاً</string>
+    <string name="error_invalid_distance">يرجى إدخال ميعاد مسافة إضافي صحيح (رقم غير سالب)</string>
+    <string name="success_deadline_saved">تم حفظ الميعاد بنجاح في قائمة المواعيد المحفوظة</string>
+
+    <!-- Days in Arabic -->
+    <string name="day_saturday">السبت</string>
+    <string name="day_sunday">الأحد</string>
+    <string name="day_monday">الاثنين</string>
+    <string name="day_tuesday">الثلاثاء</string>
+    <string name="day_wednesday">الأربعاء</string>
+    <string name="day_thursday">الخميس</string>
+    <string name="day_friday">الجمعة</string>
+</resources>
