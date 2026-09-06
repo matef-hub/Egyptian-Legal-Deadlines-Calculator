@@ -53,4 +53,5 @@ export interface SavedDeadline {
   calculationExplanation: string;
   notes: string;
   createdAt: number;
+  proactiveReminderDays?: number;
 }

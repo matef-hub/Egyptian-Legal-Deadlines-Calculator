@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -57,16 +58,24 @@ fun SavedDeadlineItem(
     val context = LocalContext.current
 
     val onAddToCalendar = {
+        val proactiveDays = deadline.proactiveReminderDays ?: 3
+        val proactiveDate = deadline.finalDeadline.minusDays(proactiveDays.toLong())
+        val proactiveFormatted = proactiveDate.format(formatter)
+
+        val descriptionText = "🔔 تنبيه استباقي: قبل الميعاد النهائي بـ $proactiveDays أيام (بتاريخ $proactiveFormatted)\n\n" +
+            "السند: ${deadline.lawArticle}\n\n" +
+            deadline.calculationExplanation
+
         try {
             val intent = Intent(Intent.ACTION_INSERT).apply {
                 data = CalendarContract.Events.CONTENT_URI
                 val title = if (deadline.caseNumber.isNotBlank()) {
-                    "ميعاد قانوني: ${deadline.actionName} - قضية ${deadline.caseNumber}"
+                    "ميعاد: ${deadline.actionName} (قضية ${deadline.caseNumber}) - تنبيه مسبق"
                 } else {
-                    "ميعاد قانوني: ${deadline.actionName}"
+                    "ميعاد: ${deadline.actionName} - تنبيه مسبق"
                 }
                 putExtra(CalendarContract.Events.TITLE, title)
-                putExtra(CalendarContract.Events.DESCRIPTION, "${deadline.lawArticle}\n\n${deadline.calculationExplanation}")
+                putExtra(CalendarContract.Events.DESCRIPTION, descriptionText)
                 putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
                 val epochMillis = deadline.finalDeadline.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, epochMillis)
@@ -77,9 +86,9 @@ fun SavedDeadlineItem(
             val cleanStart = deadline.finalDeadline.toString().replace("-", "")
             val nextDay = deadline.finalDeadline.plusDays(1).toString().replace("-", "")
             val webUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" +
-                Uri.encode("ميعاد قانوني: ${deadline.actionName}") +
+                Uri.encode("ميعاد: ${deadline.actionName}") +
                 "&dates=$cleanStart/$nextDay&details=" +
-                Uri.encode(deadline.calculationExplanation)
+                Uri.encode(descriptionText)
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(webUrl)))
         }
     }
@@ -163,6 +172,24 @@ fun SavedDeadlineItem(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
+                    }
+
+                    if (deadline.proactiveReminderDays != null && deadline.proactiveReminderDays > 0) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.NotificationsActive,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.width(14.dp).height(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "تنبيه استباقي: قبل ${deadline.proactiveReminderDays} أيام",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.tertiary
+                            )
+                        }
                     }
                 }
 

@@ -15,6 +15,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Info
@@ -23,12 +25,17 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,13 +64,25 @@ fun CalculationResultCard(
     val finalDateFormatted = result.finalDeadline.format(formatter)
     val dayNameArabic = LegalDeadlineCalculator.getArabicDayName(result.finalDeadline.dayOfWeek)
     val context = LocalContext.current
+    var proactiveReminderDays by remember { mutableStateOf(3) }
 
     val onAddToCalendar = {
+        val proactiveDate = if (proactiveReminderDays > 0) result.finalDeadline.minusDays(proactiveReminderDays.toLong()) else result.finalDeadline
+        val proactiveFormatted = proactiveDate.format(formatter)
+
+        val descriptionText = if (proactiveReminderDays > 0) {
+            "🔔 تنبيه استباقي: قبل الميعاد النهائي بـ $proactiveReminderDays أيام (بتاريخ $proactiveFormatted)\n\n" +
+            "السند: ${result.lawArticle}\n\n" +
+            result.explanation
+        } else {
+            "الميعاد النهائي: $finalDateFormatted\nالسند: ${result.lawArticle}\n\n${result.explanation}"
+        }
+
         try {
             val intent = Intent(Intent.ACTION_INSERT).apply {
                 data = CalendarContract.Events.CONTENT_URI
-                putExtra(CalendarContract.Events.TITLE, "ميعاد قانوني: ${result.lawArticle}")
-                putExtra(CalendarContract.Events.DESCRIPTION, result.explanation)
+                putExtra(CalendarContract.Events.TITLE, "ميعاد قانوني: ${result.lawArticle}" + if (proactiveReminderDays > 0) " (تنبيه مسبق $proactiveReminderDays أيام)" else "")
+                putExtra(CalendarContract.Events.DESCRIPTION, descriptionText)
                 putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
                 val epochMillis = result.finalDeadline.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, epochMillis)
@@ -74,9 +93,9 @@ fun CalculationResultCard(
             val cleanStart = result.finalDeadline.toString().replace("-", "")
             val nextDay = result.finalDeadline.plusDays(1).toString().replace("-", "")
             val webUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" +
-                Uri.encode("ميعاد قانوني: ${result.lawArticle}") +
+                Uri.encode("ميعاد قانوني: ${result.lawArticle}" + if (proactiveReminderDays > 0) " (تنبيه $proactiveReminderDays أيام)" else "") +
                 "&dates=$cleanStart/$nextDay&details=" +
-                Uri.encode(result.explanation)
+                Uri.encode(descriptionText)
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(webUrl)))
         }
     }
@@ -202,7 +221,54 @@ fun CalculationResultCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Proactive Alert Options
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .padding(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "تنبيه استباقي قبل الميعاد:",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (proactiveReminderDays > 0) {
+                        Text(
+                            text = "قبل $proactiveReminderDays أيام",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(1 to "يوم", 3 to "3 أيام", 5 to "5 أيام", 7 to "أسبوع", 0 to "بدون").forEach { (days, label) ->
+                        FilterChip(
+                            selected = proactiveReminderDays == days,
+                            onClick = { proactiveReminderDays = days },
+                            label = { Text(text = label, fontSize = 11.sp) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Action Buttons: إضافة إلى التقويم & حفظ & رجوع
             Column(

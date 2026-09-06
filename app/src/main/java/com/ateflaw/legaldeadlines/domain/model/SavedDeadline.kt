@@ -18,5 +18,6 @@ data class SavedDeadline(
     val lawArticle: String,
     val calculationExplanation: String,
     val notes: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val proactiveReminderDays: Int? = null
 )

@@ -17,7 +17,9 @@ import {
   ChevronDown,
   ChevronUp,
   RotateCcw,
-  Check
+  Check,
+  Bell,
+  BellRing
 } from 'lucide-react';
 import { DeadlineResult, Holiday, LegalRule, SavedDeadline } from './types';
 import { INITIAL_LEGAL_RULES, OFFICIAL_EGYPTIAN_HOLIDAYS } from './data/legalRules';
@@ -27,7 +29,7 @@ import {
   getArabicDayName,
   toIsoDate
 } from './utils/calculator';
-import { createGoogleCalendarUrl } from './utils/calendar';
+import { calculateProactiveAlertDate, createGoogleCalendarUrl } from './utils/calendar';
 import { AndroidProjectViewer } from './components/AndroidProjectViewer';
 
 export default function App() {
@@ -43,6 +45,10 @@ export default function App() {
   const [additionalDistanceDays, setAdditionalDistanceDays] = useState<number>(0);
   const [caseNumber, setCaseNumber] = useState<string>('');
   const [clientName, setClientName] = useState<string>('');
+
+  // Proactive Alert Settings (Default: 3 days before)
+  const [proactiveReminderDays, setProactiveReminderDays] = useState<number>(3);
+  const [calendarTarget, setCalendarTarget] = useState<'FINAL_DEADLINE' | 'PROACTIVE_ALERT'>('FINAL_DEADLINE');
 
   // Result state
   const [result, setResult] = useState<DeadlineResult | null>(null);
@@ -70,7 +76,19 @@ export default function App() {
 
   const selectedRule = rules.find((r) => r.id === selectedRuleId) || rules[0];
 
-  // Google Calendar URL generator for current calculated result
+  // Proactive Alert Date Calculation
+  const proactiveDateIso = result && proactiveReminderDays > 0
+    ? calculateProactiveAlertDate(result.finalDeadline, proactiveReminderDays)
+    : null;
+
+  const proactiveHoliday = proactiveDateIso
+    ? holidays.find((h) => h.holidayDate === proactiveDateIso)
+    : null;
+  const isProactiveFriday = proactiveDateIso
+    ? new Date(proactiveDateIso).getDay() === 5
+    : false;
+
+  // Google Calendar URL generator with Proactive Reminder configuration
   const googleCalendarUrl = result
     ? createGoogleCalendarUrl({
         title: selectedRule.actionName,
@@ -79,7 +97,24 @@ export default function App() {
         explanation: result.explanation,
         notes: result.notes,
         caseNumber: caseNumber.trim(),
-        clientName: clientName.trim()
+        clientName: clientName.trim(),
+        proactiveReminderDays,
+        calendarTarget
+      })
+    : '';
+
+  // Direct Calendar URL for the Proactive Alert date itself
+  const proactiveDirectCalendarUrl = (result && proactiveReminderDays > 0)
+    ? createGoogleCalendarUrl({
+        title: selectedRule.actionName,
+        finalDeadlineDate: result.finalDeadline,
+        lawArticle: result.lawArticle,
+        explanation: result.explanation,
+        notes: result.notes,
+        caseNumber: caseNumber.trim(),
+        clientName: clientName.trim(),
+        proactiveReminderDays,
+        calendarTarget: 'PROACTIVE_ALERT'
       })
     : '';
 
@@ -116,7 +151,8 @@ export default function App() {
       lawArticle: result.lawArticle,
       calculationExplanation: result.explanation,
       notes: result.notes,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      proactiveReminderDays: proactiveReminderDays > 0 ? proactiveReminderDays : undefined
     };
 
     setSavedDeadlines((prev) => [newDeadline, ...prev]);
@@ -427,49 +463,204 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="pt-4 border-t border-[#F0F0F0] flex flex-col sm:flex-row items-center justify-between gap-3">
-                  <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                    {/* Add to Google Calendar Link */}
-                    <a
-                      href={googleCalendarUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full sm:w-auto py-2.5 px-5 rounded-md text-sm font-medium bg-[#FAFAFA] text-[#1A1A1A] border border-[#E5E5E5] hover:bg-[#F0F0F0] hover:border-[#CCCCCC] transition-colors flex items-center justify-center gap-2 cursor-pointer no-underline"
-                      title="إضافة الميعاد النهائي إلى تقويم Google"
-                    >
-                      <CalendarPlus className="w-4 h-4 text-blue-600" />
-                      <span>إضافة إلى تقويم Google</span>
-                      <ExternalLink className="w-3.5 h-3.5 text-[#A3A3A3]" />
-                    </a>
-
-                    <button
-                      onClick={handleSave}
-                      disabled={saveSuccessNotice}
-                      className={`w-full sm:w-auto py-2.5 px-6 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-                        saveSuccessNotice
-                          ? 'bg-green-600 text-white cursor-default'
-                          : 'bg-[#1A1A1A] text-white hover:bg-black'
-                      }`}
-                    >
-                      <Bookmark className="w-4 h-4" />
-                      <span>{saveSuccessNotice ? 'تم الحفظ في المحفوظات' : 'حفظ الميعاد'}</span>
-                    </button>
-
-                    <button
-                      onClick={() => setResult(null)}
-                      className="w-full sm:w-auto bg-[#F5F5F5] border border-[#E5E5E5] text-[#1A1A1A] hover:bg-[#EAEAEA] py-2.5 px-5 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>إعادة تعيين</span>
-                    </button>
+                {/* Google Calendar & Proactive Alert Configuration */}
+                <div className="p-5 border border-[#E5E5E5] rounded-xl bg-[#FAFAFA] space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#EBEBEB]">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                        <Bell className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-[#1A1A1A]">إعدادات تقويم Google والتنبيه الاستباقي</h4>
+                        <p className="text-xs text-[#737373]">تحديد تذكير مسبق قبل حلول الميعاد النهائي لتجهيز المستندات في وقت كافٍ</p>
+                      </div>
+                    </div>
+                    {proactiveReminderDays > 0 && (
+                      <span className="text-xs font-mono bg-blue-50 border border-blue-200 text-blue-800 px-2.5 py-1 rounded-full self-start sm:self-auto font-medium">
+                        تنبيه مبكر: {proactiveReminderDays} {proactiveReminderDays === 1 ? 'يوم' : proactiveReminderDays === 2 ? 'يومين' : 'أيام'}
+                      </span>
+                    )}
                   </div>
 
-                  {saveSuccessNotice && (
-                    <span className="text-xs text-green-700 flex items-center gap-1.5 font-medium">
-                      <CheckCircle2 className="w-4 h-4" />
-                      تم الحفظ بنجاح، يمكنك مراجعته في تبويب المحفوظات.
-                    </span>
+                  {/* Proactive Reminder Selector */}
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#737373] font-semibold mb-2 block">
+                      توقيت التنبيه الاستباقي قبل الميعاد النهائي:
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
+                      {[
+                        { days: 1, label: 'قبل بيوم' },
+                        { days: 2, label: 'قبل بيومين' },
+                        { days: 3, label: 'قبل 3 أيام', recommended: true },
+                        { days: 5, label: 'قبل 5 أيام' },
+                        { days: 7, label: 'قبل أسبوع' },
+                        { days: 0, label: 'بدون تنبيه' }
+                      ].map((opt) => {
+                        const isSelected = proactiveReminderDays === opt.days;
+                        return (
+                          <button
+                            key={opt.days}
+                            type="button"
+                            onClick={() => setProactiveReminderDays(opt.days)}
+                            className={`py-2 px-2.5 rounded-lg text-xs font-medium border transition-all text-center cursor-pointer ${
+                              isSelected
+                                ? 'bg-[#1A1A1A] text-white border-[#1A1A1A] shadow-xs'
+                                : 'bg-white text-[#525252] border-[#E5E5E5] hover:bg-[#F5F5F5] hover:border-[#D4D4D4]'
+                            }`}
+                          >
+                            <span>{opt.label}</span>
+                            {opt.recommended && (
+                              <span className={`block text-[9px] font-normal mt-0.5 ${isSelected ? 'text-blue-200' : 'text-blue-600'}`}>
+                                مستحسن
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Calculated Proactive Date Card */}
+                  {proactiveReminderDays > 0 && proactiveDateIso && (
+                    <div className="p-3.5 bg-white border border-[#E5E5E5] rounded-lg space-y-2 text-xs text-[#1A1A1A]">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <CalendarDays className="w-4 h-4 text-blue-600 shrink-0" />
+                          <span className="font-semibold">موعد التنبيه الاستباقي:</span>
+                          <span className="font-medium text-blue-900 bg-blue-50 px-2.5 py-0.5 rounded border border-blue-100">
+                            {getArabicDayName(new Date(proactiveDateIso))} {formatDisplayDate(new Date(proactiveDateIso))}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-[#737373]">
+                          (يسبق الميعاد النهائي بـ {proactiveReminderDays} {proactiveReminderDays === 1 ? 'يوم' : proactiveReminderDays === 2 ? 'يومين' : 'أيام'})
+                        </span>
+                      </div>
+
+                      {isProactiveFriday && (
+                        <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded p-2">
+                          ⚠️ ملاحظة: يوافق يوم التنبيه المقترح يوم جمعة (عطلة رسمية)، لذا يوصى ببدء إعداد المذكرة قبلها بيوم عمل.
+                        </p>
+                      )}
+
+                      {proactiveHoliday && (
+                        <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded p-2">
+                          ⚠️ ملاحظة: يوافق يوم التنبيه عطلة رسمية ({proactiveHoliday.name})، يوصى ببدء الإجراءات قبلها.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Calendar Event Type Choice */}
+                  {proactiveReminderDays > 0 && (
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.2em] text-[#737373] font-semibold mb-2 block">
+                        نوع الحدث المجدول في رابط تقويم Google:
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setCalendarTarget('FINAL_DEADLINE')}
+                          className={`p-3 text-right rounded-lg text-xs border transition-all cursor-pointer ${
+                            calendarTarget === 'FINAL_DEADLINE'
+                              ? 'bg-white border-blue-600 ring-1 ring-blue-600 shadow-xs'
+                              : 'bg-white border-[#E5E5E5] hover:bg-[#F5F5F5]'
+                          }`}
+                        >
+                          <div className="font-semibold text-[#1A1A1A] flex items-center justify-between">
+                            <span>الميعاد النهائي (مع تدوين التنبيه في التفاصيل)</span>
+                            {calendarTarget === 'FINAL_DEADLINE' && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                          </div>
+                          <p className="text-[11px] text-[#737373] mt-1 leading-normal">
+                            جدولة الحدث في يوم الميعاد النهائي مع إدراج موعد التنبيه الاستباقي ضمن تفاصيل الحدث.
+                          </p>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setCalendarTarget('PROACTIVE_ALERT')}
+                          className={`p-3 text-right rounded-lg text-xs border transition-all cursor-pointer ${
+                            calendarTarget === 'PROACTIVE_ALERT'
+                              ? 'bg-white border-blue-600 ring-1 ring-blue-600 shadow-xs'
+                              : 'bg-white border-[#E5E5E5] hover:bg-[#F5F5F5]'
+                          }`}
+                        >
+                          <div className="font-semibold text-[#1A1A1A] flex items-center justify-between">
+                            <span>تاريخ التنبيه الاستباقي مباشرة (تذكير مبكر)</span>
+                            {calendarTarget === 'PROACTIVE_ALERT' && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                          </div>
+                          <p className="text-[11px] text-[#737373] mt-1 leading-normal">
+                            جدولة الحدث في تقويم Google في يوم التنبيه الاستباقي لتنبيهك ببدء تجهيز الصحيفة.
+                          </p>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="pt-4 border-t border-[#F0F0F0] space-y-3">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                      {/* Add to Google Calendar Link */}
+                      <a
+                        href={googleCalendarUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full sm:w-auto py-2.5 px-5 rounded-md text-sm font-medium bg-[#FAFAFA] text-[#1A1A1A] border border-[#E5E5E5] hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-colors flex items-center justify-center gap-2 cursor-pointer no-underline"
+                        title="إضافة الميعاد إلى تقويم Google"
+                      >
+                        <CalendarPlus className="w-4 h-4 text-blue-600" />
+                        <span>
+                          {calendarTarget === 'PROACTIVE_ALERT'
+                            ? `إضافة التنبيه المبكر لتقويم Google (قبل ${proactiveReminderDays} أيام)`
+                            : `إضافة إلى تقويم Google${proactiveReminderDays > 0 ? ` (مع تنبيه مسبق ${proactiveReminderDays} أيام)` : ''}`}
+                        </span>
+                        <ExternalLink className="w-3.5 h-3.5 text-[#A3A3A3]" />
+                      </a>
+
+                      <button
+                        onClick={handleSave}
+                        disabled={saveSuccessNotice}
+                        className={`w-full sm:w-auto py-2.5 px-6 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                          saveSuccessNotice
+                            ? 'bg-green-600 text-white cursor-default'
+                            : 'bg-[#1A1A1A] text-white hover:bg-black'
+                        }`}
+                      >
+                        <Bookmark className="w-4 h-4" />
+                        <span>{saveSuccessNotice ? 'تم الحفظ في المحفوظات' : 'حفظ الميعاد'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => setResult(null)}
+                        className="w-full sm:w-auto bg-[#F5F5F5] border border-[#E5E5E5] text-[#1A1A1A] hover:bg-[#EAEAEA] py-2.5 px-5 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>إعادة تعيين</span>
+                      </button>
+                    </div>
+
+                    {saveSuccessNotice && (
+                      <span className="text-xs text-green-700 flex items-center gap-1.5 font-medium">
+                        <CheckCircle2 className="w-4 h-4" />
+                        تم الحفظ بنجاح، يمكنك مراجعته في تبويب المحفوظات.
+                      </span>
+                    )}
+                  </div>
+
+                  {proactiveReminderDays > 0 && calendarTarget === 'FINAL_DEADLINE' && proactiveDateIso && (
+                    <div className="pt-1">
+                      <a
+                        href={proactiveDirectCalendarUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1.5 font-medium"
+                      >
+                        <BellRing className="w-3.5 h-3.5" />
+                        <span>رابط بديل: إضافة حدث التنبيه الاستباقي مباشرة لتقويم Google بتاريخ ({getArabicDayName(new Date(proactiveDateIso))} {formatDisplayDate(new Date(proactiveDateIso))})</span>
+                        <ExternalLink className="w-3 h-3 text-blue-400" />
+                      </a>
+                    </div>
                   )}
                 </div>
               </div>
@@ -535,11 +726,17 @@ export default function App() {
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2 pt-1">
+                          <div className="flex items-center gap-2 pt-1 flex-wrap">
                             <span className="text-xs text-[#737373]">الميعاد النهائي:</span>
                             <span className="text-sm font-medium text-[#1A1A1A] bg-[#FAFAFA] px-2.5 py-0.5 rounded-md border border-[#E5E5E5]">
                               {getArabicDayName(finalDate)} {formatDisplayDate(finalDate)}
                             </span>
+                            {deadline.proactiveReminderDays && (
+                              <span className="text-xs text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded flex items-center gap-1 font-medium">
+                                <Bell className="w-3 h-3 text-blue-600" />
+                                تنبيه استباقي: قبل {deadline.proactiveReminderDays} {deadline.proactiveReminderDays === 1 ? 'يوم' : deadline.proactiveReminderDays === 2 ? 'يومين' : 'أيام'}
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -554,7 +751,8 @@ export default function App() {
                               explanation: deadline.calculationExplanation,
                               notes: deadline.notes,
                               caseNumber: deadline.caseNumber,
-                              clientName: deadline.clientName
+                              clientName: deadline.clientName,
+                              proactiveReminderDays: deadline.proactiveReminderDays || 3
                             })}
                             target="_blank"
                             rel="noopener noreferrer"
