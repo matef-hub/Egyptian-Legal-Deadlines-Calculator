@@ -32,6 +32,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,11 +47,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import com.ateflaw.legaldeadlines.R
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.model.StartRule
@@ -194,7 +199,7 @@ fun LandingScreenContent(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "المساعد الإجرائي للمحامين",
+                    text = "المساعد الإجرائي للسادة المحامين",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.secondary,
@@ -323,7 +328,68 @@ fun LandingScreenContent(
                     color = MaterialTheme.colorScheme.outline,
                     textAlign = TextAlign.Center
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Social Links
+                val uriHandler = LocalUriHandler.current
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // GitHub
+                    SocialBrandButton(
+                        painter = painterResource(R.drawable.ic_github),
+                        brandColor = Color(0xFF24292E),
+                        onClick = { uriHandler.openUri("https://github.com/matef-hub") },
+                        contentDescription = "GitHub"
+                    )
+
+                    // LinkedIn
+                    SocialBrandButton(
+                        painter = painterResource(R.drawable.ic_linkedin),
+                        brandColor = Color(0xFF0077B5),
+                        onClick = { uriHandler.openUri("https://www.linkedin.com/in/atef-law") },
+                        contentDescription = "LinkedIn"
+                    )
+
+                    // Personal Web
+                    SocialBrandButton(
+                        painter = painterResource(R.drawable.ic_web),
+                        brandColor = MaterialTheme.colorScheme.tertiary,
+                        onClick = { uriHandler.openUri("https://ateflaw.com") },
+                        contentDescription = "Website"
+                    )
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun SocialBrandButton(
+    painter: Painter,
+    brandColor: Color,
+    onClick: () -> Unit,
+    contentDescription: String
+) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = brandColor.copy(alpha = 0.08f),
+        modifier = Modifier.size(48.dp),
+        tonalElevation = 1.dp
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painter,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(28.dp),
+                tint = Color.Unspecified // Keep original SVG colors
+            )
         }
     }
 }
