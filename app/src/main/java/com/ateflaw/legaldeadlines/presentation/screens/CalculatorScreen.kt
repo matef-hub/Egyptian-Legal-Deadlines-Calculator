@@ -1,8 +1,6 @@
 package com.ateflaw.legaldeadlines.presentation.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +35,7 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
@@ -69,8 +67,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
+import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
+import com.ateflaw.legaldeadlines.domain.model.DurationUnit
+import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.presentation.components.CalculationResultCard
 import com.ateflaw.legaldeadlines.presentation.components.HolidayStatusBar
+import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
+import com.ateflaw.legaldeadlines.presentation.viewmodel.MainUiState
 import com.ateflaw.legaldeadlines.presentation.viewmodel.MainViewModel
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
 import kotlinx.coroutines.delay
@@ -78,14 +82,45 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.time.Duration.Companion.milliseconds
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalculatorScreen(
     viewModel: MainViewModel,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    CalculatorScreenContent(
+        uiState = uiState,
+        onRuleSelected = viewModel::onRuleSelected,
+        onAnnouncementDateChanged = viewModel::onAnnouncementDateChanged,
+        onAdditionalDistanceDaysChanged = viewModel::onAdditionalDistanceDaysChanged,
+        onCaseNumberChanged = viewModel::onCaseNumberChanged,
+        onClientNameChanged = viewModel::onClientNameChanged,
+        onCalculateDeadline = viewModel::calculateDeadline,
+        onResetCalculation = viewModel::resetCalculation,
+        onSaveCurrentDeadline = viewModel::saveCurrentDeadline,
+        onDismissMessages = viewModel::dismissMessages,
+        modifier = modifier
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CalculatorScreenContent(
+    uiState: MainUiState,
+    onRuleSelected: (LegalRule?) -> Unit,
+    onAnnouncementDateChanged: (LocalDate) -> Unit,
+    onAdditionalDistanceDaysChanged: (String) -> Unit,
+    onCaseNumberChanged: (String) -> Unit,
+    onClientNameChanged: (String) -> Unit,
+    onCalculateDeadline: () -> Unit,
+    onResetCalculation: () -> Unit,
+    onSaveCurrentDeadline: () -> Unit,
+    onDismissMessages: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -108,8 +143,8 @@ fun CalculatorScreen(
     LaunchedEffect(uiState.selectedRule) {
         if (uiState.selectedRule == null) {
             searchQuery = ""
-        } else if (searchQuery.isBlank() || searchQuery != uiState.selectedRule?.actionName) {
-            searchQuery = uiState.selectedRule?.actionName ?: ""
+        } else if (searchQuery.isBlank() || searchQuery != uiState.selectedRule.actionName) {
+            searchQuery = uiState.selectedRule.actionName
         }
     }
 
@@ -117,13 +152,12 @@ fun CalculatorScreen(
     val filteredRules by remember(uiState.rules, searchQuery) {
         derivedStateOf {
             val query = searchQuery.trim()
-            if (query.isBlank() || (uiState.selectedRule != null && query == uiState.selectedRule?.actionName)) {
+            if (query.isBlank() || (uiState.selectedRule != null && query == uiState.selectedRule.actionName)) {
                 uiState.rules
             } else {
                 uiState.rules.filter { rule ->
                     rule.actionName.contains(query, ignoreCase = true) ||
                     rule.lawArticle.contains(query, ignoreCase = true) ||
-                    rule.category.contains(query, ignoreCase = true) ||
                     rule.notes.contains(query, ignoreCase = true)
                 }
             }
@@ -133,7 +167,7 @@ fun CalculatorScreen(
     // Scroll to result when calculated
     LaunchedEffect(uiState.result) {
         if (uiState.result != null) {
-            delay(250)
+            delay(250.milliseconds)
             scrollState.animateScrollTo(scrollState.maxValue)
         }
     }
@@ -175,12 +209,12 @@ fun CalculatorScreen(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = uiState.errorMessage ?: "",
+                            text = uiState.errorMessage,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onErrorContainer,
                             modifier = Modifier.weight(1f)
                         )
-                        IconButton(onClick = { viewModel.clearError() }) {
+                        IconButton(onClick = { onDismissMessages() }) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "إغلاق",
@@ -227,8 +261,8 @@ fun CalculatorScreen(
                                 isRuleError = false
                                 ruleErrorText = null
                                 // If user altered text away from current selection, clear selected rule
-                                if (uiState.selectedRule != null && query != uiState.selectedRule?.actionName) {
-                                    viewModel.onRuleSelected(null)
+                                if (uiState.selectedRule != null && query != uiState.selectedRule.actionName) {
+                                    onRuleSelected(null)
                                 }
                             },
                             label = { Text("الإجراء القانوني (اكتب للبحث أو اختر)") },
@@ -242,7 +276,7 @@ fun CalculatorScreen(
                                         IconButton(
                                             onClick = {
                                                 searchQuery = ""
-                                                viewModel.onRuleSelected(null)
+                                                onRuleSelected(null)
                                                 isDropdownExpanded = true
                                             }
                                         ) {
@@ -265,7 +299,7 @@ fun CalculatorScreen(
                                     )
                                 } else if (uiState.selectedRule != null) {
                                     Text(
-                                        text = "الميعاد المحدد: ${uiState.selectedRule?.duration} ${uiState.selectedRule?.unit?.arabicDisplayName} (${uiState.selectedRule?.lawArticle})",
+                                        text = "الميعاد المحدد: ${uiState.selectedRule.duration} ${uiState.selectedRule.unit.arabicDisplayName} (${uiState.selectedRule.lawArticle})",
                                         color = MaterialTheme.colorScheme.secondary
                                     )
                                 } else {
@@ -273,7 +307,10 @@ fun CalculatorScreen(
                                 }
                             },
                             modifier = Modifier
-                                .menuAnchor()
+                                .menuAnchor(
+                                    type = ExposedDropdownMenuAnchorType.PrimaryEditable,
+                                    enabled = true
+                                )
                                 .fillMaxWidth()
                                 .focusRequester(ruleFocusRequester),
                             shape = RoundedCornerShape(10.dp),
@@ -328,7 +365,7 @@ fun CalculatorScreen(
                                             },
                                             onClick = {
                                                 searchQuery = rule.actionName
-                                                viewModel.onRuleSelected(rule)
+                                                onRuleSelected(rule)
                                                 isDropdownExpanded = false
                                                 isRuleError = false
                                                 ruleErrorText = null
@@ -369,7 +406,7 @@ fun CalculatorScreen(
                     OutlinedTextField(
                         value = uiState.additionalDistanceDaysInput,
                         onValueChange = {
-                            viewModel.onAdditionalDistanceDaysChanged(it)
+                            onAdditionalDistanceDaysChanged(it)
                             isDistanceError = false
                             distanceErrorText = null
                         },
@@ -400,7 +437,7 @@ fun CalculatorScreen(
                     // Case Number (Optional)
                     OutlinedTextField(
                         value = uiState.caseNumber,
-                        onValueChange = { viewModel.onCaseNumberChanged(it) },
+                        onValueChange = { onCaseNumberChanged(it) },
                         label = { Text("رقم القضية / الدعوى (اختياري)") },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.Folder, contentDescription = null)
@@ -413,7 +450,7 @@ fun CalculatorScreen(
                     // Client Name (Optional)
                     OutlinedTextField(
                         value = uiState.clientName,
-                        onValueChange = { viewModel.onClientNameChanged(it) },
+                        onValueChange = { onClientNameChanged(it) },
                         label = { Text("اسم الموكل / الخصم (اختياري)") },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.Person, contentDescription = null)
@@ -456,7 +493,7 @@ fun CalculatorScreen(
                                     ruleErrorText = null
                                     isDistanceError = false
                                     distanceErrorText = null
-                                    viewModel.calculateDeadline()
+                                    onCalculateDeadline()
                                 }
                             }
                         },
@@ -492,10 +529,10 @@ fun CalculatorScreen(
             // 3. Calculation Result Card Display
             if (uiState.result != null) {
                 CalculationResultCard(
-                    result = uiState.result!!,
+                    result = uiState.result,
                     isSaved = uiState.isSavedSuccessfully,
-                    onSaveClick = { viewModel.saveCurrentDeadline() },
-                    onBackClick = { viewModel.resetCalculation() }
+                    onSaveClick = { onSaveCurrentDeadline() },
+                    onBackClick = { onResetCalculation() }
                 )
             }
         }
@@ -526,7 +563,7 @@ fun CalculatorScreen(
                             val selectedLocalDate = Instant.ofEpochMilli(millis)
                                 .atZone(ZoneId.systemDefault())
                                 .toLocalDate()
-                            viewModel.onAnnouncementDateChanged(selectedLocalDate)
+                            onAnnouncementDateChanged(selectedLocalDate)
                         }
                         showDatePickerDialog = false
                     }
@@ -542,5 +579,91 @@ fun CalculatorScreen(
         ) {
             DatePicker(state = datePickerState)
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CalculatorScreenPreview() {
+    val sampleRule = LegalRule(
+        id = 1,
+        actionName = "استئناف حكم مدني",
+        duration = 40,
+        unit = DurationUnit.DAYS,
+        lawArticle = "المادة 227 مرافعات",
+        notes = "يحتسب من اليوم التالي لتاريخ صدور الحكم"
+    )
+
+    val sampleUiState = MainUiState(
+        rules = listOf(sampleRule),
+        selectedRule = sampleRule,
+        announcementDate = LocalDate.now(),
+        todayDate = LocalDate.now(),
+        totalHolidaysCount = 12
+    )
+
+    EgyptianLegalDeadlinesTheme {
+        CalculatorScreenContent(
+            uiState = sampleUiState,
+            onRuleSelected = {},
+            onAnnouncementDateChanged = {},
+            onAdditionalDistanceDaysChanged = {},
+            onCaseNumberChanged = {},
+            onClientNameChanged = {},
+            onCalculateDeadline = {},
+            onResetCalculation = {},
+            onSaveCurrentDeadline = {},
+            onDismissMessages = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "With Result")
+@Composable
+fun CalculatorScreenWithResultPreview() {
+    val sampleRule = LegalRule(
+        id = 1,
+        actionName = "نقض في مواد الجنح",
+        duration = 60,
+        unit = DurationUnit.DAYS,
+        lawArticle = "المادة 34 من قانون حالات وإجراءات الطعن أمام محكمة النقض"
+    )
+
+    val sampleResult = DeadlineResult(
+        startDate = LocalDate.now(),
+        provisionalDate = LocalDate.now().plusDays(60),
+        duration = 60,
+        unit = DurationUnit.DAYS,
+        ruleDistanceDays = 0,
+        additionalDistanceDays = 0,
+        totalDistanceDays = 0,
+        excludedDays = emptyList(),
+        finalDeadline = LocalDate.now().plusDays(60),
+        explanation = "يحتسب الميعاد 60 يوماً من اليوم التالي لتاريخ صدور الحكم.",
+        lawArticle = sampleRule.lawArticle,
+        notes = ""
+    )
+
+    val sampleUiState = MainUiState(
+        rules = listOf(sampleRule),
+        selectedRule = sampleRule,
+        result = sampleResult,
+        announcementDate = LocalDate.now(),
+        todayDate = LocalDate.now()
+    )
+
+    EgyptianLegalDeadlinesTheme {
+        CalculatorScreenContent(
+            uiState = sampleUiState,
+            onRuleSelected = {},
+            onAnnouncementDateChanged = {},
+            onAdditionalDistanceDaysChanged = {},
+            onCaseNumberChanged = {},
+            onClientNameChanged = {},
+            onCalculateDeadline = {},
+            onResetCalculation = {},
+            onSaveCurrentDeadline = {},
+            onDismissMessages = {}
+        )
     }
 }

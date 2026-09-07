@@ -12,11 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Info
@@ -24,7 +22,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -33,7 +30,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -43,15 +40,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.CalendarContract
+import androidx.core.net.toUri
 import java.time.ZoneId
-import com.ateflaw.legaldeadlines.domain.calculator.LegalDeadlineCalculator
 import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun CalculationResultCard(
@@ -64,7 +59,7 @@ fun CalculationResultCard(
     val finalDateFormatted = DateFormatterUtils.formatArabicFullDate(result.finalDeadline)
     val dayNameArabic = DateFormatterUtils.getArabicDayName(result.finalDeadline.dayOfWeek)
     val context = LocalContext.current
-    var proactiveReminderDays by remember { mutableStateOf(3) }
+    var proactiveReminderDays by remember { mutableIntStateOf(3) }
 
     val onAddToCalendar = {
         val proactiveDate = if (proactiveReminderDays > 0) result.finalDeadline.minusDays(proactiveReminderDays.toLong()) else result.finalDeadline
@@ -89,14 +84,14 @@ fun CalculationResultCard(
                 putExtra(CalendarContract.EXTRA_EVENT_END_TIME, epochMillis + 86400000L)
             }
             context.startActivity(intent)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             val cleanStart = result.finalDeadline.toString().replace("-", "")
             val nextDay = result.finalDeadline.plusDays(1).toString().replace("-", "")
             val webUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" +
                 Uri.encode("ميعاد قانوني: ${result.lawArticle}" + if (proactiveReminderDays > 0) " (تنبيه $proactiveReminderDays أيام)" else "") +
                 "&dates=$cleanStart/$nextDay&details=" +
                 Uri.encode(descriptionText)
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(webUrl)))
+            context.startActivity(Intent(Intent.ACTION_VIEW, webUrl.toUri()))
         }
     }
 
@@ -316,7 +311,7 @@ fun CalculationResultCard(
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = null
                         )
                         Spacer(modifier = Modifier.width(6.dp))

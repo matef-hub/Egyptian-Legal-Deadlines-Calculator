@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Security
@@ -50,8 +50,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
+import com.ateflaw.legaldeadlines.domain.model.DurationUnit
+import com.ateflaw.legaldeadlines.domain.model.LegalRule
+import com.ateflaw.legaldeadlines.domain.model.StartRule
+import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.presentation.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun LandingScreen(
@@ -61,9 +67,38 @@ fun LandingScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    var targetProgress by remember { mutableFloatStateOf(0.15f) }
-    var currentStageText by remember { mutableStateOf("تهيئة النظام القانوني وقاعدة البيانات...") }
-    var isDataReady by remember { mutableStateOf(false) }
+    LandingScreenContent(
+        rules = uiState.rules,
+        totalHolidaysCount = uiState.totalHolidaysCount,
+        onNavigateToCalculator = onNavigateToCalculator,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun LandingScreenContent(
+    rules: List<LegalRule>,
+    totalHolidaysCount: Int,
+    onNavigateToCalculator: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var targetProgress by remember(rules, totalHolidaysCount) { 
+        mutableFloatStateOf(
+            if (rules.isNotEmpty() && totalHolidaysCount > 0) 1.0f 
+            else if (rules.isNotEmpty()) 0.7f 
+            else 0.15f
+        ) 
+    }
+    var currentStageText by remember(rules, totalHolidaysCount) { 
+        mutableStateOf(
+            if (rules.isNotEmpty() && totalHolidaysCount > 0) "اكتملت جاهزية المحرك الإجرائي (${totalHolidaysCount} عطلة معتمدة)"
+            else if (rules.isNotEmpty()) "تم تحميل ${rules.size} ميعاداً إجرائياً، جاري فحص العطلات الرسمية..."
+            else "تهيئة النظام القانوني وقاعدة البيانات..."
+        )
+    }
+    var isDataReady by remember(rules, totalHolidaysCount) { 
+        mutableStateOf(rules.isNotEmpty()) 
+    }
 
     val animatedProgress by animateFloatAsState(
         targetValue = targetProgress,
@@ -72,32 +107,35 @@ fun LandingScreen(
     )
 
     // Monitor data readiness and animate stages
-    LaunchedEffect(uiState.rules, uiState.totalHolidaysCount) {
-        // Stage 1
-        targetProgress = 0.35f
-        currentStageText = "تحميل نصوص ومواعيد قانون المرافعات المصري..."
-        delay(400)
+    LaunchedEffect(rules, totalHolidaysCount) {
+        // Only run animations if we are not already at the final state
+        if (!isDataReady || targetProgress < 1.0f) {
+            // Stage 1
+            targetProgress = 0.35f
+            currentStageText = "تحميل نصوص ومواعيد قانون المرافعات المصري..."
+            delay(400.milliseconds)
 
-        // Stage 2
-        if (uiState.rules.isNotEmpty()) {
-            targetProgress = 0.70f
-            currentStageText = "تم تحميل ${uiState.rules.size} ميعاداً إجرائياً، جاري فحص العطلات الرسمية..."
-            delay(400)
-        }
+            // Stage 2
+            if (rules.isNotEmpty()) {
+                targetProgress = 0.70f
+                currentStageText = "تم تحميل ${rules.size} ميعاداً إجرائياً، جاري فحص العطلات الرسمية..."
+                delay(400.milliseconds)
+            }
 
-        // Stage 3: Ready
-        if (uiState.rules.isNotEmpty() && uiState.totalHolidaysCount > 0) {
-            targetProgress = 1.0f
-            currentStageText = "اكتملت جاهزية المحرك الإجرائي (${uiState.totalHolidaysCount} عطلة معتمدة)"
-            isDataReady = true
-            delay(700)
-            // Auto navigate after completion
-            onNavigateToCalculator()
-        } else if (uiState.rules.isNotEmpty()) {
-            // Even if holidays count is still syncing, rules are ready
-            targetProgress = 1.0f
-            currentStageText = "اكتمل تجهيز المواعيد القانونية"
-            isDataReady = true
+            // Stage 3: Ready
+            if (rules.isNotEmpty() && totalHolidaysCount > 0) {
+                targetProgress = 1.0f
+                currentStageText = "اكتملت جاهزية المحرك الإجرائي (${totalHolidaysCount} عطلة معتمدة)"
+                isDataReady = true
+                delay(700.milliseconds)
+                // Auto navigate after completion
+                onNavigateToCalculator()
+            } else if (rules.isNotEmpty()) {
+                // Even if holidays count is still syncing, rules are ready
+                targetProgress = 1.0f
+                currentStageText = "اكتمل تجهيز المواعيد القانونية"
+                isDataReady = true
+            }
         }
     }
 
@@ -156,7 +194,7 @@ fun LandingScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "المعين الإجرائي لرجال القضاء والمحاماة",
+                    text = "المساعد الإجرائي للمحامين",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.secondary,
@@ -166,7 +204,7 @@ fun LandingScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "وفقاً لأحكام قانون المرافعات المدنية والتجارية المصري رقم 13 لسنة 1968",
+                    text = "وفقاً لأحكام قانون المرافعات المدنية والتجارية المصري",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -270,7 +308,7 @@ fun LandingScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(
-                            imageVector = Icons.Default.ArrowBack, // RTL arrow points left
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack, // RTL arrow points left
                             contentDescription = null,
                             tint = Color.White
                         )
@@ -287,5 +325,37 @@ fun LandingScreen(
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Landing Screen Loading Stage")
+@Composable
+fun LandingScreenLoadingPreview() {
+    EgyptianLegalDeadlinesTheme {
+        LandingScreenContent(
+            rules = emptyList(),
+            totalHolidaysCount = 0,
+            onNavigateToCalculator = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Landing Screen Ready Stage")
+@Composable
+fun LandingScreenReadyPreview() {
+    EgyptianLegalDeadlinesTheme {
+        LandingScreenContent(
+            rules = listOf(
+                LegalRule(
+                    id = 1,
+                    actionName = "الاستئناف",
+                    duration = 40,
+                    unit = DurationUnit.DAYS,
+                    startRule = StartRule.NEXT_DAY
+                )
+            ),
+            totalHolidaysCount = 10,
+            onNavigateToCalculator = {}
+        )
     }
 }
