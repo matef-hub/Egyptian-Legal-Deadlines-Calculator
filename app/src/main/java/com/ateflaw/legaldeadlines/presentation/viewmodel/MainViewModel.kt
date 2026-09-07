@@ -86,7 +86,7 @@ class MainViewModel(
         }
     }
 
-    fun onRuleSelected(rule: LegalRule) {
+    fun onRuleSelected(rule: LegalRule?) {
         _uiState.update { it.copy(selectedRule = rule, errorMessage = null) }
     }
 

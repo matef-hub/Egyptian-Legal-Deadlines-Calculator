@@ -13,6 +13,9 @@ interface HolidayDao {
     @Query("SELECT * FROM holidays ORDER BY holiday_date ASC")
     fun getAll(): Flow<List<HolidayEntity>>
 
+    @Query("SELECT * FROM holidays ORDER BY holiday_date ASC")
+    suspend fun getAllList(): List<HolidayEntity>
+
     @Query("SELECT COUNT(*) FROM holidays")
     suspend fun count(): Int
 

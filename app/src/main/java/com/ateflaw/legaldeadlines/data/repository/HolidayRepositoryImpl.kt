@@ -14,6 +14,10 @@ class HolidayRepositoryImpl(
         return holidayService.getAllHolidays()
     }
 
+    override suspend fun getAllHolidaysList(): List<Holiday> {
+        return holidayService.getAllHolidaysList()
+    }
+
     override suspend fun getHolidaysCount(): Int {
         return holidayService.getHolidaysCount()
     }

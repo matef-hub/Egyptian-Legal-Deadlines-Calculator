@@ -9,6 +9,7 @@ import java.time.LocalDate
  */
 interface HolidayRepository {
     fun getAllHolidays(): Flow<List<Holiday>>
+    suspend fun getAllHolidaysList(): List<Holiday>
     suspend fun getHolidaysCount(): Int
     suspend fun getHolidayByDate(date: LocalDate): Holiday?
     suspend fun isHoliday(date: LocalDate): Boolean

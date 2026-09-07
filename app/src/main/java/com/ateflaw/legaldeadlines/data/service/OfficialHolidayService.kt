@@ -31,6 +31,10 @@ class OfficialHolidayService(
         }
     }
 
+    suspend fun getAllHolidaysList(): List<Holiday> = withContext(Dispatchers.IO) {
+        holidayDao.getAllList().map { it.toDomain() }
+    }
+
     suspend fun getHolidaysCount(): Int = withContext(Dispatchers.IO) {
         holidayDao.count()
     }

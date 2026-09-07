@@ -59,9 +59,14 @@ const ANDROID_FILES: AndroidFileItem[] = [
     description: 'نموذج عرض شاشة الحاسبة الرئيسية وإدارة الحالة'
   },
   {
+    path: 'app/src/main/java/com/ateflaw/legaldeadlines/presentation/screens/LandingScreen.kt',
+    category: 'UI',
+    description: 'شاشة البداية والتهيئة الراقية مع مؤشر التحميل ومتابعة جاهزية البيانات'
+  },
+  {
     path: 'app/src/main/java/com/ateflaw/legaldeadlines/presentation/screens/CalculatorScreen.kt',
     category: 'UI',
-    description: 'واجهة المستخدم لاحتساب الميعاد بمكونات Material 3 ودعم RTL'
+    description: 'واجهة المستخدم لاحتساب الميعاد بمكونات Material 3 ودعم البحث التفاعلي والتحقق من الحقول'
   },
   {
     path: 'app/src/main/java/com/ateflaw/legaldeadlines/presentation/screens/SavedDeadlinesScreen.kt',

@@ -27,8 +27,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ateflaw.legaldeadlines.domain.calculator.LegalDeadlineCalculator
+import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun HolidayStatusBar(
@@ -38,9 +38,8 @@ fun HolidayStatusBar(
     loadedHolidaysCount: Int,
     modifier: Modifier = Modifier
 ) {
-    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    val dayNameArabic = LegalDeadlineCalculator.getArabicDayName(todayDate.dayOfWeek)
-    val formattedDate = todayDate.format(formatter)
+    val dayNameArabic = DateFormatterUtils.getArabicDayName(todayDate.dayOfWeek)
+    val formattedDate = DateFormatterUtils.formatArabicFullDate(todayDate)
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -67,7 +66,7 @@ fun HolidayStatusBar(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "اليوم: $dayNameArabic $formattedDate",
+                        text = "اليوم: $dayNameArabic، $formattedDate",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant

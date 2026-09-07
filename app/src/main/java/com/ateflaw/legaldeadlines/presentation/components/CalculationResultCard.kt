@@ -50,6 +50,7 @@ import android.provider.CalendarContract
 import java.time.ZoneId
 import com.ateflaw.legaldeadlines.domain.calculator.LegalDeadlineCalculator
 import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
+import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
 import java.time.format.DateTimeFormatter
 
 @Composable
@@ -60,22 +61,21 @@ fun CalculationResultCard(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    val finalDateFormatted = result.finalDeadline.format(formatter)
-    val dayNameArabic = LegalDeadlineCalculator.getArabicDayName(result.finalDeadline.dayOfWeek)
+    val finalDateFormatted = DateFormatterUtils.formatArabicFullDate(result.finalDeadline)
+    val dayNameArabic = DateFormatterUtils.getArabicDayName(result.finalDeadline.dayOfWeek)
     val context = LocalContext.current
     var proactiveReminderDays by remember { mutableStateOf(3) }
 
     val onAddToCalendar = {
         val proactiveDate = if (proactiveReminderDays > 0) result.finalDeadline.minusDays(proactiveReminderDays.toLong()) else result.finalDeadline
-        val proactiveFormatted = proactiveDate.format(formatter)
+        val proactiveFormatted = DateFormatterUtils.formatArabicFullDate(proactiveDate)
 
         val descriptionText = if (proactiveReminderDays > 0) {
             "🔔 تنبيه استباقي: قبل الميعاد النهائي بـ $proactiveReminderDays أيام (بتاريخ $proactiveFormatted)\n\n" +
             "السند: ${result.lawArticle}\n\n" +
             result.explanation
         } else {
-            "الميعاد النهائي: $finalDateFormatted\nالسند: ${result.lawArticle}\n\n${result.explanation}"
+            "الميعاد النهائي: $dayNameArabic، $finalDateFormatted\nالسند: ${result.lawArticle}\n\n${result.explanation}"
         }
 
         try {
@@ -150,8 +150,8 @@ fun CalculationResultCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "$dayNameArabic  $finalDateFormatted",
-                        style = MaterialTheme.typography.headlineLarge.copy(fontSize = 26.sp),
+                        text = "$dayNameArabic، $finalDateFormatted",
+                        style = MaterialTheme.typography.headlineLarge.copy(fontSize = 24.sp),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )

@@ -65,71 +65,76 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
+                val isLanding = currentRoute == Screen.Landing.route
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     topBar = {
-                        TopAppBar(
-                            title = {
-                                Text(
-                                    text = "حاسبة المواعيد القانونية",
-                                    fontWeight = FontWeight.Bold
+                        if (!isLanding) {
+                            TopAppBar(
+                                title = {
+                                    Text(
+                                        text = "حاسبة المواعيد القانونية",
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                },
+                                navigationIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Gavel,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.padding(start = 12.dp, end = 8.dp)
+                                    )
+                                },
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                                 )
-                            },
-                            navigationIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Gavel,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.padding(start = 12.dp, end = 8.dp)
-                                )
-                            },
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                                navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                             )
-                        )
+                        }
                     },
                     bottomBar = {
-                        NavigationBar(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ) {
-                            NavigationBarItem(
-                                selected = currentRoute == Screen.Calculator.route || currentRoute == null,
-                                onClick = {
-                                    if (currentRoute != Screen.Calculator.route) {
-                                        navController.navigate(Screen.Calculator.route) {
-                                            popUpTo(Screen.Calculator.route) { inclusive = true }
+                        if (!isLanding) {
+                            NavigationBar(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ) {
+                                NavigationBarItem(
+                                    selected = currentRoute == Screen.Calculator.route || currentRoute == null,
+                                    onClick = {
+                                        if (currentRoute != Screen.Calculator.route) {
+                                            navController.navigate(Screen.Calculator.route) {
+                                                popUpTo(Screen.Calculator.route) { inclusive = true }
+                                            }
                                         }
-                                    }
-                                },
-                                icon = { Icon(Icons.Default.Calculate, contentDescription = "الحاسبة") },
-                                label = { Text("الحاسبة") },
-                                colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                                    },
+                                    icon = { Icon(Icons.Default.Calculate, contentDescription = "الحاسبة") },
+                                    label = { Text("الحاسبة") },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                                    )
                                 )
-                            )
 
-                            NavigationBarItem(
-                                selected = currentRoute == Screen.SavedDeadlines.route,
-                                onClick = {
-                                    if (currentRoute != Screen.SavedDeadlines.route) {
-                                        navController.navigate(Screen.SavedDeadlines.route) {
-                                            launchSingleTop = true
+                                NavigationBarItem(
+                                    selected = currentRoute == Screen.SavedDeadlines.route,
+                                    onClick = {
+                                        if (currentRoute != Screen.SavedDeadlines.route) {
+                                            navController.navigate(Screen.SavedDeadlines.route) {
+                                                launchSingleTop = true
+                                            }
                                         }
-                                    }
-                                },
-                                icon = { Icon(Icons.Default.Bookmark, contentDescription = "المواعيد المحفوظة") },
-                                label = { Text("المحفوظات") },
-                                colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                                    },
+                                    icon = { Icon(Icons.Default.Bookmark, contentDescription = "المواعيد المحفوظة") },
+                                    label = { Text("المحفوظات") },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                 ) { innerPadding ->
@@ -137,7 +142,7 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         mainViewModel = mainViewModel,
                         deadlineListViewModel = deadlineListViewModel,
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.padding(if (isLanding) androidx.compose.foundation.layout.PaddingValues(0.dp) else innerPadding)
                     )
                 }
             }
