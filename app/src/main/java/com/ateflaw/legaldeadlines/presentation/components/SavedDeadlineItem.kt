@@ -86,7 +86,7 @@ fun SavedDeadlineItem(
                 putExtra(CalendarContract.EXTRA_EVENT_END_TIME, epochMillis + 86400000L)
             }
             context.startActivity(intent)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             val cleanStart = deadline.finalDeadline.toString().replace("-", "")
             val nextDay = deadline.finalDeadline.plusDays(1).toString().replace("-", "")
             val webUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" +

@@ -5,9 +5,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Gavel
@@ -73,19 +79,42 @@ class MainActivity : ComponentActivity() {
                         if (!isLanding) {
                             TopAppBar(
                                 title = {
-                                    Text(
-                                        text = "حاسبة المواعيد القانونية",
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        // العنوان
+                                        Text(
+                                            text = "حاسبة المواعيد القانونية",
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+
+                                        Spacer(modifier = Modifier.weight(1f))
+
+                                        // حقوق الملكية
+                                        Text(
+                                            text = "© Mohamed Atef",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.65f),
+                                            maxLines = 1
+                                        )
+                                    }
                                 },
+
                                 navigationIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Gavel,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.padding(start = 12.dp, end = 8.dp)
+                                        contentDescription = "المواعيد القانونية",
+                                        modifier = Modifier
+                                            .padding(start = 12.dp, end = 8.dp)
+                                            .size(24.dp),
+                                        tint = MaterialTheme.colorScheme.onPrimary
                                     )
                                 },
+
                                 colors = TopAppBarDefaults.topAppBarColors(
                                     containerColor = MaterialTheme.colorScheme.primary,
                                     titleContentColor = MaterialTheme.colorScheme.onPrimary,

@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Card
@@ -25,8 +25,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.ateflaw.legaldeadlines.domain.calculator.LegalDeadlineCalculator
+import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
 import java.time.LocalDate
 
@@ -60,13 +61,13 @@ fun HolidayStatusBar(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Default.CalendarToday,
+                        imageVector = Icons.Default.CalendarMonth,
                         contentDescription = "اليوم",
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "اليوم: $dayNameArabic، $formattedDate",
+                        text = "اليوم: $dayNameArabic/ $formattedDate",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -100,7 +101,7 @@ fun HolidayStatusBar(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (isTodayHoliday) "عطلة رسمية" else "يوم عمل رسمي",
+                            text = if (isTodayHoliday) "عطلة رسمية" else "يوم عمل",
                             style = MaterialTheme.typography.labelLarge,
                             color = statusText
                         )
@@ -127,3 +128,30 @@ fun HolidayStatusBar(
         }
     }
 }
+
+@Preview(showBackground = true, name = "Work Day")
+@Composable
+fun HolidayStatusBarWorkDayPreview() {
+    EgyptianLegalDeadlinesTheme {
+        HolidayStatusBar(
+            todayDate = LocalDate.of(2025, 5, 12),
+            isTodayHoliday = false,
+            holidayName = null,
+            loadedHolidaysCount = 15
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Holiday")
+@Composable
+fun HolidayStatusBarHolidayPreview() {
+    EgyptianLegalDeadlinesTheme {
+        HolidayStatusBar(
+            todayDate = LocalDate.of(2025, 1, 7),
+            isTodayHoliday = true,
+            holidayName = "عيد الميلاد المجيد",
+            loadedHolidaysCount = 15
+        )
+    }
+}
+
