@@ -47,7 +47,7 @@ class MainViewModel(
                     _uiState.update { currentState ->
                         currentState.copy(
                             rules = rulesList,
-                            selectedRule = currentState.selectedRule ?: rulesList.firstOrNull()
+                            selectedRule = currentState.selectedRule
                         )
                     }
                 }

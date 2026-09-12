@@ -5,6 +5,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -53,6 +54,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -365,7 +367,13 @@ fun CalculatorScreenContent(
                                 ExposedDropdownMenu(
                                     expanded = isDropdownExpanded,
                                     onDismissRequest = { isDropdownExpanded = false },
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier
+                                        .exposedDropdownSize()
+                                        .heightIn(max = 280.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    shadowElevation = 4.dp,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                                 ) {
                                     if (filteredRules.isEmpty()) {
                                         DropdownMenuItem(
@@ -382,7 +390,13 @@ fun CalculatorScreenContent(
                                             modifier = Modifier.fillMaxWidth()
                                         )
                                     } else {
-                                        filteredRules.forEach { rule ->
+                                        filteredRules.forEachIndexed { index, rule ->
+                                            if (index > 0) {
+                                                HorizontalDivider(
+                                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
+                                                    thickness = 1.dp
+                                                )
+                                            }
                                             DropdownMenuItem(
                                                 text = {
                                                     Column(
@@ -394,6 +408,7 @@ fun CalculatorScreenContent(
                                                             style = MaterialTheme.typography.bodyMedium,
                                                             fontWeight = FontWeight.Bold,
                                                             textAlign = TextAlign.Right,
+                                                            color = MaterialTheme.colorScheme.onSurface,
                                                             modifier = Modifier.fillMaxWidth()
                                                         )
                                                         Spacer(modifier = Modifier.height(2.dp))
