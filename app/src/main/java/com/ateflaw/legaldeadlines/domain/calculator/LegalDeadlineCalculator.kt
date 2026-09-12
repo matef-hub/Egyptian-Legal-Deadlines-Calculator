@@ -114,7 +114,8 @@ class LegalDeadlineCalculator {
             finalDeadline = finalDeadline,
             explanation = explanation,
             lawArticle = rule.lawArticle,
-            notes = rule.notes
+            notes = rule.notes,
+            actionSummary = rule.summary.ifBlank { rule.actionName }
         )
     }
 

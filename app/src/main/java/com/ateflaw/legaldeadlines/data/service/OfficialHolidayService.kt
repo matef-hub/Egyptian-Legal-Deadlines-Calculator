@@ -51,6 +51,7 @@ class OfficialHolidayService(
         holidayDao.insertAll(holidays.map { HolidayEntity.fromDomain(it) })
     }
 
+    @Suppress("KotlinConstantConditions")
     suspend fun syncHolidays(year: Int): Result<Int> = withContext(Dispatchers.IO) {
         try {
             val apiKey = BuildConfig.CALENDARIFIC_API_KEY

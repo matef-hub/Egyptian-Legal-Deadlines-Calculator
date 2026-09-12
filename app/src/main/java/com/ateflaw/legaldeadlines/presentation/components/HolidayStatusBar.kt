@@ -59,7 +59,10 @@ fun HolidayStatusBar(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(
                         imageVector = Icons.Default.CalendarMonth,
                         contentDescription = "اليوم",
@@ -70,7 +73,7 @@ fun HolidayStatusBar(
                         text = "اليوم: $dayNameArabic/ $formattedDate",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -123,7 +126,7 @@ fun HolidayStatusBar(
             Text(
                 text = "قاعدة بيانات العطلات الرسمية المعتمدة: $loadedHolidaysCount عطلة مسجلة",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }

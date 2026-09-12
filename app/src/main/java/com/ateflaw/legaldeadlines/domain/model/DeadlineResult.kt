@@ -17,5 +17,6 @@ data class DeadlineResult(
     val finalDeadline: LocalDate,
     val explanation: String,
     val lawArticle: String,
-    val notes: String
+    val notes: String,
+    val actionSummary: String = ""
 )

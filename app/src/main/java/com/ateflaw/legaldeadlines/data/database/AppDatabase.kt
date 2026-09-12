@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
         HolidayEntity::class,
         SavedDeadlineEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

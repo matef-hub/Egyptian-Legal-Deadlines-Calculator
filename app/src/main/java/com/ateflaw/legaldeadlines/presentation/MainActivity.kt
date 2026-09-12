@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,8 +16,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Gavel
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -79,31 +80,14 @@ class MainActivity : ComponentActivity() {
                         if (!isLanding) {
                             TopAppBar(
                                 title = {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        // العنوان
-                                        Text(
-                                            text = "حاسبة المواعيد القانونية",
-                                            fontWeight = FontWeight.Bold,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-
-                                        Spacer(modifier = Modifier.weight(1f))
-
-                                        // حقوق الملكية
-                                        Text(
-                                            text = "© Mohamed Atef",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Medium,
-                                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.65f),
-                                            maxLines = 1
-                                        )
-                                    }
+                                    Text(
+                                        text = "حاسبة المواعيد القانونية",
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
                                 },
-
                                 navigationIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Gavel,
@@ -114,11 +98,32 @@ class MainActivity : ComponentActivity() {
                                         tint = MaterialTheme.colorScheme.onPrimary
                                     )
                                 },
-
+                                actions = {
+                                    IconButton(
+                                        onClick = {
+                                            if (currentRoute != Screen.SavedDeadlines.route) {
+                                                navController.navigate(Screen.SavedDeadlines.route) {
+                                                    launchSingleTop = true
+                                                }
+                                            } else {
+                                                navController.navigate(Screen.Calculator.route) {
+                                                    popUpTo(Screen.Calculator.route) { inclusive = true }
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Menu,
+                                            contentDescription = "القائمة",
+                                            tint = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    }
+                                },
                                 colors = TopAppBarDefaults.topAppBarColors(
                                     containerColor = MaterialTheme.colorScheme.primary,
                                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                                 )
                             )
                         }

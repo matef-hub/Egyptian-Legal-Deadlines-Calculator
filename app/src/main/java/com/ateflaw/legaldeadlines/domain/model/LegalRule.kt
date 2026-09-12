@@ -11,5 +11,6 @@ data class LegalRule(
     val distanceDays: Int = 0,
     val startRule: StartRule = StartRule.NEXT_DAY,
     val lawArticle: String = "",
-    val notes: String = ""
+    val notes: String = "",
+    val summary: String = ""
 )

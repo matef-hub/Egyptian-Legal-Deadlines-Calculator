@@ -32,7 +32,10 @@ data class LegalRuleEntity(
     val lawArticle: String,
 
     @ColumnInfo(name = "notes")
-    val notes: String
+    val notes: String,
+
+    @ColumnInfo(name = "summary", defaultValue = "")
+    val summary: String = ""
 ) {
     fun toDomain(): LegalRule = LegalRule(
         id = id,
@@ -42,7 +45,8 @@ data class LegalRuleEntity(
         distanceDays = distanceDays,
         startRule = try { StartRule.valueOf(startRule) } catch (_: Exception) { StartRule.NEXT_DAY },
         lawArticle = lawArticle,
-        notes = notes
+        notes = notes,
+        summary = summary
     )
 
     companion object {
@@ -54,7 +58,8 @@ data class LegalRuleEntity(
             distanceDays = domain.distanceDays,
             startRule = domain.startRule.name,
             lawArticle = domain.lawArticle,
-            notes = domain.notes
+            notes = domain.notes,
+            summary = domain.summary
         )
     }
 }
