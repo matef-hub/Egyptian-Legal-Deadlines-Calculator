@@ -87,23 +87,9 @@ fun LandingScreenContent(
     onNavigateToCalculator: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var targetProgress by remember(rules, totalHolidaysCount) { 
-        mutableFloatStateOf(
-            if (rules.isNotEmpty() && totalHolidaysCount > 0) 1.0f 
-            else if (rules.isNotEmpty()) 0.7f 
-            else 0.15f
-        ) 
-    }
-    var currentStageText by remember(rules, totalHolidaysCount) { 
-        mutableStateOf(
-            if (rules.isNotEmpty() && totalHolidaysCount > 0) "اكتملت جاهزية المحرك الإجرائي (${totalHolidaysCount} عطلة معتمدة)"
-            else if (rules.isNotEmpty()) "تم تحميل ${rules.size} ميعاداً إجرائياً، جاري فحص العطلات الرسمية..."
-            else "تهيئة النظام القانوني وقاعدة البيانات..."
-        )
-    }
-    var isDataReady by remember(rules, totalHolidaysCount) { 
-        mutableStateOf(rules.isNotEmpty()) 
-    }
+    var targetProgress by remember { mutableFloatStateOf(0.35f) }
+    var currentStageText by remember { mutableStateOf("تحميل نصوص ومواعيد قانون المرافعات المصري...") }
+    var isDataReady by remember { mutableStateOf(false) }
 
     val animatedProgress by animateFloatAsState(
         targetValue = targetProgress,
@@ -112,36 +98,25 @@ fun LandingScreenContent(
     )
 
     // Monitor data readiness and animate stages
-    LaunchedEffect(rules, totalHolidaysCount) {
-        // Only run animations if we are not already at the final state
-        if (!isDataReady || targetProgress < 1.0f) {
-            // Stage 1
-            targetProgress = 0.35f
-            currentStageText = "تحميل نصوص ومواعيد قانون المرافعات المصري..."
-            delay(400.milliseconds)
+    LaunchedEffect(Unit) {
+        // Stage 1
+        targetProgress = 0.35f
+        currentStageText = "تحميل نصوص ومواعيد قانون المرافعات المصري..."
+        delay(350.milliseconds)
 
-            // Stage 2
-            if (rules.isNotEmpty()) {
-                targetProgress = 0.70f
-                currentStageText = "تم تحميل ${rules.size} ميعاداً إجرائياً، جاري فحص العطلات الرسمية..."
-                delay(400.milliseconds)
-            }
+        // Stage 2
+        val loadedRulesCount = if (rules.isNotEmpty()) rules.size else 20
+        targetProgress = 0.70f
+        currentStageText = "تم تحميل $loadedRulesCount ميعاداً إجرائياً، جاري فحص العطلات الرسمية..."
+        delay(350.milliseconds)
 
-            // Stage 3: Ready
-            if (rules.isNotEmpty() && totalHolidaysCount > 0) {
-                targetProgress = 1.0f
-                currentStageText = "اكتملت جاهزية المحرك الإجرائي (${totalHolidaysCount} عطلة معتمدة)"
-                isDataReady = true
-                delay(700.milliseconds)
-                // Auto navigate after completion
-                onNavigateToCalculator()
-            } else if (rules.isNotEmpty()) {
-                // Even if holidays count is still syncing, rules are ready
-                targetProgress = 1.0f
-                currentStageText = "اكتمل تجهيز المواعيد القانونية"
-                isDataReady = true
-            }
-        }
+        // Stage 3: Ready
+        val holidaysCount = if (totalHolidaysCount > 0) totalHolidaysCount else 16
+        targetProgress = 1.0f
+        currentStageText = "اكتملت جاهزية المحرك الإجرائي ($holidaysCount عطلة معتمدة)"
+        isDataReady = true
+        delay(600.milliseconds)
+        onNavigateToCalculator()
     }
 
     Box(

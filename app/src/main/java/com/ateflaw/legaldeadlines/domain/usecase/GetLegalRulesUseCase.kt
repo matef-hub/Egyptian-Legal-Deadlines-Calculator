@@ -8,4 +8,8 @@ class GetLegalRulesUseCase(
     private val repository: LegalRuleRepository
 ) {
     operator fun invoke(): Flow<List<LegalRule>> = repository.getAllRules()
+
+    suspend fun getRulesCount(): Int = repository.getRulesCount()
+
+    suspend fun insertRules(rules: List<LegalRule>) = repository.insertRules(rules)
 }

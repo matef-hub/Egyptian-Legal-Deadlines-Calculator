@@ -3,6 +3,7 @@ package com.ateflaw.legaldeadlines.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.ateflaw.legaldeadlines.data.seed.LegalRuleSeedData
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.model.SavedDeadline
 import com.ateflaw.legaldeadlines.domain.usecase.CalculateDeadlineUseCase
@@ -36,12 +37,19 @@ class MainViewModel(
 
     private fun loadLegalRules() {
         viewModelScope.launch {
+            if (getLegalRulesUseCase.getRulesCount() == 0) {
+                getLegalRulesUseCase.insertRules(LegalRuleSeedData.getSeedRules())
+            }
             getLegalRulesUseCase().collect { rulesList ->
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        rules = rulesList,
-                        selectedRule = currentState.selectedRule ?: rulesList.firstOrNull()
-                    )
+                if (rulesList.isEmpty()) {
+                    getLegalRulesUseCase.insertRules(LegalRuleSeedData.getSeedRules())
+                } else {
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            rules = rulesList,
+                            selectedRule = currentState.selectedRule ?: rulesList.firstOrNull()
+                        )
+                    }
                 }
             }
         }
@@ -49,6 +57,9 @@ class MainViewModel(
 
     private fun loadHolidayStatus() {
         viewModelScope.launch {
+            if (getHolidaysUseCase.getCount() == 0) {
+                getHolidaysUseCase.insertHolidays(LegalRuleSeedData.getInitialOfficialHolidays())
+            }
             val today = LocalDate.now()
             val isHoliday = getHolidaysUseCase.isHoliday(today)
             val holidayName = if (isHoliday) getHolidaysUseCase.getHolidayName(today) else null

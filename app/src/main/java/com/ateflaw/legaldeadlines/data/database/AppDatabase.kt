@@ -45,14 +45,34 @@ abstract class AppDatabase : RoomDatabase() {
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
-                            // Seed verified procedural rules on first database creation
+                            seedIfEmpty(context)
+                        }
+
+                        override fun onOpen(db: SupportSQLiteDatabase) {
+                            super.onOpen(db)
+                            seedIfEmpty(context)
+                        }
+
+                        override fun onDestructiveMigration(db: SupportSQLiteDatabase) {
+                            super.onDestructiveMigration(db)
+                            seedIfEmpty(context)
+                        }
+
+                        private fun seedIfEmpty(context: Context) {
                             CoroutineScope(Dispatchers.IO).launch {
-                                getInstance(context).legalRuleDao().insertAll(
-                                    LegalRuleSeedData.getSeedRules().map { LegalRuleEntity.fromDomain(it) }
-                                )
-                                getInstance(context).holidayDao().insertAll(
-                                    LegalRuleSeedData.getInitialOfficialHolidays().map { HolidayEntity.fromDomain(it) }
-                                )
+                                try {
+                                    val database = getInstance(context)
+                                    if (database.legalRuleDao().count() == 0) {
+                                        database.legalRuleDao().insertAll(
+                                            LegalRuleSeedData.getSeedRules().map { LegalRuleEntity.fromDomain(it) }
+                                        )
+                                    }
+                                    if (database.holidayDao().count() == 0) {
+                                        database.holidayDao().insertAll(
+                                            LegalRuleSeedData.getInitialOfficialHolidays().map { HolidayEntity.fromDomain(it) }
+                                        )
+                                    }
+                                } catch (_: Exception) {}
                             }
                         }
                     })

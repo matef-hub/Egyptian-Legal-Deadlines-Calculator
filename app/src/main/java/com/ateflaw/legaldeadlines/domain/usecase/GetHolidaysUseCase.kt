@@ -15,4 +15,6 @@ class GetHolidaysUseCase(
     suspend fun getHolidayName(date: LocalDate): String? = repository.getHolidayName(date)
 
     suspend fun getCount(): Int = repository.getHolidaysCount()
+
+    suspend fun insertHolidays(holidays: List<Holiday>) = repository.insertHolidays(holidays)
 }
