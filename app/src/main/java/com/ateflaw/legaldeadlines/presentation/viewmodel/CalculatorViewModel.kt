@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
-class MainViewModel(
+class CalculatorViewModel(
     private val getLegalRulesUseCase: GetLegalRulesUseCase,
     private val getHolidaysUseCase: GetHolidaysUseCase,
     private val calculateDeadlineUseCase: CalculateDeadlineUseCase,
@@ -215,7 +215,7 @@ class MainViewModel(
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return MainViewModel(
+                return CalculatorViewModel(
                     getLegalRulesUseCase,
                     getHolidaysUseCase,
                     calculateDeadlineUseCase,

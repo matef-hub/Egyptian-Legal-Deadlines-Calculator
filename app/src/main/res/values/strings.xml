@@ -3,6 +3,8 @@
     <string name="app_name">حاسبة المواعيد القانونية</string>
     <string name="nav_calculator">الحاسبة</string>
     <string name="nav_saved">المحفوظات</string>
+    <string name="nav_toggle_desc">التبديل بين الشاشات</string>
+    <string name="nav_legal_deadlines_desc">المواعيد القانونية</string>
 
     <string name="today_label">اليوم</string>
     <string name="official_working_day">يوم عمل رسمي</string>

@@ -67,13 +67,13 @@ import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.model.StartRule
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
-import com.ateflaw.legaldeadlines.presentation.viewmodel.MainViewModel
+import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun LandingScreen(
-    viewModel: MainViewModel,
+    viewModel: CalculatorViewModel,
     onNavigateToCalculator: () -> Unit,
     modifier: Modifier = Modifier
 ) {

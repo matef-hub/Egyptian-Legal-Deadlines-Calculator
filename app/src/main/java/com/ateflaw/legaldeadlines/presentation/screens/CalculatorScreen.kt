@@ -95,8 +95,8 @@ import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.presentation.components.CalculationResultCard
 import com.ateflaw.legaldeadlines.presentation.components.HolidayStatusBar
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
+import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.MainUiState
-import com.ateflaw.legaldeadlines.presentation.viewmodel.MainViewModel
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -107,7 +107,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun CalculatorScreen(
-    viewModel: MainViewModel,
+    viewModel: CalculatorViewModel,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()

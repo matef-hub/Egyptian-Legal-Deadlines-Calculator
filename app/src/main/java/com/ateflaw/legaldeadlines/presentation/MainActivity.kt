@@ -1,19 +1,29 @@
 package com.ateflaw.legaldeadlines.presentation
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Gavel
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,19 +35,25 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.ateflaw.legaldeadlines.LegalDeadlinesApplication
+import com.ateflaw.legaldeadlines.R
 import com.ateflaw.legaldeadlines.presentation.navigation.AppNavHost
 import com.ateflaw.legaldeadlines.presentation.navigation.Screen
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
+import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListViewModel
-import com.ateflaw.legaldeadlines.presentation.viewmodel.MainViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -49,8 +65,8 @@ class MainActivity : ComponentActivity() {
 
         val appContainer = (application as LegalDeadlinesApplication).container
 
-        val mainViewModel: MainViewModel by viewModels {
-            MainViewModel.provideFactory(
+        val calculatorViewModel: CalculatorViewModel by viewModels {
+            CalculatorViewModel.provideFactory(
                 getLegalRulesUseCase = appContainer.getLegalRulesUseCase,
                 getHolidaysUseCase = appContainer.getHolidaysUseCase,
                 calculateDeadlineUseCase = appContainer.calculateDeadlineUseCase,
@@ -68,19 +84,52 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             EgyptianLegalDeadlinesTheme {
+                val view = LocalView.current
+                val isDarkTheme = isSystemInDarkTheme()
+                if (!view.isInEditMode) {
+                    LaunchedEffect(isDarkTheme) {
+                        val window = (view.context as? Activity)?.window ?: return@LaunchedEffect
+                        WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDarkTheme
+                    }
+                }
+
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
                 val isLanding = currentRoute == Screen.Landing.route
 
+                fun navigateTo(route: String) {
+                    if (currentRoute != route) {
+                        navController.navigate(route) {
+                            launchSingleTop = true
+                            restoreState = true
+                            val graph = runCatching { navController.graph }.getOrNull()
+                            if (graph != null) {
+                                popUpTo(graph.startDestinationId) {
+                                    saveState = true
+                                }
+                            }
+                        }
+                    }
+                }
+
+                BackHandler(enabled = currentRoute == Screen.SavedDeadlines.route) {
+                    navigateTo(Screen.Calculator.route)
+                }
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
+                    contentWindowInsets = WindowInsets.safeDrawing,
                     topBar = {
-                        if (!isLanding) {
+                        AnimatedVisibility(
+                            visible = !isLanding,
+                            enter = fadeIn() + slideInVertically { -it },
+                            exit = fadeOut() + slideOutVertically { -it }
+                        ) {
                             TopAppBar(
                                 title = {
                                     Text(
-                                        text = "حاسبة المواعيد القانونية",
+                                        text = stringResource(R.string.app_name),
                                         fontWeight = FontWeight.Bold,
                                         style = MaterialTheme.typography.titleLarge,
                                         maxLines = 1,
@@ -90,7 +139,7 @@ class MainActivity : ComponentActivity() {
                                 navigationIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Gavel,
-                                        contentDescription = "المواعيد القانونية",
+                                        contentDescription = stringResource(R.string.nav_legal_deadlines_desc),
                                         modifier = Modifier
                                             .padding(start = 12.dp, end = 8.dp)
                                             .size(24.dp),
@@ -100,20 +149,17 @@ class MainActivity : ComponentActivity() {
                                 actions = {
                                     IconButton(
                                         onClick = {
-                                            if (currentRoute != Screen.SavedDeadlines.route) {
-                                                navController.navigate(Screen.SavedDeadlines.route) {
-                                                    launchSingleTop = true
-                                                }
+                                            val target = if (currentRoute != Screen.SavedDeadlines.route) {
+                                                Screen.SavedDeadlines.route
                                             } else {
-                                                navController.navigate(Screen.Calculator.route) {
-                                                    popUpTo(Screen.Calculator.route) { inclusive = true }
-                                                }
+                                                Screen.Calculator.route
                                             }
+                                            navigateTo(target)
                                         }
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Menu,
-                                            contentDescription = "القائمة",
+                                            imageVector = Icons.AutoMirrored.Filled.CompareArrows,
+                                            contentDescription = stringResource(R.string.nav_toggle_desc),
                                             tint = MaterialTheme.colorScheme.onPrimary
                                         )
                                     }
@@ -128,21 +174,26 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     bottomBar = {
-                        if (!isLanding) {
+                        AnimatedVisibility(
+                            visible = !isLanding,
+                            enter = fadeIn() + slideInVertically { it },
+                            exit = fadeOut() + slideOutVertically { it }
+                        ) {
                             NavigationBar(
                                 containerColor = MaterialTheme.colorScheme.surface
                             ) {
+                                val isCalculatorSelected = currentRoute == Screen.Calculator.route || currentRoute == null
+
                                 NavigationBarItem(
-                                    selected = currentRoute == Screen.Calculator.route || currentRoute == null,
-                                    onClick = {
-                                        if (currentRoute != Screen.Calculator.route) {
-                                            navController.navigate(Screen.Calculator.route) {
-                                                popUpTo(Screen.Calculator.route) { inclusive = true }
-                                            }
-                                        }
+                                    selected = isCalculatorSelected,
+                                    onClick = { navigateTo(Screen.Calculator.route) },
+                                    icon = {
+                                        Icon(
+                                            imageVector = Icons.Default.Calculate,
+                                            contentDescription = stringResource(R.string.nav_calculator)
+                                        )
                                     },
-                                    icon = { Icon(Icons.Default.Calculate, contentDescription = "الحاسبة") },
-                                    label = { Text("الحاسبة") },
+                                    label = { Text(stringResource(R.string.nav_calculator)) },
                                     colors = NavigationBarItemDefaults.colors(
                                         selectedIconColor = MaterialTheme.colorScheme.primary,
                                         selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -152,15 +203,14 @@ class MainActivity : ComponentActivity() {
 
                                 NavigationBarItem(
                                     selected = currentRoute == Screen.SavedDeadlines.route,
-                                    onClick = {
-                                        if (currentRoute != Screen.SavedDeadlines.route) {
-                                            navController.navigate(Screen.SavedDeadlines.route) {
-                                                launchSingleTop = true
-                                            }
-                                        }
+                                    onClick = { navigateTo(Screen.SavedDeadlines.route) },
+                                    icon = {
+                                        Icon(
+                                            imageVector = Icons.Default.Bookmark,
+                                            contentDescription = stringResource(R.string.nav_saved)
+                                        )
                                     },
-                                    icon = { Icon(Icons.Default.Bookmark, contentDescription = "المواعيد المحفوظة") },
-                                    label = { Text("المحفوظات") },
+                                    label = { Text(stringResource(R.string.nav_saved)) },
                                     colors = NavigationBarItemDefaults.colors(
                                         selectedIconColor = MaterialTheme.colorScheme.primary,
                                         selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -173,9 +223,11 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     AppNavHost(
                         navController = navController,
-                        mainViewModel = mainViewModel,
+                        mainViewModel = calculatorViewModel,
                         deadlineListViewModel = deadlineListViewModel,
-                        modifier = Modifier.padding(if (isLanding) androidx.compose.foundation.layout.PaddingValues(0.dp) else innerPadding)
+                        modifier = Modifier.padding(
+                            if (isLanding) PaddingValues() else innerPadding
+                        )
                     )
                 }
             }

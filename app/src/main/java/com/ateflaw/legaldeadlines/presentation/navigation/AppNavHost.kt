@@ -8,13 +8,13 @@ import androidx.navigation.compose.composable
 import com.ateflaw.legaldeadlines.presentation.screens.CalculatorScreen
 import com.ateflaw.legaldeadlines.presentation.screens.LandingScreen
 import com.ateflaw.legaldeadlines.presentation.screens.SavedDeadlinesScreen
+import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListViewModel
-import com.ateflaw.legaldeadlines.presentation.viewmodel.MainViewModel
 
 @Composable
 fun AppNavHost(
     navController: NavHostController,
-    mainViewModel: MainViewModel,
+    mainViewModel: CalculatorViewModel,
     deadlineListViewModel: DeadlineListViewModel,
     modifier: Modifier = Modifier
 ) {

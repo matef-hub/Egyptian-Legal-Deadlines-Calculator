@@ -92,6 +92,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.compose.foundation.layout)
     coreLibraryDesugaring(libs.android.desugar.jdk.libs)
 
     // AndroidX & Compose
