@@ -7,6 +7,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -50,6 +53,10 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -87,9 +94,15 @@ fun LandingScreenContent(
     onNavigateToCalculator: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var targetProgress by remember { mutableFloatStateOf(0.35f) }
-    var currentStageText by remember { mutableStateOf("تحميل نصوص ومواعيد قانون المرافعات المصري...") }
-    var isDataReady by remember { mutableStateOf(false) }
+    val initialReady = rules.isNotEmpty()
+    var targetProgress by remember(rules) { mutableFloatStateOf(if (initialReady) 1.0f else 0.35f) }
+    var currentStageText by remember(rules, totalHolidaysCount) {
+        mutableStateOf(
+            if (initialReady) "اكتملت جاهزية المحرك الإجرائي ($totalHolidaysCount عطلة معتمدة)"
+            else "تحميل نصوص ومواعيد قانون المرافعات المصري..."
+        )
+    }
+    var isDataReady by remember(rules) { mutableStateOf(initialReady) }
 
     val animatedProgress by animateFloatAsState(
         targetValue = targetProgress,
@@ -115,20 +128,19 @@ fun LandingScreenContent(
         targetProgress = 1.0f
         currentStageText = "اكتملت جاهزية المحرك الإجرائي ($holidaysCount عطلة معتمدة)"
         isDataReady = true
-        delay(600.milliseconds)
-        onNavigateToCalculator()
     }
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(24.dp)
+            .padding(horizontal = 24.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(vertical = 32.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
@@ -155,7 +167,7 @@ fun LandingScreenContent(
                         Icon(
                             imageVector = Icons.Default.Gavel,
                             contentDescription = "ميزان العدالة",
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(42.dp)
                         )
                     }
@@ -194,7 +206,11 @@ fun LandingScreenContent(
 
             // Middle Section: Loading Status & Progress Bar
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = "حالة تهيئة البيانات: ${if (isDataReady) "جاهز للاستخدام" else "جاري تهيئة البيانات"}"
+                    },
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
@@ -215,7 +231,7 @@ fun LandingScreenContent(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = if (isDataReady) Icons.Default.CheckCircle else Icons.Default.Security,
-                                contentDescription = null,
+                                contentDescription = if (isDataReady) "حالة مكتملة" else "حالة جاري التهيئة",
                                 tint = if (isDataReady) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -244,7 +260,11 @@ fun LandingScreenContent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
+                            .clip(RoundedCornerShape(4.dp))
+                            .semantics {
+                                progressBarRangeInfo = ProgressBarRangeInfo(animatedProgress, 0f..1f)
+                                contentDescription = "شريط تقدم التهيئة"
+                            },
                         color = MaterialTheme.colorScheme.primary,
                         trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                         strokeCap = StrokeCap.Round
@@ -273,24 +293,26 @@ fun LandingScreenContent(
                     Button(
                         onClick = onNavigateToCalculator,
                         modifier = Modifier
+                            .widthIn(max = 320.dp)
                             .fillMaxWidth()
                             .height(52.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     ) {
                         Text(
                             text = "دخول الحاسبة القانونية",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward, // RTL arrow points left
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = null,
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }
@@ -300,7 +322,7 @@ fun LandingScreenContent(
                 Text(
                     text = "يعمل دون اتصال بالإنترنت • حساب تلقائي لعطلات الجمعة والأعياد الرسمية",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
 

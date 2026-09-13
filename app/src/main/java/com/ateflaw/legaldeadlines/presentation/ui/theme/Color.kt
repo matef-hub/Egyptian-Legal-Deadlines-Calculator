@@ -8,7 +8,7 @@ val OnPrimaryLegal = Color(0xFFFFFFFF)
 val PrimaryContainerLegal = Color(0xFFD8E4F8)
 val OnPrimaryContainerLegal = Color(0xFF001B3E)
 
-val SecondaryGold = Color(0xFF8B6B23)      // Legal Gold / Bronze
+val SecondaryGold = Color(0xFF7E5E18)      // Legal Gold / Bronze
 val OnSecondaryGold = Color(0xFFFFFFFF)
 val SecondaryContainerGold = Color(0xFFFAF5E8) // Light warm yellow/beige badge background
 val OnSecondaryContainerGold = Color(0xFF5A4300)
