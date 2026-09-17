@@ -54,9 +54,14 @@ const ANDROID_FILES: AndroidFileItem[] = [
     description: 'عامل المزامنة الخلفية الدوري عبر WorkManager'
   },
   {
-    path: 'app/src/main/java/com/ateflaw/legaldeadlines/presentation/viewmodel/MainViewModel.kt',
+    path: 'app/src/main/java/com/ateflaw/legaldeadlines/presentation/viewmodel/CalculatorViewModel.kt',
     category: 'UI',
-    description: 'نموذج عرض شاشة الحاسبة الرئيسية وإدارة الحالة'
+    description: 'نموذج عرض شاشة الحاسبة الرئيسية والتهيئة وإدارة حالة واجهة المستخدم'
+  },
+  {
+    path: 'app/src/main/java/com/ateflaw/legaldeadlines/presentation/viewmodel/DeadlineListViewModel.kt',
+    category: 'UI',
+    description: 'نموذج عرض قائمة المواعيد المسجلة وعمليات الحذف'
   },
   {
     path: 'app/src/main/java/com/ateflaw/legaldeadlines/presentation/screens/LandingScreen.kt',
