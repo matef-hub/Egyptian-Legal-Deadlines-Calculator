@@ -50,15 +50,26 @@ private val DarkColorScheme = darkColorScheme(
     primary = PrimaryLegalDark,
     onPrimary = OnPrimaryLegalDark,
     primaryContainer = PrimaryLegal,
-    onPrimaryContainer = OnPrimaryLegal,
-    secondary = SecondaryContainerGold,
-    onSecondary = OnSecondaryGold,
+    onPrimaryContainer = PrimaryContainerLegal,
+    secondary = SecondaryGoldDark,
+    onSecondary = OnSecondaryGoldDark,
+    secondaryContainer = SecondaryContainerGoldDark,
+    onSecondaryContainer = OnSecondaryContainerGoldDark,
+    tertiary = TertiaryEmeraldDark,
+    onTertiary = OnTertiaryEmeraldDark,
+    tertiaryContainer = TertiaryContainerEmeraldDark,
+    onTertiaryContainer = OnTertiaryContainerEmeraldDark,
     background = BackgroundDark,
     onBackground = OnBackgroundLight,
     surface = SurfaceDark,
     onSurface = OnSurfaceLight,
     surfaceVariant = SurfaceVariantDark,
-    onSurfaceVariant = OnBackgroundLight
+    onSurfaceVariant = OnBackgroundLight,
+    outline = OutlineDark,
+    error = ErrorRedDark,
+    onError = OnErrorRedDark,
+    errorContainer = ErrorContainerRedDark,
+    onErrorContainer = OnErrorContainerRedDark
 )
 
 @SuppressLint("LocalContextGetResources", "LocalContextResourcesRead")

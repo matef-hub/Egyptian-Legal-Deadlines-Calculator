@@ -26,9 +26,6 @@ val OnSurfaceDark = Color(0xFF191C1E)
 val SurfaceVariantWarm = Color(0xFFEFF2F6)
 val OnSurfaceVariantDark = Color(0xFF43474E)
 
-val InfoContainerSky = Color(0xFFEBF3FA)   // Light sky blue info banner
-val OnInfoContainerSky = Color(0xFF0F2B48)
-
 val OutlineBorder = Color(0xFFC4C7D0)
 val ErrorRed = Color(0xFFD93838)
 val OnErrorRed = Color(0xFFFFFFFF)
@@ -43,3 +40,22 @@ val SurfaceDark = Color(0xFF1A1D21)
 val SurfaceVariantDark = Color(0xFF2E3136)
 val OnBackgroundLight = Color(0xFFE2E2E6)
 val OnSurfaceLight = Color(0xFFE2E2E6)
+val OutlineDark = Color(0xFF8E9099)
+
+// Dark theme - Secondary
+val SecondaryGoldDark = Color(0xFFDCC28E)
+val OnSecondaryGoldDark = Color(0xFF402D04)
+val SecondaryContainerGoldDark = Color(0xFF5A4300)
+val OnSecondaryContainerGoldDark = Color(0xFFFAF5E8)
+
+// Dark theme - Tertiary
+val TertiaryEmeraldDark = Color(0xFF81D79E)
+val OnTertiaryEmeraldDark = Color(0xFF00391A)
+val TertiaryContainerEmeraldDark = Color(0xFF005228)
+val OnTertiaryContainerEmeraldDark = Color(0xFF9DF4B9)
+
+// Dark theme - Error
+val ErrorRedDark = Color(0xFFFFB4AB)
+val OnErrorRedDark = Color(0xFF690005)
+val ErrorContainerRedDark = Color(0xFF93000A)
+val OnErrorContainerRedDark = Color(0xFFFFDAD6)

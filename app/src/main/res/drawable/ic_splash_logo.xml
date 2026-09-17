@@ -1,67 +1,150 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="192dp"
-    android:height="192dp"
-    android:viewportWidth="288"
-    android:viewportHeight="288">
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
 
-    <!-- Outer Gold Ring -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#C5A059"
-        android:strokeWidth="6"
-        android:pathData="M144,18 A126,126 0 1,1 143.9,18 Z" />
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="288dp"
+            android:height="288dp"
+            android:viewportWidth="288"
+            android:viewportHeight="288">
 
-    <!-- Inner Decorative Ring -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#C5A059"
-        android:strokeWidth="2"
-        android:strokeAlpha="0.6"
-        android:pathData="M144,28 A116,116 0 1,1 143.9,28 Z" />
+            <!-- Subtle Radial Tonal Depth Glow -->
+            <path
+                android:pathData="M 0,0 L 288,0 L 288,288 L 0,288 Z">
+                <aapt:attr name="android:fillColor">
+                    <gradient
+                        android:type="radial"
+                        android:centerX="144"
+                        android:centerY="130"
+                        android:gradientRadius="180"
+                        android:startColor="#1B3848"
+                        android:endColor="#0F2027" />
+                </aapt:attr>
+            </path>
 
-    <!-- Central Pillar -->
-    <path
-        android:fillColor="#D4AF37"
-        android:pathData="M140,70 L148,70 L148,190 L140,190 Z" />
+            <!-- Logo Group: Minimal Geometric Legal Shield -->
+            <group
+                android:name="logo_group"
+                android:pivotX="144"
+                android:pivotY="115">
 
-    <!-- Pillar Top Finial Ornament -->
-    <path
-        android:fillColor="#D4AF37"
-        android:pathData="M144,54 A10,10 0 1,1 143.9,54 Z" />
+                <!-- Outer Tech Shield -->
+                <path
+                    android:pathData="M 144,40 L 194,60 L 194,120 C 194,160 144,190 144,190 C 144,190 94,160 94,120 L 94,60 Z"
+                    android:strokeColor="#C5A059"
+                    android:strokeWidth="3.5"
+                    android:strokeLineJoin="round"
+                    android:strokeLineCap="round"/>
 
-    <!-- Pillar Base Base Pedestal -->
-    <path
-        android:fillColor="#D4AF37"
-        android:pathData="M110,190 L178,190 L184,204 L104,204 Z" />
+                <!-- Inner Minimal Scales of Justice -->
+                <path
+                    android:pathData="M 144,70 L 144,150 M 114,90 L 174,90 M 120,90 L 120,115 M 168,90 L 168,115"
+                    android:strokeColor="#E2E2E6"
+                    android:strokeWidth="3.5"
+                    android:strokeLineCap="round"
+                    android:strokeLineJoin="round"/>
 
-    <!-- Horizontal Balance Beam -->
-    <path
-        android:fillColor="#C5A059"
-        android:pathData="M70,98 L218,98 C218,98 218,104 218,104 L70,104 C70,104 70,98 70,98 Z" />
+                <!-- Tech Diamond Balances -->
+                <path
+                    android:pathData="M 120,112 L 125,117 L 120,122 L 115,117 Z M 168,112 L 173,117 L 168,122 L 163,117 Z"
+                    android:fillColor="#C5A059"/>
+            </group>
 
-    <!-- Left Scale Strings -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#C5A059"
-        android:strokeWidth="2.5"
-        android:pathData="M74,104 L52,154 M74,104 L96,154" />
+            <!-- Text Group: Geometric Kufi Arabic "المواعيد القانونية" -->
+            <group
+                android:name="text_group"
+                android:pivotX="144"
+                android:pivotY="210">
 
-    <!-- Left Scale Bowl -->
-    <path
-        android:fillColor="#D4AF37"
-        android:pathData="M48,154 C52,176 96,176 100,154 Z" />
+                <!-- Word 1: المواعيد -->
+                <path
+                    android:pathData="
+                        M 252,204 L 252,220
+                        M 244,204 L 244,220 L 236,220 L 236,212 L 228,212 L 228,220 L 220,220 L 220,212 L 212,212 L 212,220 L 220,220
+                        M 212,220 L 212,226 L 204,226
+                        M 196,204 L 196,220
+                        M 188,220 L 188,212 L 180,212 L 180,220 L 172,220 L 172,216 L 164,216 L 164,220 L 156,220 L 156,212 L 148,212"
+                    android:strokeColor="#E2E2E6"
+                    android:strokeWidth="3"
+                    android:strokeLineCap="round"
+                    android:strokeLineJoin="round"
+                    android:fillColor="#00000000"/>
 
-    <!-- Right Scale Strings -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#C5A059"
-        android:strokeWidth="2.5"
-        android:pathData="M214,104 L192,154 M214,104 L236,154" />
+                <!-- Word 2: القانونية -->
+                <path
+                    android:pathData="
+                        M 140,204 L 140,220
+                        M 132,204 L 132,220 L 124,220 L 124,212 L 116,212 L 116,220 L 108,220 L 108,204
+                        M 100,214 L 100,220 L 92,220 L 92,212 L 84,212 L 84,220 L 92,220
+                        M 84,220 L 84,226 L 76,226
+                        M 68,214 L 68,220 L 60,220 L 60,216 L 52,216 L 52,220 L 44,220 L 44,212 L 36,212 L 36,220 Z"
+                    android:strokeColor="#E2E2E6"
+                    android:strokeWidth="3"
+                    android:strokeLineCap="round"
+                    android:strokeLineJoin="round"
+                    android:fillColor="#00000000"/>
 
-    <!-- Right Scale Bowl -->
-    <path
-        android:fillColor="#D4AF37"
-        android:pathData="M188,154 C192,176 236,176 240,154 Z" />
+                <!-- Calligraphic Dots for both words -->
+                <path
+                    android:pathData="
+                        M 168,227 L 168,227.1 M 162,227 L 162,227.1
+                        M 122,207 L 122,207.1 M 116,207 L 116,207.1
+                        M 96,209 L 96,209.1
+                        M 64,209 L 64,209.1
+                        M 58,227 L 58,227.1 M 52,227 L 52,227.1
+                        M 42,207 L 42,207.1 M 38,207 L 38,207.1"
+                    android:strokeColor="#C5A059"
+                    android:strokeWidth="4"
+                    android:strokeLineCap="round" />
+            </group>
+        </vector>
+    </aapt:attr>
 
-</vector>
+    <!-- Logo Animation: Subtle Fade and Scale -->
+    <target android:name="logo_group">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:propertyName="scaleX"
+                    android:valueFrom="0.85"
+                    android:valueTo="1.0"
+                    android:duration="700"
+                    android:interpolator="@android:interpolator/fast_out_slow_in" />
+                <objectAnimator
+                    android:propertyName="scaleY"
+                    android:valueFrom="0.85"
+                    android:valueTo="1.0"
+                    android:duration="700"
+                    android:interpolator="@android:interpolator/fast_out_slow_in" />
+                <objectAnimator
+                    android:propertyName="alpha"
+                    android:valueFrom="0.0"
+                    android:valueTo="1.0"
+                    android:duration="500" />
+            </set>
+        </aapt:attr>
+    </target>
+
+    <!-- Text Animation: Delayed Fade and Gentle Slide Up -->
+    <target android:name="text_group">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:propertyName="alpha"
+                    android:valueFrom="0.0"
+                    android:valueTo="1.0"
+                    android:startOffset="300"
+                    android:duration="600" />
+                <objectAnimator
+                    android:propertyName="translateY"
+                    android:valueFrom="15"
+                    android:valueTo="0"
+                    android:startOffset="300"
+                    android:duration="600"
+                    android:interpolator="@android:interpolator/fast_out_slow_in" />
+            </set>
+        </aapt:attr>
+    </target>
+
+</animated-vector>

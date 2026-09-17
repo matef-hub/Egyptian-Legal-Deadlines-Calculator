@@ -3,6 +3,9 @@ package com.ateflaw.legaldeadlines.presentation.components
 import android.content.Intent
 import android.net.Uri
 import android.provider.CalendarContract
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -54,10 +57,6 @@ import androidx.core.net.toUri
 import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
-import com.ateflaw.legaldeadlines.presentation.ui.theme.InfoContainerSky
-import com.ateflaw.legaldeadlines.presentation.ui.theme.OnInfoContainerSky
-import com.ateflaw.legaldeadlines.presentation.ui.theme.OnTertiaryContainerEmerald
-import com.ateflaw.legaldeadlines.presentation.ui.theme.TertiaryContainerEmerald
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
 import java.time.LocalDate
 import java.time.ZoneId
@@ -114,10 +113,10 @@ fun CalculationResultCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = TertiaryContainerEmerald
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
         ),
         border = CardDefaults.outlinedCardBorder().copy(
-            brush = SolidColor(OnTertiaryContainerEmerald.copy(alpha = 0.3f))
+            brush = SolidColor(MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.3f))
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -137,13 +136,13 @@ fun CalculationResultCard(
                     text = "الميعاد النهائي",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = OnTertiaryContainerEmerald
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
                 )
 
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = null,
-                    tint = OnTertiaryContainerEmerald,
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -160,7 +159,7 @@ fun CalculationResultCard(
                     Icon(
                         imageVector = Icons.Default.CalendarMonth,
                         contentDescription = null,
-                        tint = OnTertiaryContainerEmerald,
+                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
                         modifier = Modifier.size(28.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -168,7 +167,7 @@ fun CalculationResultCard(
                         text = finalDateFormatted,
                         style = MaterialTheme.typography.headlineLarge.copy(fontSize = 28.sp),
                         fontWeight = FontWeight.Bold,
-                        color = OnTertiaryContainerEmerald
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
                 }
 
@@ -178,7 +177,7 @@ fun CalculationResultCard(
                     text = dayNameArabic,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = OnTertiaryContainerEmerald.copy(alpha = 0.85f)
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
                 )
             }
 
@@ -246,7 +245,7 @@ fun CalculationResultCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(10.dp))
-                    .background(InfoContainerSky)
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
                     .padding(12.dp)
             ) {
                 Row(
@@ -256,7 +255,7 @@ fun CalculationResultCard(
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = null,
-                        tint = OnInfoContainerSky,
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier.size(20.dp)
                     )
 
@@ -264,7 +263,7 @@ fun CalculationResultCard(
                         text = "تم احتساب الميعاد وفقًا للقاعدة القانونية المحدد مع مراعاة الإجازات والعطلات الرسمية",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Medium,
-                        color = OnInfoContainerSky,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                         lineHeight = 18.sp
                     )
                 }
@@ -306,14 +305,22 @@ fun CalculationResultCard(
                 ) {
                     listOf(1 to "يوم", 3 to "3 أيام", 5 to "5 أيام", 7 to "أسبوع", 0 to "بدون").forEach { (days, label) ->
                         val isSelected = proactiveReminderDays == days
+                        val pillBgColor by animateColorAsState(
+                            targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                            label = "ProactivePillBg"
+                        )
+                        val pillTextColor by animateColorAsState(
+                            targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                            label = "ProactivePillText"
+                        )
+
                         Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(
-                                    if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                )
+                                .background(pillBgColor)
                                 .clickable { proactiveReminderDays = days }
                                 .padding(vertical = 8.dp),
                             contentAlignment = Alignment.Center
@@ -322,8 +329,7 @@ fun CalculationResultCard(
                                 text = label,
                                 fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
-                                       else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = pillTextColor,
                                 textAlign = TextAlign.Center
                             )
                         }

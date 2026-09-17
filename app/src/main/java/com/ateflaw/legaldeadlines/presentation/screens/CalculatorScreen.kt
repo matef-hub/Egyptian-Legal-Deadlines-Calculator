@@ -1,14 +1,25 @@
 package com.ateflaw.legaldeadlines.presentation.screens
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,7 +38,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Balance
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -38,7 +48,6 @@ import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.RemoveCircle
 import androidx.compose.material.icons.filled.Straighten
@@ -81,6 +90,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
@@ -267,13 +277,19 @@ fun CalculatorScreenContent(
             }
 
             // 2. Calculation Input Form Card ("بيانات احتساب الميعاد")
+            val cardElevation by animateDpAsState(
+                targetValue = if (uiState.selectedRule != null) 4.dp else 2.dp,
+                animationSpec = tween(durationMillis = 200),
+                label = "FormCardElevation"
+            )
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = cardElevation)
             ) {
                 Column(
                     modifier = Modifier
@@ -506,6 +522,12 @@ fun CalculatorScreenContent(
                     // -------------------------------------------------------------
                     // COLLAPSIBLE 1: Extra Distance (إضافة مسافة إضافية - اختياري)
                     // -------------------------------------------------------------
+                    val distanceArrowRotation by animateFloatAsState(
+                        targetValue = if (isAdditionalDistanceExpanded) 180f else 0f,
+                        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+                        label = "DistanceArrowRotation"
+                    )
+
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -561,17 +583,18 @@ fun CalculatorScreenContent(
                                 }
 
                                 Icon(
-                                    imageVector = if (isAdditionalDistanceExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                    imageVector = Icons.Default.KeyboardArrowDown,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.graphicsLayer { rotationZ = distanceArrowRotation }
                                 )
                             }
 
                             // Expanded Content
                             AnimatedVisibility(
                                 visible = isAdditionalDistanceExpanded,
-                                enter = expandVertically() + fadeIn(),
-                                exit = shrinkVertically() + fadeOut()
+                                enter = expandVertically(animationSpec = tween(200, easing = FastOutSlowInEasing)) + fadeIn(animationSpec = tween(200)),
+                                exit = shrinkVertically(animationSpec = tween(180, easing = FastOutSlowInEasing)) + fadeOut(animationSpec = tween(180))
                             ) {
                                 Column(
                                     modifier = Modifier
@@ -651,6 +674,12 @@ fun CalculatorScreenContent(
                     // -------------------------------------------------------------
                     // COLLAPSIBLE 2: Case Details (بيانات القضية - اختياري)
                     // -------------------------------------------------------------
+                    val caseDetailsArrowRotation by animateFloatAsState(
+                        targetValue = if (isCaseDetailsExpanded) 180f else 0f,
+                        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+                        label = "CaseDetailsArrowRotation"
+                    )
+
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -691,17 +720,18 @@ fun CalculatorScreenContent(
                                 }
 
                                 Icon(
-                                    imageVector = if (isCaseDetailsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.AddCircle,
+                                    imageVector = Icons.Default.KeyboardArrowDown,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.graphicsLayer { rotationZ = caseDetailsArrowRotation }
                                 )
                             }
 
                             // Expanded Content
                             AnimatedVisibility(
                                 visible = isCaseDetailsExpanded,
-                                enter = expandVertically() + fadeIn(),
-                                exit = shrinkVertically() + fadeOut()
+                                enter = expandVertically(animationSpec = tween(200, easing = FastOutSlowInEasing)) + fadeIn(animationSpec = tween(200)),
+                                exit = shrinkVertically(animationSpec = tween(180, easing = FastOutSlowInEasing)) + fadeOut(animationSpec = tween(180))
                             ) {
                                 Column(
                                     modifier = Modifier
@@ -750,6 +780,14 @@ fun CalculatorScreenContent(
                     // -------------------------------------------------------------
                     // MAIN ACTION BUTTON: Calculate (احسب الميعاد)
                     // -------------------------------------------------------------
+                    val calculateButtonInteractionSource = remember { MutableInteractionSource() }
+                    val isCalculatePressed by calculateButtonInteractionSource.collectIsPressedAsState()
+                    val calculateButtonScale by animateFloatAsState(
+                        targetValue = if (isCalculatePressed) 0.97f else 1.0f,
+                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                        label = "CalculateButtonScale"
+                    )
+
                     Button(
                         onClick = {
                             if (uiState.selectedRule == null) {
@@ -784,9 +822,14 @@ fun CalculatorScreenContent(
                                 }
                             }
                         },
+                        interactionSource = calculateButtonInteractionSource,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 52.dp),
+                            .heightIn(min = 52.dp)
+                            .graphicsLayer {
+                                scaleX = calculateButtonScale
+                                scaleY = calculateButtonScale
+                            },
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
@@ -815,56 +858,69 @@ fun CalculatorScreenContent(
                 }
             }
 
-            // 3. Calculation Result Card or Initial Welcome Graphic
-            if (uiState.result != null) {
-                CalculationResultCard(
-                    result = uiState.result,
-                    isSaved = uiState.isSavedSuccessfully,
-                    onSaveClick = { onSaveCurrentDeadline() },
-                    onBackClick = { onResetCalculation() }
-                )
-            } else {
-                // Initial Welcome Banner matching Left Image Concept
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Golden Scales Graphic
-                    Box(
+            // 3. Calculation Result Card or Initial Welcome Graphic with AnimatedContent
+            AnimatedContent(
+                targetState = uiState.result,
+                transitionSpec = {
+                    (fadeIn(animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)) +
+                     slideInVertically(animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)) { 24 } +
+                     expandVertically(animationSpec = tween(durationMillis = 250)))
+                        .togetherWith(
+                            fadeOut(animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)) +
+                            shrinkVertically(animationSpec = tween(durationMillis = 180))
+                        )
+                },
+                label = "CalculationResultContent"
+            ) { result ->
+                if (result != null) {
+                    CalculationResultCard(
+                        result = result,
+                        isSaved = uiState.isSavedSuccessfully,
+                        onSaveClick = { onSaveCurrentDeadline() },
+                        onBackClick = { onResetCalculation() }
+                    )
+                } else {
+                    // Initial Welcome Banner
+                    Column(
                         modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Balance,
-                            contentDescription = "ميزان العدالة",
-                            tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(46.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Balance,
+                                contentDescription = "ميزان العدالة",
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(46.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "دقة في الحساب .. أمان في المواعيد",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Text(
+                            text = "لأن كل يوم يصنع فرقًا",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "دقة في الحساب .. أمان في المواعيد",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Text(
-                        text = "لأن كل يوم يصنع فرقًا",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
                 }
             }
         }

@@ -1,5 +1,12 @@
 package com.ateflaw.legaldeadlines.presentation.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material3.CircularProgressIndicator
@@ -18,10 +25,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -33,7 +45,9 @@ import com.ateflaw.legaldeadlines.presentation.components.SavedDeadlineItem
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListUiState
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListViewModel
+import kotlinx.coroutines.delay
 import java.time.LocalDate
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun SavedDeadlinesScreen(
@@ -60,68 +74,102 @@ fun SavedDeadlinesScreenContent(
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        when {
-            uiState.isLoading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-
-            uiState.deadlines.isEmpty() -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.BookmarkBorder,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.outline
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "لا توجد مواعيد محفوظة حالياً",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "يمكنك احتساب أي ميعاد قانوني من شاشة الحاسبة والضغط على زر 'حفظ' لإضافته إلى هنا.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-
-            else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    item {
-                        Text(
-                            text = "المواعيد المسجلة (${uiState.deadlines.size})",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(bottom = 4.dp)
+        AnimatedContent(
+            targetState = Triple(uiState.isLoading, uiState.deadlines.isEmpty(), uiState.deadlines.size),
+            transitionSpec = {
+                fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing))
+                    .togetherWith(fadeOut(animationSpec = tween(180, easing = FastOutSlowInEasing)))
+            },
+            label = "SavedDeadlinesContentState"
+        ) { (isLoading, isEmpty, _) ->
+            when {
+                isLoading -> {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center)
                         )
                     }
+                }
 
-                    items(
-                        items = uiState.deadlines,
-                        key = { it.id }
-                    ) { savedDeadline ->
-                        SavedDeadlineItem(
-                            deadline = savedDeadline,
-                            onDeleteClick = { onDeleteClick(savedDeadline) }
+                isEmpty -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BookmarkBorder,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.outline
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "لا توجد مواعيد محفوظة حالياً",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "يمكنك احتساب أي ميعاد قانوني من شاشة الحاسبة والضغط على زر 'حفظ' لإضافته إلى هنا.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.outline,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        item {
+                            Text(
+                                text = "المواعيد المسجلة (${uiState.deadlines.size})",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+                        }
+
+                        itemsIndexed(
+                            items = uiState.deadlines,
+                            key = { _, savedDeadline -> savedDeadline.id }
+                        ) { index, savedDeadline ->
+                            var itemVisible by remember { mutableStateOf(false) }
+                            LaunchedEffect(savedDeadline.id) {
+                                delay(((index * 35).coerceAtMost(180)).milliseconds)
+                                itemVisible = true
+                            }
+                            val itemAlpha by animateFloatAsState(
+                                targetValue = if (itemVisible) 1f else 0f,
+                                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+                                label = "ListItemAlpha"
+                            )
+                            val itemTranslateY by animateFloatAsState(
+                                targetValue = if (itemVisible) 0f else 16f,
+                                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+                                label = "ListItemTranslateY"
+                            )
+
+                            Box(
+                                modifier = Modifier.graphicsLayer {
+                                    alpha = itemAlpha
+                                    translationY = itemTranslateY
+                                }
+                            ) {
+                                SavedDeadlineItem(
+                                    deadline = savedDeadline,
+                                    onDeleteClick = { onDeleteClick(savedDeadline) }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -198,4 +246,3 @@ fun SavedDeadlinesScreenEmptyPreview() {
         )
     }
 }
-
