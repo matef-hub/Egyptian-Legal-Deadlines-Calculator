@@ -11,6 +11,7 @@ export interface LegalRule {
   startRule: StartRule;
   lawArticle: string;
   notes: string;
+  category?: string;
 }
 
 export interface Holiday {

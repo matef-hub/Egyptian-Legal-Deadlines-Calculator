@@ -69,17 +69,20 @@ export function createGoogleCalendarUrl(payload: CalendarEventPayload): string {
   // Assemble comprehensive event description
   const descriptionParts: string[] = [];
 
+  const formattedFinalDate = finalDeadlineDate.replace(/-/g, '/');
+  const formattedProactiveDate = proactiveDateIso.replace(/-/g, '/');
+
   if (isAlertEvent) {
     descriptionParts.push(`🚨 تنبيه استباقي مبكر لميعاد قضائي`);
     descriptionParts.push(`----------------------------------------`);
-    descriptionParts.push(`• تذكير: متبقي ${proactiveReminderDays} أيام حتى الميعاد النهائي الملزم (${finalDeadlineDate}).`);
+    descriptionParts.push(`• تذكير: متبقي ${proactiveReminderDays} أيام حتى الميعاد النهائي الملزم (${formattedFinalDate}).`);
     descriptionParts.push(`• الإجراء المطلوب: بدء تجهيز صحيفة الدعوى أو الطعن ومستنداتها وإيداعها بقلم الكتاب.`);
   } else {
     descriptionParts.push(`⚖️ ميعاد قانوني إجرائي نهائي ملزم`);
     descriptionParts.push(`----------------------------------------`);
-    descriptionParts.push(`• الميعاد النهائي واجب الالتزام: ${finalDeadlineDate}`);
+    descriptionParts.push(`• الميعاد النهائي واجب الالتزام: ${formattedFinalDate}`);
     if (hasProactiveReminder) {
-      descriptionParts.push(`• 🔔 تنبيه استباقي: قبل الميعاد بـ ${proactiveReminderDays} أيام (بتاريخ ${proactiveDateIso}) لضمان قيد الطعن مبكراً.`);
+      descriptionParts.push(`• 🔔 تنبيه استباقي: قبل الميعاد بـ ${proactiveReminderDays} أيام (بتاريخ ${formattedProactiveDate}) لضمان قيد الطعن مبكراً.`);
     }
   }
 

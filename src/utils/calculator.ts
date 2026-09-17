@@ -10,7 +10,11 @@ export function formatDisplayDate(date: Date): string {
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
+  return `${year}/${month}/${day}`;
+}
+
+export function formatDisplayDateWithDay(date: Date): string {
+  return `${formatDisplayDate(date)} (${getArabicDayName(date)})`;
 }
 
 export function toIsoDate(date: Date): string {
