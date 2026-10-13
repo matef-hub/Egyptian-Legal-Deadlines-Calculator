@@ -25,6 +25,23 @@ export interface ExcludedDay {
   reason: string;
 }
 
+export type MilestoneType =
+  | 'TRIGGER_EVENT'
+  | 'COUNTING_START'
+  | 'BASE_DEADLINE'
+  | 'DISTANCE_EXTENSION'
+  | 'HOLIDAY_EXTENSION'
+  | 'FINAL_DEADLINE';
+
+export interface CalculationMilestone {
+  type: MilestoneType;
+  date: string;
+  title: string;
+  description: string;
+  legalBasis?: string;
+  isExcludedDay?: boolean;
+}
+
 export interface DeadlineResult {
   startDate: string;
   provisionalDate: string;
@@ -38,7 +55,9 @@ export interface DeadlineResult {
   explanation: string;
   lawArticle: string;
   notes: string;
+  milestones?: CalculationMilestone[];
 }
+
 
 export interface SavedDeadline {
   id: string;

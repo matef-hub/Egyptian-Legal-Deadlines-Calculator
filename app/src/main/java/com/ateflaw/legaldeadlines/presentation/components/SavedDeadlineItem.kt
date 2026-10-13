@@ -69,23 +69,19 @@ fun SavedDeadlineItem(
     val dayNameArabic = DateFormatterUtils.getArabicDayName(deadline.finalDeadline.dayOfWeek)
     val context = LocalContext.current
 
-    val onAddToCalendar = {
-        val proactiveDays = deadline.proactiveReminderDays ?: 3
-        val proactiveDate = deadline.finalDeadline.minusDays(proactiveDays.toLong())
-        val proactiveFormatted = DateFormatterUtils.formatArabicFullDate(proactiveDate)
-
-        val descriptionText = "🔔 تنبيه استباقي: قبل الميعاد النهائي بـ $proactiveDays أيام (بتاريخ $proactiveFormatted)\n\n" +
-            "السند: ${deadline.lawArticle}\n\n" +
+    val onAddFinalDeadlineToCalendar = {
+        val title = if (deadline.caseNumber.isNotBlank()) {
+            "⚖️ ميعاد قانوني: ${deadline.actionName} (دعوى ${deadline.caseNumber})"
+        } else {
+            "⚖️ ميعاد قانوني: ${deadline.actionName}"
+        }
+        val descriptionText = "الميعاد النهائي واجب الالتزام: $dayNameArabic، $finalDateFormatted\n" +
+            "السند التشريعي: ${deadline.lawArticle}\n\n" +
             deadline.calculationExplanation
 
         try {
             val intent = Intent(Intent.ACTION_INSERT).apply {
                 data = CalendarContract.Events.CONTENT_URI
-                val title = if (deadline.caseNumber.isNotBlank()) {
-                    "ميعاد: ${deadline.actionName} (قضية ${deadline.caseNumber}) - تنبيه مسبق"
-                } else {
-                    "ميعاد: ${deadline.actionName} - تنبيه مسبق"
-                }
                 putExtra(CalendarContract.Events.TITLE, title)
                 putExtra(CalendarContract.Events.DESCRIPTION, descriptionText)
                 putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
@@ -98,12 +94,55 @@ fun SavedDeadlineItem(
             val cleanStart = deadline.finalDeadline.toString().replace("-", "")
             val nextDay = deadline.finalDeadline.plusDays(1).toString().replace("-", "")
             val webUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" +
-                Uri.encode("ميعاد: ${deadline.actionName}") +
+                Uri.encode(title) +
                 "&dates=$cleanStart/$nextDay&details=" +
                 Uri.encode(descriptionText)
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(webUrl)))
         }
     }
+
+    val onAddProactiveAlertToCalendar = {
+        val proactiveDays = deadline.proactiveReminderDays ?: 3
+        val proactiveDate = deadline.finalDeadline.minusDays(proactiveDays.toLong())
+        val proactiveFormatted = DateFormatterUtils.formatArabicFullDate(proactiveDate)
+        val proactiveDayName = DateFormatterUtils.getArabicDayName(proactiveDate.dayOfWeek)
+
+        val title = if (deadline.caseNumber.isNotBlank()) {
+            "🔔 تنبيه استباقي: ${deadline.actionName} (دعوى ${deadline.caseNumber})"
+        } else {
+            "🔔 تنبيه استباقي: ${deadline.actionName}"
+        }
+
+        val descriptionText = "تنبيه إجرائي استباقي قبل فوات الميعاد بـ $proactiveDays أيام.\n" +
+            "تاريخ التنبيه: $proactiveDayName، $proactiveFormatted.\n" +
+            "الميعاد النهائي الملزم: $dayNameArabic، $finalDateFormatted.\n" +
+            "السند: ${deadline.lawArticle}\n\n" +
+            "الإجراء المطلوب: سرعة قيد الطعن وإيداع الصحيفة بقلم الكتاب.\n\n" +
+            deadline.calculationExplanation
+
+        try {
+            val intent = Intent(Intent.ACTION_INSERT).apply {
+                data = CalendarContract.Events.CONTENT_URI
+                putExtra(CalendarContract.Events.TITLE, title)
+                putExtra(CalendarContract.Events.DESCRIPTION, descriptionText)
+                putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
+                // Epoch starts on the ACTUAL PROACTIVE DATE!
+                val epochMillis = proactiveDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, epochMillis)
+                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, epochMillis + 86400000L)
+            }
+            context.startActivity(intent)
+        } catch (_: Exception) {
+            val cleanStart = proactiveDate.toString().replace("-", "")
+            val nextDay = proactiveDate.plusDays(1).toString().replace("-", "")
+            val webUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" +
+                Uri.encode(title) +
+                "&dates=$cleanStart/$nextDay&details=" +
+                Uri.encode(descriptionText)
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(webUrl)))
+        }
+    }
+
 
     val cardInteractionSource = remember { MutableInteractionSource() }
     val isCardPressed by cardInteractionSource.collectIsPressedAsState()
@@ -176,12 +215,12 @@ fun SavedDeadlineItem(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
-                        onClick = onAddToCalendar,
+                        onClick = onAddFinalDeadlineToCalendar,
                         modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.CalendarMonth,
-                            contentDescription = "إضافة إلى تقويم Google / الجهاز",
+                            contentDescription = "إضافة الميعاد النهائي إلى تقويم Google / الجهاز",
                             tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(20.dp)
                         )
@@ -197,6 +236,7 @@ fun SavedDeadlineItem(
                             modifier = Modifier.size(20.dp)
                         )
                     }
+
                     IconButton(
                         onClick = { isExpanded = !isExpanded },
                         modifier = Modifier.size(36.dp)
@@ -307,23 +347,38 @@ fun SavedDeadlineItem(
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.NotificationsActive,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.NotificationsActive,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "تنبيه استباقي: قبل الميعاد بـ ${deadline.proactiveReminderDays} أيام",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
                     Text(
-                        text = "تنبيه استباقي: قبل الميعاد النهائي بـ ${deadline.proactiveReminderDays} أيام",
+                        text = "إضافة للتقويم",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.tertiary,
-                        fontWeight = FontWeight.Medium
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable(onClick = onAddProactiveAlertToCalendar)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
             }
+
 
             // Expandable details (law article and calculation breakdown)
             AnimatedVisibility(visible = isExpanded) {

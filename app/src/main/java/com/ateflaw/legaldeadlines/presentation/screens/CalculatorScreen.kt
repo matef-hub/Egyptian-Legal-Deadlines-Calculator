@@ -474,8 +474,17 @@ fun CalculatorScreenContent(
                     val statutoryDistance = uiState.selectedRule?.distanceDays ?: 15
 
                     // -------------------------------------------------------------
-                    // FIELD 2: Date of Notice (تاريخ الإعلان)
+                    // FIELD 2: Trigger Event Date (تاريخ الواقعة المنشئة للميعاد)
                     // -------------------------------------------------------------
+                    val triggerLabel = when {
+                        uiState.selectedRule == null -> "تاريخ الواقعة المنشئة للميعاد"
+                        uiState.selectedRule.actionName.contains("معارضة") -> "تاريخ إعلان الحكم الغيابي"
+                        uiState.selectedRule.actionName.contains("أمر أداء") -> "تاريخ إعلان أمر الأداء"
+                        uiState.selectedRule.actionName.contains("استئناف") || uiState.selectedRule.actionName.contains("نقض") -> "تاريخ صدور الحكم الحضوري أو إعلانه"
+                        uiState.selectedRule.actionName.contains("التماس") -> "تاريخ ثبوت الغش/الورقة أو إعلان الحكم"
+                        else -> "تاريخ الإعلان أو صدور القرار"
+                    }
+
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -488,10 +497,19 @@ fun CalculatorScreenContent(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = "تاريخ الإعلان",
+                                text = triggerLabel,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        if (uiState.selectedRule != null && uiState.selectedRule.startRule == StartRule.NEXT_DAY) {
+                            Text(
+                                text = "إعمالاً للمادة 15 مرافعات: لا يُحسب هذا اليوم، ويبدأ سريان الميعاد من اليوم التالي.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 11.sp
                             )
                         }
 
@@ -520,7 +538,7 @@ fun CalculatorScreenContent(
                     }
 
                     // -------------------------------------------------------------
-                    // COLLAPSIBLE 1: Extra Distance (إضافة مسافة إضافية - اختياري)
+                    // COLLAPSIBLE 1: Extra Distance (ميعاد مسافة الطريق - المواد 16 و17)
                     // -------------------------------------------------------------
                     val distanceArrowRotation by animateFloatAsState(
                         targetValue = if (isAdditionalDistanceExpanded) 180f else 0f,
@@ -561,24 +579,16 @@ fun CalculatorScreenContent(
                                     )
                                     Column {
                                         Text(
-                                            text = "ميعاد المسافة الإضافي",
+                                            text = "ميعاد مسافة الطريق (المواد 16 و17 مرافعات)",
                                             style = MaterialTheme.typography.titleSmall,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.primary
                                         )
-                                        if (isAdditionalDistanceExpanded) {
-                                            Text(
-                                                text = "المسافة القانونية: $statutoryDistance يوم",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        } else {
-                                            Text(
-                                                text = "إضافة مسافة إضافية (اختياري)",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
+                                        Text(
+                                            text = if (isAdditionalDistanceExpanded) "المسافة القانونية المقررة بالقاعدة: $statutoryDistance يوم" else "إضافة أيام مسافة (محلية أو بالخارج)",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
                                 }
 
@@ -602,6 +612,40 @@ fun CalculatorScreenContent(
                                         .padding(horizontal = 14.dp, vertical = 8.dp),
                                     verticalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
+                                    Text(
+                                        text = "• المادة 16 مرافعات: يوم لكل 50 كم بحد أقصى 4 أيام للمسافة المحلية.\n• المادة 17 مرافعات: 60 يوماً كحد أقصى لمن يكون موطنه بالخارج.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        lineHeight = 16.sp
+                                    )
+
+                                    // Quick Distance Selection Presets
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        listOf(0 to "بدون", 1 to "يوم (50 كم)", 2 to "يومان", 4 to "4 أيام (أقصى محلي)", 60 to "موطن بالخارج").forEach { (days, label) ->
+                                            val isSelected = uiState.additionalDistanceDaysInput == days.toString()
+                                            Surface(
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                                                border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clickable { onAdditionalDistanceDaysChanged(days.toString()) }
+                                            ) {
+                                                Text(
+                                                    text = label,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                                    textAlign = TextAlign.Center,
+                                                    modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+
                                     OutlinedTextField(
                                         value = uiState.additionalDistanceDaysInput,
                                         onValueChange = {

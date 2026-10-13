@@ -274,4 +274,64 @@ class LegalDeadlineCalculatorTest {
         assertTrue(result.explanation.contains("٩. الأيام المستبعدة"))
         assertTrue(result.explanation.contains("١٠. الميعاد النهائي واجب الالتزام به"))
     }
+
+    /**
+     * Test H (Audit P0 Requirement):
+     * Event on 31/01/2026 with 1 Month and NEXT_DAY:
+     * Validates Article 15 of Egyptian Procedures Law:
+     * Event date 31/01/2026, counting starts 01/02/2026.
+     * Completes on corresponding day of next month (28/02/2026 since Feb has no 31).
+     * 28/02/2026 is Saturday (valid working day in Egyptian courts).
+     */
+    @Test
+    fun testH_whenMonthAdditionWithNextDay_onJan31_handlesEndOfMonthAndSaturday() {
+        val announcementDate = LocalDate.of(2026, 1, 31)
+        val rule = LegalRule(
+            id = 10,
+            actionName = "التماس إعادة النظر في المواد المدنية",
+            duration = 1,
+            unit = DurationUnit.MONTHS,
+            startRule = StartRule.NEXT_DAY,
+            lawArticle = "المادة 242 من قانون المرافعات"
+        )
+
+        val result = calculator.calculate(announcementDate, rule)
+
+        assertEquals(LocalDate.of(2026, 2, 1), result.startDate)
+        assertEquals(LocalDate.of(2026, 2, 28), result.provisionalDate)
+        assertEquals(LocalDate.of(2026, 2, 28), result.finalDeadline)
+        assertEquals(DayOfWeek.SATURDAY, result.finalDeadline.dayOfWeek)
+        assertTrue(result.excludedDays.isEmpty())
+    }
+
+    /**
+     * Test I:
+     * Validates that structured Milestones list is correctly constructed for timeline rendering.
+     */
+    @Test
+    fun testI_structuredMilestones_containsAllLifecycleStages() {
+        val announcementDate = LocalDate.of(2026, 10, 1) // Thursday
+        val rule = LegalRule(
+            id = 11,
+            actionName = "طعن بالاستئناف",
+            duration = 40,
+            unit = DurationUnit.DAYS,
+            distanceDays = 2,
+            startRule = StartRule.NEXT_DAY,
+            lawArticle = "المادة 227 مرافعات"
+        )
+
+        val result = calculator.calculate(announcementDate, rule, additionalDistanceDays = 1)
+
+        val milestones = result.milestones
+        assertTrue(milestones.isNotEmpty())
+        assertEquals("الواقعة المنشئة للميعاد", milestones[0].title)
+        assertEquals(announcementDate, milestones[0].date)
+        assertEquals("بدء سريان الميعاد الإجرائي", milestones[1].title)
+        assertEquals(announcementDate.plusDays(1), milestones[1].date)
+        assertTrue(milestones.any { it.title.contains("نهاية المدة") })
+        assertTrue(milestones.any { it.title.contains("مسافة") })
+        assertEquals("الميعاد النهائي واجب الالتزام به", milestones.last().title)
+    }
 }
+

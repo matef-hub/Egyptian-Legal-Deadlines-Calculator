@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -152,6 +153,18 @@ fun HolidaysScreenContent(
                 }
 
                 else -> {
+                    val today = LocalDate.now()
+                    var selectedFilter by remember { mutableStateOf("ALL") }
+
+                    val filteredHolidays = remember(uiState.holidays, selectedFilter) {
+                        when (selectedFilter) {
+                            "UPCOMING" -> uiState.holidays.filter { it.holidayDate.isAfter(today) || it.holidayDate == today }
+                            "PAST" -> uiState.holidays.filter { it.holidayDate.isBefore(today) }
+                            "THURSDAY" -> uiState.holidays.filter { it.holidayDate.dayOfWeek == DayOfWeek.THURSDAY }
+                            else -> uiState.holidays
+                        }
+                    }
+
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
@@ -208,7 +221,7 @@ fun HolidaysScreenContent(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = stringResource(R.string.holidays_count_summary, uiState.holidays.size),
+                                    text = "العطلات الرسمية (${filteredHolidays.size})",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
@@ -240,10 +253,54 @@ fun HolidaysScreenContent(
                             }
                         }
 
+                        // Filter Segment Tabs
+                        item {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    listOf(
+                                        "ALL" to "الكل",
+                                        "UPCOMING" to "القادمة",
+                                        "PAST" to "المنقضية",
+                                        "THURSDAY" to "المرحّلة (الخميس)"
+                                    ).forEach { (key, label) ->
+                                        val isSelected = selectedFilter == key
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(
+                                                    if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent
+                                                )
+                                                .clickable { selectedFilter = key }
+                                                .padding(vertical = 8.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = label,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         itemsIndexed(
-                            items = uiState.holidays,
+                            items = filteredHolidays,
                             key = { _, holiday -> "${holiday.holidayDate}_${holiday.id}" }
                         ) { index, holiday ->
+
                             var itemVisible by remember { mutableStateOf(false) }
                             LaunchedEffect(holiday.holidayDate) {
                                 delay(((index * 30).coerceAtMost(180)).milliseconds)

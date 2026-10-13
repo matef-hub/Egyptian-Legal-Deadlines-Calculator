@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ateflaw.legaldeadlines.data.dao.HolidayDao
 import com.ateflaw.legaldeadlines.data.dao.LegalRuleDao
@@ -22,7 +23,7 @@ import kotlinx.coroutines.launch
         HolidayEntity::class,
         SavedDeadlineEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -35,6 +36,23 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Version 1 to 2 schema migration
+            }
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add proactive_reminder_days column without wiping existing client deadline data
+                try {
+                    db.execSQL("ALTER TABLE saved_deadlines ADD COLUMN proactive_reminder_days INTEGER DEFAULT NULL")
+                } catch (_: Exception) {
+                    // Column might already exist
+                }
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -42,6 +60,8 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "egyptian_legal_deadlines.db"
                 )
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .fallbackToDestructiveMigrationOnDowngrade()
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
@@ -50,11 +70,6 @@ abstract class AppDatabase : RoomDatabase() {
 
                         override fun onOpen(db: SupportSQLiteDatabase) {
                             super.onOpen(db)
-                            seedIfEmpty(context)
-                        }
-
-                        override fun onDestructiveMigration(db: SupportSQLiteDatabase) {
-                            super.onDestructiveMigration(db)
                             seedIfEmpty(context)
                         }
 
@@ -76,7 +91,6 @@ abstract class AppDatabase : RoomDatabase() {
                             }
                         }
                     })
-                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

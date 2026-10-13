@@ -56,9 +56,13 @@ class OfficialHolidayService(
         try {
             val apiKey = BuildConfig.CALENDARIFIC_API_KEY
             if (apiKey.isBlank() || apiKey == "YOUR_API_KEY") {
-                // If API key is not configured, silently succeed with cached records without crashing
-                return@withContext Result.success(holidayDao.count())
+                // If API key is not configured, explicitly communicate reliance on verified local database
+                val localCount = holidayDao.count()
+                return@withContext Result.failure(
+                    IllegalStateException("يتم الاعتماد على قاعدة البيانات المحلية المعتمدة ($localCount عطلة مسجلة).")
+                )
             }
+
 
             val response = apiService.getHolidays(
                 apiKey = apiKey,

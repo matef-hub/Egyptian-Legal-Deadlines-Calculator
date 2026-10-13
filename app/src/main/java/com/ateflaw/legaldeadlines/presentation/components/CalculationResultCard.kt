@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -75,23 +76,18 @@ fun CalculationResultCard(
     val context = LocalContext.current
     var proactiveReminderDays by remember { mutableIntStateOf(3) }
 
-    val onAddToCalendar = {
-        val proactiveDate = if (proactiveReminderDays > 0) result.finalDeadline.minusDays(proactiveReminderDays.toLong()) else result.finalDeadline
-        val proactiveFormatted = DateFormatterUtils.formatArabicFullDate(proactiveDate)
-
-        val descriptionText = if (proactiveReminderDays > 0) {
-            "🔔 تنبيه استباقي: قبل الميعاد النهائي بـ $proactiveReminderDays أيام (بتاريخ $proactiveFormatted)\n\n" +
-            "السند: ${result.lawArticle}\n\n" +
+    // 1. Add FINAL DEADLINE to Calendar (Target Date = finalDeadline)
+    val onAddFinalDeadlineToCalendar = {
+        val title = "⚖️ ميعاد قانوني ملزم: ${result.actionSummary.ifBlank { result.lawArticle }}"
+        val description = "الميعاد النهائي واجب الالتزام: $dayNameArabic، $finalDateFormatted\n" +
+            "السند التشريعي: ${result.lawArticle}\n\n" +
             result.explanation
-        } else {
-            "الميعاد النهائي: $dayNameArabic، $finalDateFormatted\nالسند: ${result.lawArticle}\n\n${result.explanation}"
-        }
 
         try {
             val intent = Intent(Intent.ACTION_INSERT).apply {
                 data = CalendarContract.Events.CONTENT_URI
-                putExtra(CalendarContract.Events.TITLE, "ميعاد قانوني: ${result.lawArticle}" + if (proactiveReminderDays > 0) " (تنبيه مسبق $proactiveReminderDays أيام)" else "")
-                putExtra(CalendarContract.Events.DESCRIPTION, descriptionText)
+                putExtra(CalendarContract.Events.TITLE, title)
+                putExtra(CalendarContract.Events.DESCRIPTION, description)
                 putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
                 val epochMillis = result.finalDeadline.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, epochMillis)
@@ -102,16 +98,54 @@ fun CalculationResultCard(
             val cleanStart = result.finalDeadline.toString().replace("-", "")
             val nextDay = result.finalDeadline.plusDays(1).toString().replace("-", "")
             val webUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" +
-                Uri.encode("ميعاد قانوني: ${result.lawArticle}" + if (proactiveReminderDays > 0) " (تنبيه $proactiveReminderDays أيام)" else "") +
+                Uri.encode(title) +
                 "&dates=$cleanStart/$nextDay&details=" +
-                Uri.encode(descriptionText)
+                Uri.encode(description)
+            context.startActivity(Intent(Intent.ACTION_VIEW, webUrl.toUri()))
+        }
+    }
+
+    // 2. Add PROACTIVE ALERT to Calendar (Target Date = finalDeadline - proactiveReminderDays)
+    val onAddProactiveAlertToCalendar = {
+        val proactiveDays = proactiveReminderDays.coerceAtLeast(1)
+        val proactiveDate = result.finalDeadline.minusDays(proactiveDays.toLong())
+        val proactiveFormatted = DateFormatterUtils.formatArabicFullDate(proactiveDate)
+        val proactiveDayName = DateFormatterUtils.getArabicDayName(proactiveDate.dayOfWeek)
+
+        val title = "🔔 تنبيه استباقي: ميعاد ${result.actionSummary.ifBlank { result.lawArticle }} (متبقي $proactiveDays أيام)"
+        val description = "تنبيه إجرائي استباقي قبل فوات الميعاد بـ $proactiveDays أيام.\n" +
+            "تاريخ التنبيه: $proactiveDayName، $proactiveFormatted.\n" +
+            "الميعاد النهائي الملزم: $dayNameArabic، $finalDateFormatted.\n" +
+            "السند: ${result.lawArticle}\n\n" +
+            "الإجراء المطلوب: تجهيز صحيفة الطعن أو الدعوى ومستنداتها وإيداعها بقلم الكتاب مبكراً.\n\n" +
+            result.explanation
+
+        try {
+            val intent = Intent(Intent.ACTION_INSERT).apply {
+                data = CalendarContract.Events.CONTENT_URI
+                putExtra(CalendarContract.Events.TITLE, title)
+                putExtra(CalendarContract.Events.DESCRIPTION, description)
+                putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
+                // Use ACTUAL PROACTIVE DATE epoch!
+                val epochMillis = proactiveDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, epochMillis)
+                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, epochMillis + 86400000L)
+            }
+            context.startActivity(intent)
+        } catch (_: Exception) {
+            val cleanStart = proactiveDate.toString().replace("-", "")
+            val nextDay = proactiveDate.plusDays(1).toString().replace("-", "")
+            val webUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" +
+                Uri.encode(title) +
+                "&dates=$cleanStart/$nextDay&details=" +
+                Uri.encode(description)
             context.startActivity(Intent(Intent.ACTION_VIEW, webUrl.toUri()))
         }
     }
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.tertiaryContainer
         ),
@@ -181,10 +215,18 @@ fun CalculationResultCard(
                 )
             }
 
-            // Structured Table / Rows Inside White Card Container
+            // Interactive Procedural Lifecycle Timeline
+            if (result.milestones.isNotEmpty()) {
+                DeadlineTimelineView(
+                    milestones = result.milestones,
+                    finalDeadline = result.finalDeadline
+                )
+            }
+
+            // Structured Table / Rows Inside Surface Card Container
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
@@ -210,7 +252,7 @@ fun CalculationResultCard(
                     // Row 2: Legal Action / Statutory Basis
                     ResultDetailRow(
                         icon = Icons.Default.Gavel,
-                        label = "الإجراء القانوني",
+                        label = "الإجراء وسنده",
                         value = result.actionSummary.ifBlank { result.lawArticle.ifBlank { "صحيفة دعوى" } }
                     )
 
@@ -222,7 +264,7 @@ fun CalculationResultCard(
                     // Row 3: Start Date
                     ResultDetailRow(
                         icon = Icons.Default.CalendarMonth,
-                        label = "تاريخ البداية",
+                        label = "تاريخ السريان",
                         value = startDateFormatted
                     )
 
@@ -231,36 +273,38 @@ fun CalculationResultCard(
                         modifier = Modifier.padding(horizontal = 14.dp)
                     )
 
-                    // Row 4: Distance Days
+                    // Row 4: Distance Days (Articles 16 and 17)
                     ResultDetailRow(
                         icon = Icons.Default.Straighten,
-                        label = "المسافة الإضافية",
+                        label = "أيام المسافة",
                         value = "${result.totalDistanceDays} يوم"
                     )
                 }
             }
 
-            // Info Banner Notice (Light Sky Blue Card with Info Icon)
+            // Professional Legal Disclaimer & Note
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.secondaryContainer)
                     .padding(12.dp)
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier
+                            .size(20.dp)
+                            .padding(top = 2.dp)
                     )
 
                     Text(
-                        text = "تم احتساب الميعاد وفقًا للقاعدة القانونية المحدد مع مراعاة الإجازات والعطلات الرسمية",
+                        text = "تنبيه مهني: الحساب استرشادي وفقاً للمواد 15 و16 و17 و18 من قانون المرافعات وقرارات العطلات الرسمية، ويلزم التحقق من وقائع الخصومة وحضورها واستثناءاتها.",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -269,13 +313,13 @@ fun CalculationResultCard(
                 }
             }
 
-            // Proactive Alert Options
+            // Proactive Alert Configuration Selector
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(14.dp))
                     .background(MaterialTheme.colorScheme.surface)
-                    .padding(12.dp)
+                    .padding(14.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -283,21 +327,23 @@ fun CalculationResultCard(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "تنبيه استباقي قبل الميعاد:",
+                        text = "التنبيه الاستباقي للتقويم:",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     if (proactiveReminderDays > 0) {
+                        val proactiveDate = result.finalDeadline.minusDays(proactiveReminderDays.toLong())
                         Text(
-                            text = "قبل $proactiveReminderDays أيام",
+                            text = "بتاريخ ${DateFormatterUtils.formatArabicFullDate(proactiveDate)} (قبل $proactiveReminderDays أيام)",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -319,7 +365,7 @@ fun CalculationResultCard(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(10.dp))
                                 .background(pillBgColor)
                                 .clickable { proactiveReminderDays = days }
                                 .padding(vertical = 8.dp),
@@ -337,20 +383,22 @@ fun CalculationResultCard(
                 }
             }
 
-            // Action Buttons: Add to Calendar, Save, Back
+            // Separated Calendar Actions:
+            // 1. Add Final Deadline (at finalDeadline)
+            // 2. Add Proactive Reminder (at proactiveDate)
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
-                    onClick = onAddToCalendar,
+                    onClick = onAddFinalDeadlineToCalendar,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondary
                     ),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.CalendarMonth,
@@ -358,9 +406,35 @@ fun CalculationResultCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "إضافة إلى تقويم Google / الجهاز",
-                        fontWeight = FontWeight.Bold
+                        text = "إضافة الميعاد النهائي للتقويم (${finalDateFormatted})",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodyMedium
                     )
+                }
+
+                if (proactiveReminderDays > 0) {
+                    val pDate = result.finalDeadline.minusDays(proactiveReminderDays.toLong())
+                    OutlinedButton(
+                        onClick = onAddProactiveAlertToCalendar,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.NotificationsActive,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "إضافة تنبيه استباقي للتقويم (${DateFormatterUtils.formatArabicFullDate(pDate)})",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
 
                 Row(
@@ -376,14 +450,18 @@ fun CalculationResultCard(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
                         ),
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(
-                            imageVector = if (isSaved) Icons.Default.CheckCircle else Icons.Default.Bookmark,
-                            contentDescription = null
+                            imageVector = Icons.Default.Bookmark,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = if (isSaved) "تم الحفظ" else "حفظ")
+                        Text(
+                            text = if (isSaved) "تم الحفظ بالمحفوظات" else "حفظ الميعاد",
+                            fontWeight = FontWeight.Bold
+                        )
                     }
 
                     OutlinedButton(
@@ -391,14 +469,18 @@ fun CalculationResultCard(
                         modifier = Modifier
                             .weight(1f)
                             .height(46.dp),
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = "رجوع")
+                        Text(
+                            text = "احتساب جديد",
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
@@ -416,24 +498,25 @@ private fun ResultDetailRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.Start
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(18.dp)
             )
-
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -446,24 +529,23 @@ private fun ResultDetailRow(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Calculation Result Card")
 @Composable
 fun CalculationResultCardPreview() {
-    val fixedDate = LocalDate.of(2026, 9, 12)
     val sampleResult = DeadlineResult(
-        startDate = fixedDate,
-        provisionalDate = fixedDate.plusDays(13),
-        duration = 13,
+        startDate = LocalDate.of(2026, 10, 2),
+        provisionalDate = LocalDate.of(2026, 11, 10),
+        duration = 40,
         unit = DurationUnit.DAYS,
-        ruleDistanceDays = 15,
+        ruleDistanceDays = 0,
         additionalDistanceDays = 0,
-        totalDistanceDays = 15,
+        totalDistanceDays = 0,
         excludedDays = emptyList(),
-        finalDeadline = fixedDate.plusDays(13),
-        explanation = "تم احتساب الميعاد وفقًا للقاعدة القانونية المحددة مع مراعاة الإجازات والعطلات الرسمية.",
-        lawArticle = "المادة 66 مرافعات",
-        notes = "",
-        actionSummary = "صحيفة دعوى"
+        finalDeadline = LocalDate.of(2026, 11, 10),
+        explanation = "شرح تفصيلي للميعاد الإجرائي",
+        lawArticle = "المادة 227 من قانون المرافعات المدنية والتجارية",
+        notes = "ملاحظات القاعدة",
+        actionSummary = "استئناف مدني وتجاري"
     )
 
     EgyptianLegalDeadlinesTheme {

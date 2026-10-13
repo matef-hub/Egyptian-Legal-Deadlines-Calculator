@@ -35,8 +35,9 @@ The project features a **100% Native Android Application** (Kotlin, Jetpack Comp
   - Renewal from Dismissal (*التجديد من الشطب* - 60 days)
   - Abandonment of Litigation (*سقوط الخصومة* - 1 year)
 - **Add to Google Calendar**: Instant one-click export to Google Calendar (`action=TEMPLATE`) and native Android Calendar (`CalendarContract`), pre-filling the case number, client name, relevant statutory articles, and procedural calculation notes.
-- **Offline-First Local Storage**: Encrypted persistence of saved deadlines, case dossiers, and court hearing dates via Android Room and browser storage.
+- **Offline-First Local Storage**: Reliable local persistence of saved deadlines, case dossiers, and procedural calculation records via Android Room (with explicit schema migration safety) and local storage.
 - **Clean Minimalism UI**: Focused typography, high contrast, zero bloat, and full Right-to-Left (RTL) Arabic support.
+
 
 ---
 
@@ -57,8 +58,9 @@ The project features a **100% Native Android Application** (Kotlin, Jetpack Comp
 ### 🌟 أبرز المميزات
 - **مكتبة شاملة للمواعيد الإجرائية**: تغطي الاستئناف العادي والمستعجل، الطعن بالنقض المدني والجنائي، التماس إعادة النظر، المعارضة في الأحكام الغيابية، تجديد الدعوى من الشطب، سقوط الخصومة، وتقادم الدعاوى الجنائية.
 - **إضافة الميعاد إلى تقويم Google بنقرة واحدة**: إنشاء تذكير تلقائي في تقويم Google يتضمن بيانات القضية، اسم الموكل، السند التشريعي، وملاحظات الاحتساب.
-- **سجل المواعيد المحفوظة والأجندة**: إمكانية أرشفة المواعيد المحسوبة والرجوع إليها أو تصفيتها أو حذفها عند اللزوم، والعمل دون الحاجة لشبكة الإنترنت (Offline-first).
-- **تصميم مخصص للمحامين**: واجهات سريعة وواضحة خالية من التشتيت وتدعم اللغة العربية بالكامل (RTL) مع إبراز النتيجة القانونية بوضوح تام.
+- **سجل المواعيد المحفوظة والأجندة**: إمكانية أرشفة المواعيد المحسوبة والرجوع إليها أو تصفيتها أو حذفها عند اللزوم، والعمل دون الحاجة لشبكة الإنترنت (Offline-first) مع حماية السجلات المحلية بهجرات Room صريحة تمنع فقدان البيانات.
+- **تصميم مخصص للمحامين ومسار زمني تفاعلي**: واجهات سريعة وواضحة خالية من التشتيت وتدعم اللغة العربية بالكامل (RTL) مع مسار زمني إجرائي حي يحلل محطات الميعاد خطوة بخطوة.
+
 
 ---
 

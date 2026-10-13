@@ -59,13 +59,15 @@ class HolidaysViewModel(
                     )
                 }
             } else {
+                val msg = result.exceptionOrNull()?.message ?: "تم الاعتماد على قاعدة البيانات المحلية المعتمدة"
                 _uiState.update {
                     it.copy(
                         isSyncing = false,
-                        syncMessage = "تم الاعتماد على قاعدة البيانات المصلحة المتاحة حالياً"
+                        syncMessage = msg
                     )
                 }
             }
+
         }
     }
 

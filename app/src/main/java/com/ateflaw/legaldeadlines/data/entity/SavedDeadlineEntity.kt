@@ -46,6 +46,9 @@ data class SavedDeadlineEntity(
     @ColumnInfo(name = "notes")
     val notes: String,
 
+    @ColumnInfo(name = "proactive_reminder_days")
+    val proactiveReminderDays: Int? = null,
+
     @ColumnInfo(name = "created_at")
     val createdAt: Long = System.currentTimeMillis()
 ) {
@@ -62,6 +65,7 @@ data class SavedDeadlineEntity(
         lawArticle = lawArticle,
         calculationExplanation = calculationExplanation,
         notes = notes,
+        proactiveReminderDays = proactiveReminderDays,
         createdAt = createdAt
     )
 
@@ -79,7 +83,9 @@ data class SavedDeadlineEntity(
             lawArticle = domain.lawArticle,
             calculationExplanation = domain.calculationExplanation,
             notes = domain.notes,
+            proactiveReminderDays = domain.proactiveReminderDays,
             createdAt = domain.createdAt
         )
     }
 }
+

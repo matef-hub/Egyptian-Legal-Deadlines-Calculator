@@ -53,23 +53,35 @@ export function calculateLegalDeadline(
     startDate.setDate(startDate.getDate() + 1);
   }
 
-  // 2. Compute Provisional Deadline
-  const provisionalDate = new Date(startDate);
+  // 2. Compute Base End Date according to Article 15 Procedures Law
+  const baseEndDate = new Date(startDate);
   if (rule.unit === 'DAYS') {
     const effectiveDays = Math.max(0, rule.duration - 1);
-    provisionalDate.setDate(provisionalDate.getDate() + effectiveDays + totalDistanceDays);
+    baseEndDate.setDate(startDate.getDate() + effectiveDays);
   } else if (rule.unit === 'MONTHS') {
-    provisionalDate.setMonth(provisionalDate.getMonth() + rule.duration);
-    provisionalDate.setDate(provisionalDate.getDate() + totalDistanceDays);
+    if (rule.startRule === 'NEXT_DAY') {
+      baseEndDate.setTime(announcementDate.getTime());
+      baseEndDate.setMonth(announcementDate.getMonth() + rule.duration);
+    } else {
+      baseEndDate.setMonth(startDate.getMonth() + rule.duration);
+    }
   } else if (rule.unit === 'YEARS') {
-    provisionalDate.setFullYear(provisionalDate.getFullYear() + rule.duration);
-    provisionalDate.setDate(provisionalDate.getDate() + totalDistanceDays);
+    if (rule.startRule === 'NEXT_DAY') {
+      baseEndDate.setTime(announcementDate.getTime());
+      baseEndDate.setFullYear(announcementDate.getFullYear() + rule.duration);
+    } else {
+      baseEndDate.setFullYear(startDate.getFullYear() + rule.duration);
+    }
   } else if (rule.unit === 'HOURS') {
     const equivalentDays = Math.max(1, Math.ceil(rule.duration / 24));
-    provisionalDate.setDate(provisionalDate.getDate() + (equivalentDays - 1) + totalDistanceDays);
+    baseEndDate.setDate(startDate.getDate() + (equivalentDays - 1));
   }
 
-  // 3. Final Deadline Adjustment Loop
+  // 3. Add Distance Days (Articles 16 and 17)
+  const provisionalDate = new Date(baseEndDate);
+  provisionalDate.setDate(baseEndDate.getDate() + totalDistanceDays);
+
+  // 4. Final Deadline Adjustment Loop (Article 18)
   const currentDate = new Date(provisionalDate);
   const excludedDays: ExcludedDay[] = [];
 
@@ -101,12 +113,70 @@ export function calculateLegalDeadline(
 
   const finalDeadline = new Date(currentDate);
 
-  // 4. Generate Comprehensive Arabic Explanation
+  // 5. Build Structured Milestones
+  const milestones: any[] = [
+    {
+      type: 'TRIGGER_EVENT',
+      date: toIsoDate(announcementDate),
+      title: 'الواقعة المنشئة للميعاد',
+      description: `تاريخ الإعلان أو صدور الحكم القضائي (${formatDisplayDate(announcementDate)}) (${getArabicDayName(announcementDate)}).`,
+      legalBasis: rule.lawArticle
+    },
+    {
+      type: 'COUNTING_START',
+      date: toIsoDate(startDate),
+      title: 'بدء سريان الميعاد الإجرائي',
+      description: rule.startRule === 'NEXT_DAY'
+        ? `يبدأ احتساب الميعاد من اليوم التالي للإعلان (${formatDisplayDate(startDate)}) ولا يُحسب يوم الإعلان نفسه إعمالاً للمادة 15 مرافعات.`
+        : `يبدأ احتساب الميعاد من نفس يوم الواقعة (${formatDisplayDate(startDate)}) وفقاً لنص القاعدة.`,
+      legalBasis: 'المادة 15 مرافعات'
+    },
+    {
+      type: 'BASE_DEADLINE',
+      date: toIsoDate(baseEndDate),
+      title: 'نهاية المدة القانونية الأصلية',
+      description: `انقضاء مدة الميعاد الأصلية (${rule.duration} ${rule.unit === 'DAYS' ? 'يوم' : rule.unit === 'MONTHS' ? 'شهر' : 'سنة'}) في (${formatDisplayDate(baseEndDate)}).`,
+      legalBasis: rule.lawArticle
+    }
+  ];
+
+  if (totalDistanceDays > 0) {
+    milestones.push({
+      type: 'DISTANCE_EXTENSION',
+      date: toIsoDate(provisionalDate),
+      title: 'إضافة ميعاد مسافة الطريق',
+      description: `إضافة ${totalDistanceDays} أيام مسافة ليمتد الميعاد المبدئي إلى (${formatDisplayDate(provisionalDate)}).`,
+      legalBasis: totalDistanceDays > 4 ? 'المادة 17 مرافعات (موطن بالخارج)' : 'المادة 16 مرافعات (مسافة محلية)'
+    });
+  }
+
+  excludedDays.forEach(ex => {
+    milestones.push({
+      type: 'HOLIDAY_EXTENSION',
+      date: ex.date,
+      title: 'امتداد الميعاد لمصادفة عطلة',
+      description: `مصادفة تاريخ (${ex.reason.split('—')[0].trim()}) عطلة، ويمتد الميعاد إعمالاً للمادة 18 مرافعات.`,
+      legalBasis: 'المادة 18 مرافعات',
+      isExcludedDay: true
+    });
+  });
+
+  milestones.push({
+    type: 'FINAL_DEADLINE',
+    date: toIsoDate(finalDeadline),
+    title: 'الميعاد النهائي الملزم للعمل الإجرائي',
+    description: `آخر موعد لرفع الطعن أو قيد الصحيفة بقلم الكتاب (${formatDisplayDate(finalDeadline)}) (${getArabicDayName(finalDeadline)})${
+      finalDeadline.getDay() === 6 ? ' [السبت يوم عمل رسمي بالمحاكم المصرية].' : ''
+    }`,
+    legalBasis: 'المادتان 15 و 18 مرافعات'
+  });
+
+  // 6. Generate Comprehensive Arabic Explanation
   const explanationLines: string[] = [
     `١. تاريخ الإعلان / الإجراء: ${formatDisplayDate(announcementDate)} (${getArabicDayName(announcementDate)})`,
     `٢. تاريخ بدء احتساب الميعاد: ${formatDisplayDate(startDate)} (${getArabicDayName(startDate)})${
       rule.startRule === 'NEXT_DAY'
-        ? ' — تطبيقاً للقاعدة الإجرائية: يبدأ احتساب الميعاد من اليوم التالي للإعلان ولا يُحسب يوم الإجراء نفسه.'
+        ? ' — تطبيقاً للمادة 15 مرافعات: يبدأ احتساب الميعاد من اليوم التالي للإعلان ولا يُحسب يوم الإجراء نفسه.'
         : ' — يبدأ احتساب الميعاد من نفس يوم الإعلان وفقاً لنص القاعدة الإجرائية.'
     }`,
     `٣. مدة الميعاد القانوني: ${rule.duration} ${
@@ -115,12 +185,12 @@ export function calculateLegalDeadline(
     `٤. وحدة الاحتساب: ${
       rule.unit === 'DAYS' ? 'أيام' : rule.unit === 'MONTHS' ? 'أشهر' : rule.unit === 'YEARS' ? 'سنوات' : 'ساعات'
     }`,
-    `٥. ميعاد المسافة القانوني الأصلي: ${rule.distanceDays} يوم`,
+    `٥. ميعاد المسافة القانوني الأصلي: ${rule.distanceDays} يوم (المادتان 16 و17 مرافعات)`,
     `٦. ميعاد المسافة الإضافي: ${additionalDistanceDays} يوم`,
     `٧. إجمالي مواعيد المسافة المضافة: ${totalDistanceDays} يوم`,
     `٨. الميعاد المبدئي (قبل استبعاد العطلات): ${formatDisplayDate(provisionalDate)} (${getArabicDayName(provisionalDate)})`,
     excludedDays.length > 0
-      ? `٩. الأيام المستبعدة لمصادفتها عطلة رسمية أو أسبوعية:\n${excludedDays
+      ? `٩. الأيام المستبعدة والامتداد (المادة 18 مرافعات):\n${excludedDays
           .map((ex, i) => `   • [${i + 1}] ${ex.reason}`)
           .join('\n')}`
       : '٩. الأيام المستبعدة: لا يوجد أيام مستبعدة (صادف الميعاد المبدئي يوم عمل رسمي مباشرة).',
@@ -143,6 +213,8 @@ export function calculateLegalDeadline(
     finalDeadline: toIsoDate(finalDeadline),
     explanation: explanationLines.join('\n'),
     lawArticle: rule.lawArticle,
-    notes: rule.notes
+    notes: rule.notes,
+    milestones
   };
 }
+

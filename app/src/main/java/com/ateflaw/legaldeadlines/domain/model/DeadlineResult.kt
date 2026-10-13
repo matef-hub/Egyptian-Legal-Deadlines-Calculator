@@ -18,5 +18,7 @@ data class DeadlineResult(
     val explanation: String,
     val lawArticle: String,
     val notes: String,
-    val actionSummary: String = ""
+    val actionSummary: String = "",
+    val milestones: List<CalculationMilestone> = emptyList()
 )
+
