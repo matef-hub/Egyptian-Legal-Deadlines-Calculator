@@ -23,8 +23,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ChevronDown
-import androidx.compose.material.icons.filled.ChevronUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.HourglassBottom
@@ -333,7 +333,7 @@ private fun TimelineNodeItem(
                 )
 
                 Icon(
-                    imageVector = if (expanded) Icons.Default.ChevronUp else Icons.Default.ChevronDown,
+                    imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.outline,
                     modifier = Modifier.size(16.dp)
