@@ -50,7 +50,13 @@ data class SavedDeadlineEntity(
     val proactiveReminderDays: Int? = null,
 
     @ColumnInfo(name = "created_at")
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+
+    @ColumnInfo(name = "rule_snapshot", defaultValue = "")
+    val ruleSnapshot: String = "",
+
+    @ColumnInfo(name = "distance_type", defaultValue = "NONE")
+    val distanceType: String = "NONE"
 ) {
     fun toDomain(): SavedDeadline = SavedDeadline(
         id = id,
@@ -66,7 +72,9 @@ data class SavedDeadlineEntity(
         calculationExplanation = calculationExplanation,
         notes = notes,
         proactiveReminderDays = proactiveReminderDays,
-        createdAt = createdAt
+        createdAt = createdAt,
+        ruleSnapshot = ruleSnapshot,
+        distanceType = distanceType
     )
 
     companion object {
@@ -84,8 +92,9 @@ data class SavedDeadlineEntity(
             calculationExplanation = domain.calculationExplanation,
             notes = domain.notes,
             proactiveReminderDays = domain.proactiveReminderDays,
-            createdAt = domain.createdAt
+            createdAt = domain.createdAt,
+            ruleSnapshot = domain.ruleSnapshot,
+            distanceType = domain.distanceType
         )
     }
 }
-

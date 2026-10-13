@@ -2,6 +2,8 @@ export type StartRule = 'SAME_DAY' | 'NEXT_DAY';
 
 export type DurationUnit = 'DAYS' | 'MONTHS' | 'YEARS' | 'HOURS';
 
+export type DistanceType = 'NONE' | 'LOCAL' | 'ABROAD';
+
 export interface LegalRule {
   id: number;
   actionName: string;
@@ -12,6 +14,18 @@ export interface LegalRule {
   lawArticle: string;
   notes: string;
   category?: string;
+  triggerEventType?: string;
+  triggerEventLabel?: string;
+  courtType?: string;
+  distancePolicy?: string;
+  extensionPolicy?: string;
+  lawName?: string;
+  article?: string;
+  officialSourceUrl?: string;
+  effectiveFrom?: string;
+  effectiveTo?: string | null;
+  lastReviewedAt?: string;
+  reviewStatus?: string;
 }
 
 export interface Holiday {
@@ -56,8 +70,8 @@ export interface DeadlineResult {
   lawArticle: string;
   notes: string;
   milestones?: CalculationMilestone[];
+  distanceType?: DistanceType;
 }
-
 
 export interface SavedDeadline {
   id: string;
@@ -74,4 +88,6 @@ export interface SavedDeadline {
   notes: string;
   createdAt: number;
   proactiveReminderDays?: number;
+  ruleSnapshot?: string;
+  distanceType?: DistanceType;
 }

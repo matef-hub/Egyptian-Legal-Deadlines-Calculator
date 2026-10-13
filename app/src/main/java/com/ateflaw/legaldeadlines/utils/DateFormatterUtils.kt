@@ -68,7 +68,7 @@ object DateFormatterUtils {
     fun formatDisplayDate(date: LocalDate): String {
         val d = if (date.dayOfMonth < 10) "0${date.dayOfMonth}" else "${date.dayOfMonth}"
         val m = if (date.monthValue < 10) "0${date.monthValue}" else "${date.monthValue}"
-        return "\u200E$d/$m/${date.year}\u200E"
+        return "\u200E${date.year}/$m/$d\u200E"
     }
 
     fun parseIsoDate(isoString: String): LocalDate {

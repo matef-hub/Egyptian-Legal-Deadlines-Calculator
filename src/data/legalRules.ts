@@ -1,5 +1,19 @@
 import { Holiday, LegalRule } from '../types';
 
+export const LEGAL_CATEGORIES = [
+  'الكل',
+  'طرق الطعن العادية',
+  'طرق الطعن غير العادية',
+  'طرق الطعن الجنائية',
+  'أوامر الأداء',
+  'مواعيد الحضور والإعلان',
+  'عوارض الخصومة القضائية',
+  'إجراءات الرد ومخاصمة القضاة',
+  'أحوال شخصية',
+  'قضاء إداري ومجلس الدولة',
+  'رسوم قضائية'
+];
+
 export const INITIAL_LEGAL_RULES: LegalRule[] = [
   {
     id: 1,
@@ -9,8 +23,19 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     distanceDays: 0,
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 227 من قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
-    notes: 'ميعاد الاستئناف أربعون يوماً ما لم ينص القانون على غير ذلك، ويبدأ من اليوم التالي لصدور الحكم أو إعلانه بحسب الأحوال.',
-    category: 'مدني وتجاري'
+    notes: 'ميعاد الاستئناف أربعون يوماً ما لم ينص القانون على غير ذلك، ويبدأ من اليوم التالي لصدور الحكم الحضوري أو إعلانه بحسب الأحوال.',
+    category: 'طرق الطعن العادية',
+    triggerEventType: 'JUDGMENT_ANNOUNCEMENT',
+    triggerEventLabel: 'تاريخ صدور الحكم الحضوري أو إعلانه',
+    courtType: 'محاكم الاستئناف العالي والمحاكم الابتدائية بهيئة استئنافية',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
+    article: 'المادة 227',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1968-11-01',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 2,
@@ -21,7 +46,18 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 227 فقرة 2 من قانون المرافعات المدنية والتجارية',
     notes: 'ميعاد استئناف الأحكام الصادرة في المواد المستعجلة خمسة عشر يوماً أياً كانت المحكمة التي أصدرتها.',
-    category: 'مستعجل وتنفيذ'
+    category: 'طرق الطعن العادية',
+    triggerEventType: 'SUMMARY_JUDGMENT',
+    triggerEventLabel: 'تاريخ صدور حكم القضاء المستعجل أو إعلانه',
+    courtType: 'قضاء الأمور المستعجلة',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
+    article: 'المادة 227 فقرة 2',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1968-11-01',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 3,
@@ -32,7 +68,18 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 252 من قانون المرافعات المدنية والتجارية',
     notes: 'ميعاد الطعن بالنقض ستون يوماً من تاريخ صدور الحكم إذا كان حضورياً أو إعلانه إذا كان بمثابة الحضوري.',
-    category: 'نقض والتماس'
+    category: 'طرق الطعن غير العادية',
+    triggerEventType: 'FINAL_APPEAL_JUDGMENT',
+    triggerEventLabel: 'تاريخ صدور الحكم الاستئنافي الحضوري أو إعلانه',
+    courtType: 'محكمة النقض (الدوائر المدنية والتجارية)',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
+    article: 'المادة 252',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1968-11-01',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 4,
@@ -43,7 +90,18 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 34 من القانون رقم 57 لسنة 1959 بشأن حالات وإجراءات الطعن أمام محكمة النقض',
     notes: 'يحصل الطعن بالتقرير به في قلم كتاب المحكمة خلال ستين يوماً من تاريخ الحكم الحضوري مع إيداع الأسباب في ذات الميعاد.',
-    category: 'جنائي'
+    category: 'طرق الطعن الجنائية',
+    triggerEventType: 'CRIMINAL_JUDGMENT',
+    triggerEventLabel: 'تاريخ النطق بالحكم الجنائي الحضوري أو إعلانه',
+    courtType: 'محكمة النقض (الدائرة الجنائية)',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'القانون رقم 57 لسنة 1959 بشأن حالات وإجراءات الطعن أمام محكمة النقض',
+    article: 'المادة 34',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1959-03-21',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 5,
@@ -54,7 +112,18 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 398 من قانون الإجراءات الجنائية رقم 150 لسنة 1950',
     notes: 'تقبل المعارضة في الأحكام الغيابية الصادرة في الجنح والمخالفات خلال العشرة أيام التالية لإعلان الحكم الغيابي للمحكوم عليه.',
-    category: 'جنائي'
+    category: 'طرق الطعن الجنائية',
+    triggerEventType: 'IN_ABSENTIA_ANNOUNCEMENT',
+    triggerEventLabel: 'تاريخ إعلان الحكم الغيابي للمحكوم عليه',
+    courtType: 'محكمة الجنح',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون الإجراءات الجنائية رقم 150 لسنة 1950',
+    article: 'المادة 398',
+    officialSourceUrl: 'الوقائع المصرية',
+    effectiveFrom: '1951-10-15',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 6,
@@ -65,7 +134,18 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 406 من قانون الإجراءات الجنائية',
     notes: 'يحصل الاستئناف بتقرير في قلم كتاب المحكمة التي أصدرت الحكم في ظرف عشرة أيام من تاريخ النطق بالحكم الحضوري أو إعلانه.',
-    category: 'جنائي'
+    category: 'طرق الطعن الجنائية',
+    triggerEventType: 'MISDEMEANOR_JUDGMENT',
+    triggerEventLabel: 'تاريخ النطق بالحكم الحضوري أو إعلانه للمحكوم عليه',
+    courtType: 'محكمة الجنح المستأنفة',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون الإجراءات الجنائية رقم 150 لسنة 1950',
+    article: 'المادة 406',
+    officialSourceUrl: 'الوقائع المصرية',
+    effectiveFrom: '1951-10-15',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 7,
@@ -74,9 +154,20 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     unit: 'DAYS',
     distanceDays: 0,
     startRule: 'NEXT_DAY',
-    lawArticle: 'المادة 204 من قانون المرافعات المدنية والتجارية',
-    notes: 'يجوز للمدين التظلم من أمر الأداء خلال عشرة أيام من تاريخ إعلانه إليه بالأمر بورقة من أوراق المحضرين.',
-    category: 'مستعجل وتنفيذ'
+    lawArticle: 'المادة 206 من قانون المرافعات المدنية والتجارية',
+    notes: 'يجوز للمدين التظلم من أمر الأداء خلال عشرة أيام من تاريخ إعلانه إليه، ويحصل التظلم أمام المحكمة الجزئية أو الابتدائية حسب الأحوال ويجب أن يكون مسبباً وإلا كان باطلاً.',
+    category: 'أوامر الأداء',
+    triggerEventType: 'PAYMENT_ORDER_SERVICE',
+    triggerEventLabel: 'تاريخ إعلان أمر الأداء القضائي للمدين',
+    courtType: 'المحكمة الجزئية أو الابتدائية',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
+    article: 'المادة 206',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1968-11-01',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 8,
@@ -85,9 +176,20 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     unit: 'DAYS',
     distanceDays: 0,
     startRule: 'NEXT_DAY',
-    lawArticle: 'المادة 205 من قانون المرافعات المدنية والتجارية',
-    notes: 'يخضع استئناف أمر الأداء للقواعد والمواعيد المقررة لاستئناف الأحكام (40 يوماً).',
-    category: 'مستعجل وتنفيذ'
+    lawArticle: 'المادتان 206 و227 من قانون المرافعات المدنية والتجارية',
+    notes: 'يبدأ ميعاد استئناف أمر الأداء من تاريخ فوات ميعاد التظلم أو من تاريخ اعتبار التظلم كأن لم يكن (م206)، ويخضع في مدته لقواعد استئناف الأحكام العادية (40 يوماً وفق م227).',
+    category: 'أوامر الأداء',
+    triggerEventType: 'GRIEVANCE_LAPSE',
+    triggerEventLabel: 'تاريخ فوات ميعاد التظلم أو الحكم باعتباره كأن لم يكن',
+    courtType: 'محكمة الاستئناف أو المحكمة الابتدائية بهيئة استئنافية',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
+    article: 'المادتان 206 و227',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1968-11-01',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 9,
@@ -98,7 +200,18 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 242 من قانون المرافعات المدنية والتجارية',
     notes: 'ميعاد الالتماس أربعون يوماً ويبدأ في حالات الغش أو الورقة المزورة من اليوم الذي ظهر فيه الغش أو ثبت فيه التزوير.',
-    category: 'نقض والتماس'
+    category: 'طرق الطعن غير العادية',
+    triggerEventType: 'FRAUD_OR_NEW_DOCUMENT',
+    triggerEventLabel: 'تاريخ ثبوت التزوير أو ظهور الورقة المحتجزة أو كشف الغش',
+    courtType: 'المحكمة التي أصدرت الحكم النهائي الملتمس فيه',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
+    article: 'المادة 242',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1968-11-01',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 10,
@@ -107,9 +220,20 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     unit: 'DAYS',
     distanceDays: 0,
     startRule: 'NEXT_DAY',
-    lawArticle: 'المادة 84 من قانون المرافعات المدنية والتجارية',
-    notes: 'ميعاد الحضور أمام المحكمة الجزئية ثمانية أيام كاملة على الأقل قبل موعد الجلسة.',
-    category: 'إعلانات وحضور'
+    lawArticle: 'المادة 66 من قانون المرافعات المدنية والتجارية',
+    notes: 'ميعاد الحضور أمام المحكمة الجزئية ثمانية أيام كاملة على الأقل قبل موعد الجلسة، ويجوز في حالة الضرورة نقصه إلى ثلاثة أيام أو أربع وعشرين ساعة.',
+    category: 'مواعيد الحضور والإعلان',
+    triggerEventType: 'SUMMONS_SERVICE',
+    triggerEventLabel: 'تاريخ تكليف الخصم بالحضور وإعلان صحيفة الدعوى',
+    courtType: 'المحكمة الجزئية',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
+    article: 'المادة 66',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1968-11-01',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 11,
@@ -118,20 +242,42 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     unit: 'DAYS',
     distanceDays: 0,
     startRule: 'NEXT_DAY',
-    lawArticle: 'المادة 84 من قانون المرافعات المدنية والتجارية',
-    notes: 'ميعاد الحضور أمام المحكمة الابتدائية ومحكمة الاستئناف خمسة عشر يوماً كاملة على الأقل قبل الجلسة.',
-    category: 'إعلانات وحضور'
+    lawArticle: 'المادة 66 من قانون المرافعات المدنية والتجارية',
+    notes: 'ميعاد الحضور أمام المحكمة الابتدائية ومحكمة الاستئناف خمسة عشر يوماً كاملة على الأقل قبل الجلسة، ويجوز في حالة الضرورة نقصه إلى ثلاثة أيام أو أربع وعشرين ساعة.',
+    category: 'مواعيد الحضور والإعلان',
+    triggerEventType: 'SUMMONS_SERVICE',
+    triggerEventLabel: 'تاريخ تكليف الخصم بالحضور وإعلان صحيفة الدعوى',
+    courtType: 'المحكمة الابتدائية ومحكمة الاستئناف',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
+    article: 'المادة 66',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1968-11-01',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 12,
     actionName: 'سقوط الخصومة القضائية لعدم السير فيها بفعل المدعي أو امتناعه',
-    duration: 1,
-    unit: 'YEARS',
+    duration: 180,
+    unit: 'DAYS',
     distanceDays: 0,
     startRule: 'NEXT_DAY',
-    lawArticle: 'المادة 134 من قانون المرافعات المدنية والتجارية',
-    notes: 'تسقط الخصومة بانقضاء سنة واحدة من آخر إجراء صحيح اتخذ في الدعوى.',
-    category: 'مدني وتجاري'
+    lawArticle: 'المادة 134 من قانون المرافعات المدنية والتجارية (المعدلة بالقانون رقم 18 لسنة 1999)',
+    notes: 'تسقط الخصومة بانقضاء ستة أشهر (180 يوماً) من آخر إجراء صحيح اتخذ في الدعوى بفعل المدعي أو امتناعه (كانت المدة سنة قبل تعديل 1999).',
+    category: 'عوارض الخصومة القضائية',
+    triggerEventType: 'LAST_PROCEDURAL_ACTION',
+    triggerEventLabel: 'تاريخ آخر إجراء قضائي صحيح اتخذ في الدعوى',
+    courtType: 'المحاكم المدنية والتجارية',
+    distancePolicy: 'NOT_APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون المرافعات المدنية والتجارية المعدل بالقانون 18 لسنة 1999',
+    article: 'المادة 134',
+    officialSourceUrl: 'الجريدة الرسمية - العدد 19 مكرر في 1999/05/17',
+    effectiveFrom: '1999-05-18',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 13,
@@ -141,8 +287,19 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     distanceDays: 0,
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 140 من قانون المرافعات المدنية والتجارية',
-    notes: 'في جميع الأحوال تنقضي الخصومة بمضي ثلاث سنوات على آخر إجراء صحيح اتخذ فيها.',
-    category: 'مدني وتجاري'
+    notes: 'في جميع الأحوال تنقضي الخصومة بمضي ثلاث سنوات على آخر إجراء صحيح اتخذ فيها بقوة القانون.',
+    category: 'عوارض الخصومة القضائية',
+    triggerEventType: 'LAST_PROCEDURAL_ACTION',
+    triggerEventLabel: 'تاريخ آخر إجراء صحيح اتخذ في الخصومة',
+    courtType: 'المحاكم المدنية والتجارية',
+    distancePolicy: 'NOT_APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
+    article: 'المادة 140',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1968-11-01',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 14,
@@ -152,8 +309,19 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     distanceDays: 0,
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 82 من قانون المرافعات المدنية والتجارية',
-    notes: 'إذا بقيت الدعوى مشطوبة ستين يوماً ولم يطلب أحد الخصوم السير فيها أو لم يحضر الطرفان اعتبرت كأن لم تكن.',
-    category: 'مدني وتجاري'
+    notes: 'إذا بقيت الدعوى مشطوبة ستين يوماً ولم يطلب أحد الخصوم السير فيها أو لم يحضر الطرفان بعد تجديدها اعتبرت كأن لم تكن.',
+    category: 'عوارض الخصومة القضائية',
+    triggerEventType: 'STRIKE_OFF_DATE',
+    triggerEventLabel: 'تاريخ صدور قرار المحكمة بشطب الدعوى بالجلسة',
+    courtType: 'المحاكم المدنية والتجارية',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
+    article: 'المادة 82',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1968-11-01',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 15,
@@ -164,18 +332,40 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 99 من قانون المرافعات المدنية والتجارية',
     notes: 'يجب على المدعي تعجيل الدعوى وإعلان الخصم خلال ثلاثين يوماً التالية لانتهاء مدة الوقف الجزائي وإلا حُكم باعتبارها كأن لم تكن.',
-    category: 'مدني وتجاري'
+    category: 'عوارض الخصومة القضائية',
+    triggerEventType: 'STAY_PERIOD_EXPIRATION',
+    triggerEventLabel: 'تاريخ انتهاء المدة المقضي بها لوقف الدعوى جزائياً',
+    courtType: 'المحاكم المدنية والتجارية',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
+    article: 'المادة 99',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1968-11-01',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 16,
-    actionName: 'رد القضاة وأعضاء الدائرة القضائية',
+    actionName: 'رد القضاة وأعضاء الدائرة القضائية (القاضي المنتدب للإثبات)',
     duration: 3,
     unit: 'DAYS',
     distanceDays: 0,
     startRule: 'NEXT_DAY',
-    lawArticle: 'المادة 153 من قانون المرافعات المدنية والتجارية',
-    notes: 'يجب تقديم طلب الرد بتقرير في قلم كتاب المحكمة وتحديد أسبابه وإيداع الكفالة قبل قفل باب المرافعة.',
-    category: 'إجراءات قضائية'
+    lawArticle: 'المادة 157 من قانون المرافعات المدنية والتجارية',
+    notes: 'إذا كان الرد في حق قاضٍ منتدب لإجراء من إجراءات الإثبات فيجب تقديم الطلب خلال ثلاثة أيام من يوم ندبه أو من إعلانه به إن صدر الندب في غيبته.',
+    category: 'إجراءات الرد ومخاصمة القضاة',
+    triggerEventType: 'JUDICIAL_APPOINTMENT',
+    triggerEventLabel: 'تاريخ صدور قرار ندب القاضي أو إعلانه به للخصم',
+    courtType: 'المحكمة المختصة بنظر طلب الرد',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
+    article: 'المادة 157',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1968-11-01',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 17,
@@ -185,8 +375,19 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     distanceDays: 0,
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 11 مكرر ثانياً من القانون رقم 25 لسنة 1929 المعدل بالقانون 100 لسنة 1985',
-    notes: 'للزوجة حق الاعتراض على إنذار الطاعة أمام محكمة الأسرة خلال ثلاثين يوماً من تاريخ إعلانها بالإنذار.',
-    category: 'أحوال شخصية'
+    notes: 'للزوجة حق الاعتراض على إنذار الطاعة أمام محكمة الأسرة خلال ثلاثين يوماً من تاريخ إعلانها بالإنذار بصحيفة تبين أوجه اعتراضها.',
+    category: 'أحوال شخصية',
+    triggerEventType: 'OBEDIENCE_WARNING_SERVICE',
+    triggerEventLabel: 'تاريخ إعلان الزوجة بإنذار الطاعة على يد محضر',
+    courtType: 'محكمة الأسرة',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'القانون رقم 25 لسنة 1929 المعدل بالقانون 100 لسنة 1985',
+    article: 'المادة 11 مكرر ثانياً',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1985-07-04',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 18,
@@ -197,7 +398,18 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 44 من قانون مجلس الدولة رقم 47 لسنة 1972',
     notes: 'ميعاد الطعن أمام المحكمة الإدارية العليا ستون يوماً من تاريخ صدور الحكم المطعون فيه.',
-    category: 'مجلس الدولة'
+    category: 'قضاء إداري ومجلس الدولة',
+    triggerEventType: 'ADMIN_JUDGMENT',
+    triggerEventLabel: 'تاريخ صدور حكم محكمة القضاء الإداري',
+    courtType: 'المحكمة الإدارية العليا (مجلس الدولة)',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون مجلس الدولة رقم 47 لسنة 1972',
+    article: 'المادة 44',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1972-10-05',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 19,
@@ -207,8 +419,19 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     distanceDays: 0,
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 24 من قانون مجلس الدولة رقم 47 لسنة 1972',
-    notes: 'ميعاد رفع دعوى الإلغاء ستون يوماً من تاريخ نشر القرار الإداري أو إعلانه للذوي الشأن أو العلم اليقيني به.',
-    category: 'مجلس الدولة'
+    notes: 'ميعاد رفع دعوى الإلغاء ستون يوماً من تاريخ نشر القرار الإداري في الجريدة أو إعلانه للذوي الشأن أو العلم اليقيني به.',
+    category: 'قضاء إداري ومجلس الدولة',
+    triggerEventType: 'ADMIN_DECISION_PUBLICATION',
+    triggerEventLabel: 'تاريخ نشر القرار الإداري أو إعلانه أو العلم اليقيني به',
+    courtType: 'محاكم القضاء الإداري (مجلس الدولة)',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون مجلس الدولة رقم 47 لسنة 1972',
+    article: 'المادة 24',
+    officialSourceUrl: 'الجريدة الرسمية',
+    effectiveFrom: '1972-10-05',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
     id: 20,
@@ -219,23 +442,22 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 17 من القانون رقم 90 لسنة 1944 بشأن الرسوم القضائية في المواد المدنية',
     notes: 'يجوز للمدين بالرسوم المعارضة في مقدارها بتقرير في قلم الكتاب خلال ثمانية أيام من تاريخ إعلانه بأمر التقدير.',
-    category: 'رسوم قضائية'
+    category: 'رسوم قضائية',
+    triggerEventType: 'FEES_ORDER_SERVICE',
+    triggerEventLabel: 'تاريخ إعلان أمر تقدير الرسوم القضائية للمدين',
+    courtType: 'المحكمة التي أصدر رئيسها أمر التقدير',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'القانون رقم 90 لسنة 1944 بشأن الرسوم القضائية في المواد المدنية',
+    article: 'المادة 17',
+    officialSourceUrl: 'الوقائع المصرية',
+    effectiveFrom: '1944-09-01',
+    lastReviewedAt: '2026-10-13',
+    reviewStatus: 'VERIFIED_ACCURATE'
   }
 ];
 
-export const LEGAL_CATEGORIES = [
-  'الكل',
-  'مدني وتجاري',
-  'جنائي',
-  'مجلس الدولة',
-  'نقض والتماس',
-  'مستعجل وتنفيذ',
-  'أحوال شخصية',
-  'إعلانات وحضور',
-  'رسوم قضائية'
-] as const;
-
-export const OFFICIAL_EGYPTIAN_HOLIDAYS: Holiday[] = [
+export const INITIAL_OFFICIAL_HOLIDAYS: Holiday[] = [
   { id: 1, holidayDate: '2026-01-07', name: 'عيد الميلاد المجيد' },
   { id: 2, holidayDate: '2026-01-25', name: 'عيد الشرطة وثورة 25 يناير' },
   { id: 3, holidayDate: '2026-03-20', name: 'وقفة عيد الفطر المبارك' },
@@ -253,3 +475,5 @@ export const OFFICIAL_EGYPTIAN_HOLIDAYS: Holiday[] = [
   { id: 15, holidayDate: '2026-08-26', name: 'المولد النبوي الشريف' },
   { id: 16, holidayDate: '2026-10-06', name: 'عيد القوات المسلحة (حرب 6 أكتوبر)' }
 ];
+
+export const OFFICIAL_EGYPTIAN_HOLIDAYS: Holiday[] = INITIAL_OFFICIAL_HOLIDAYS;

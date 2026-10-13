@@ -1,6 +1,7 @@
 package com.ateflaw.legaldeadlines.presentation.viewmodel
 
 import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
+import com.ateflaw.legaldeadlines.domain.model.DistanceType
 import com.ateflaw.legaldeadlines.domain.model.Holiday
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import java.time.LocalDate
@@ -9,6 +10,7 @@ data class MainUiState(
     val rules: List<LegalRule> = emptyList(),
     val selectedRule: LegalRule? = null,
     val announcementDate: LocalDate = LocalDate.now(),
+    val distanceType: DistanceType = DistanceType.NONE,
     val additionalDistanceDaysInput: String = "0",
     val caseNumber: String = "",
     val clientName: String = "",

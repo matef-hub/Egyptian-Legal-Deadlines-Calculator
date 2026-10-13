@@ -90,7 +90,7 @@ export const CalculatorForm: React.FC<CalculatorFormProps> = ({
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-amber-600" />
-                <span>تاريخ الإعلان أو صدور الحكم</span>
+                <span>{selectedRule.triggerEventLabel || 'تاريخ الإعلان أو صدور الحكم'}</span>
               </label>
               <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-md" dir="rtl">
                 <span dir="ltr" className="font-mono ml-1">{formatDisplayDate(currentDateObj)}</span> ({getArabicDayName(currentDateObj)})
@@ -143,10 +143,10 @@ export const CalculatorForm: React.FC<CalculatorFormProps> = ({
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-amber-600" />
-                <span>ميعاد المسافة الإضافي (بالأيام)</span>
+                <span>ميعاد مسافة الطريق</span>
               </label>
-              <span className="text-[11px] text-slate-400 font-medium">
-                المادة 16 مرافعات
+              <span className="text-[11px] text-slate-500 font-medium">
+                {additionalDistanceDays > 4 ? 'المادة 17 (خارج)' : additionalDistanceDays > 0 ? 'المادة 16 (محلي)' : 'بدون مسافة'}
               </span>
             </div>
 
@@ -154,6 +154,7 @@ export const CalculatorForm: React.FC<CalculatorFormProps> = ({
               <input
                 type="number"
                 min="0"
+                max="90"
                 value={additionalDistanceDays}
                 onChange={(e) =>
                   setAdditionalDistanceDays(Math.max(0, parseInt(e.target.value) || 0))
@@ -164,6 +165,46 @@ export const CalculatorForm: React.FC<CalculatorFormProps> = ({
               <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-medium pointer-events-none">
                 يوم
               </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px]">
+              <span className="text-slate-400 text-[10px]">خيارات:</span>
+              <button
+                type="button"
+                onClick={() => setAdditionalDistanceDays(0)}
+                className={`px-2 py-0.5 rounded-md font-medium transition-colors cursor-pointer ${
+                  additionalDistanceDays === 0 ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                بدون (0)
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdditionalDistanceDays(1)}
+                className={`px-2 py-0.5 rounded-md font-medium transition-colors cursor-pointer ${
+                  additionalDistanceDays === 1 ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                يوم (م16)
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdditionalDistanceDays(4)}
+                className={`px-2 py-0.5 rounded-md font-medium transition-colors cursor-pointer ${
+                  additionalDistanceDays === 4 ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                4 أيام (أقصى محلي)
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdditionalDistanceDays(60)}
+                className={`px-2 py-0.5 rounded-md font-medium transition-colors cursor-pointer ${
+                  additionalDistanceDays === 60 ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                60 يوماً (موطن بالخارج م17)
+              </button>
             </div>
 
             <p className="text-[11px] text-slate-500">

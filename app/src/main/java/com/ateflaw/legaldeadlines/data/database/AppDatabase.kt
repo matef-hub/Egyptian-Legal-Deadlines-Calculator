@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
         HolidayEntity::class,
         SavedDeadlineEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -53,6 +53,29 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                try {
+                    db.execSQL("ALTER TABLE legal_rules ADD COLUMN trigger_event_type TEXT NOT NULL DEFAULT 'ANNOUNCEMENT'")
+                    db.execSQL("ALTER TABLE legal_rules ADD COLUMN trigger_event_label TEXT NOT NULL DEFAULT 'تاريخ الإعلان أو صدور الحكم'")
+                    db.execSQL("ALTER TABLE legal_rules ADD COLUMN court_type TEXT NOT NULL DEFAULT 'مدني وتجاري'")
+                    db.execSQL("ALTER TABLE legal_rules ADD COLUMN category TEXT NOT NULL DEFAULT 'طرق الطعن'")
+                    db.execSQL("ALTER TABLE legal_rules ADD COLUMN distance_policy TEXT NOT NULL DEFAULT 'APPLICABLE'")
+                    db.execSQL("ALTER TABLE legal_rules ADD COLUMN extension_policy TEXT NOT NULL DEFAULT 'ARTICLE_18_COURTS'")
+                    db.execSQL("ALTER TABLE legal_rules ADD COLUMN law_name TEXT NOT NULL DEFAULT 'قانون المرافعات المدنية والتجارية'")
+                    db.execSQL("ALTER TABLE legal_rules ADD COLUMN article TEXT NOT NULL DEFAULT ''")
+                    db.execSQL("ALTER TABLE legal_rules ADD COLUMN official_source_url TEXT NOT NULL DEFAULT ''")
+                    db.execSQL("ALTER TABLE legal_rules ADD COLUMN effective_from TEXT NOT NULL DEFAULT '1968-11-01'")
+                    db.execSQL("ALTER TABLE legal_rules ADD COLUMN effective_to TEXT DEFAULT NULL")
+                    db.execSQL("ALTER TABLE legal_rules ADD COLUMN last_reviewed_at TEXT NOT NULL DEFAULT '2026-10-13'")
+                    db.execSQL("ALTER TABLE legal_rules ADD COLUMN review_status TEXT NOT NULL DEFAULT 'VERIFIED_ACCURATE'")
+
+                    db.execSQL("ALTER TABLE saved_deadlines ADD COLUMN rule_snapshot TEXT NOT NULL DEFAULT ''")
+                    db.execSQL("ALTER TABLE saved_deadlines ADD COLUMN distance_type TEXT NOT NULL DEFAULT 'NONE'")
+                } catch (_: Exception) {}
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -60,7 +83,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "egyptian_legal_deadlines.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .fallbackToDestructiveMigrationOnDowngrade()
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

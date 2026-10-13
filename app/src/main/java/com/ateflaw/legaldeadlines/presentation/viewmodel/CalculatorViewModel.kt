@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.ateflaw.legaldeadlines.data.seed.LegalRuleSeedData
+import com.ateflaw.legaldeadlines.domain.model.DistanceType
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.model.SavedDeadline
 import com.ateflaw.legaldeadlines.domain.usecase.CalculateDeadlineUseCase
@@ -105,6 +106,23 @@ class CalculatorViewModel(
         _uiState.update { it.copy(announcementDate = date, errorMessage = null) }
     }
 
+    fun onDistanceTypeChanged(type: DistanceType) {
+        _uiState.update {
+            val defaultDays = when (type) {
+                DistanceType.NONE -> "0"
+                DistanceType.LOCAL -> {
+                    val current = it.additionalDistanceDaysInput.toIntOrNull()
+                    if (current == null || current !in 1..4) "1" else it.additionalDistanceDaysInput
+                }
+                DistanceType.ABROAD -> {
+                    val current = it.additionalDistanceDaysInput.toIntOrNull()
+                    if (current == null || current !in 1..90) "60" else it.additionalDistanceDaysInput
+                }
+            }
+            it.copy(distanceType = type, additionalDistanceDaysInput = defaultDays, errorMessage = null)
+        }
+    }
+
     fun onAdditionalDistanceDaysChanged(input: String) {
         // Allow digits only
         val filtered = input.filter { it.isDigit() }
@@ -128,10 +146,29 @@ class CalculatorViewModel(
             return
         }
 
-        val distanceDays = currentState.additionalDistanceDaysInput.toIntOrNull()
-        if (distanceDays == null || distanceDays < 0) {
-            _uiState.update { it.copy(errorMessage = "يرجى إدخال ميعاد مسافة إضافي صحيح (رقم غير سالب)") }
-            return
+        val distanceType = currentState.distanceType
+        val distanceDays: Int = when (distanceType) {
+            DistanceType.NONE -> 0
+            DistanceType.LOCAL -> {
+                val days = currentState.additionalDistanceDaysInput.toIntOrNull()
+                if (days == null || days !in 0..4) {
+                    _uiState.update {
+                        it.copy(errorMessage = "ميعاد المسافة المحلي لا يجوز أن يجاوز 4 أيام إعمالاً للمادة 16 من قانون المرافعات")
+                    }
+                    return
+                }
+                days
+            }
+            DistanceType.ABROAD -> {
+                val days = currentState.additionalDistanceDaysInput.toIntOrNull()
+                if (days == null || days !in 1..90) {
+                    _uiState.update {
+                        it.copy(errorMessage = "ميعاد المسافة لموطن الخارج يجب أن يكون بين 1 و 90 يوماً إعمالاً للمادة 17 من قانون المرافعات")
+                    }
+                    return
+                }
+                days
+            }
         }
 
         viewModelScope.launch {
@@ -140,6 +177,7 @@ class CalculatorViewModel(
                 val calculationResult = calculateDeadlineUseCase(
                     announcementDate = currentState.announcementDate,
                     rule = rule,
+                    distanceType = distanceType,
                     additionalDistanceDays = distanceDays
                 )
                 _uiState.update {
@@ -171,6 +209,15 @@ class CalculatorViewModel(
 
         viewModelScope.launch {
             try {
+                val ruleSnapshotText = buildString {
+                    append(rule.actionName)
+                    append(" | المدة: ").append(rule.duration).append(" ").append(rule.unit.arabicDisplayName)
+                    append(" | ").append(rule.lawArticle)
+                    if (rule.triggerEventLabel.isNotBlank()) {
+                        append(" | الواقعة: ").append(rule.triggerEventLabel)
+                    }
+                }
+
                 val deadlineToSave = SavedDeadline(
                     caseNumber = currentState.caseNumber.trim(),
                     clientName = currentState.clientName.trim(),
@@ -183,7 +230,9 @@ class CalculatorViewModel(
                     lawArticle = result.lawArticle,
                     calculationExplanation = result.explanation,
                     notes = result.notes,
-                    createdAt = System.currentTimeMillis()
+                    createdAt = System.currentTimeMillis(),
+                    ruleSnapshot = ruleSnapshotText,
+                    distanceType = currentState.distanceType.name
                 )
 
                 saveDeadlineUseCase(deadlineToSave)

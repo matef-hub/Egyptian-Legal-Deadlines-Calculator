@@ -128,6 +128,7 @@ fun CalculatorScreen(
         uiState = uiState,
         onRuleSelected = viewModel::onRuleSelected,
         onAnnouncementDateChanged = viewModel::onAnnouncementDateChanged,
+        onDistanceTypeChanged = viewModel::onDistanceTypeChanged,
         onAdditionalDistanceDaysChanged = viewModel::onAdditionalDistanceDaysChanged,
         onCaseNumberChanged = viewModel::onCaseNumberChanged,
         onClientNameChanged = viewModel::onClientNameChanged,
@@ -145,6 +146,7 @@ fun CalculatorScreenContent(
     uiState: MainUiState,
     onRuleSelected: (LegalRule?) -> Unit,
     onAnnouncementDateChanged: (LocalDate) -> Unit,
+    onDistanceTypeChanged: (com.ateflaw.legaldeadlines.domain.model.DistanceType) -> Unit = {},
     onAdditionalDistanceDaysChanged: (String) -> Unit,
     onCaseNumberChanged: (String) -> Unit,
     onClientNameChanged: (String) -> Unit,
@@ -478,14 +480,8 @@ fun CalculatorScreenContent(
                     // -------------------------------------------------------------
                     // FIELD 2: Trigger Event Date (تاريخ الواقعة المنشئة للميعاد)
                     // -------------------------------------------------------------
-                    val triggerLabel = when {
-                        uiState.selectedRule == null -> "تاريخ الواقعة المنشئة للميعاد"
-                        uiState.selectedRule.actionName.contains("معارضة") -> "تاريخ إعلان الحكم الغيابي"
-                        uiState.selectedRule.actionName.contains("أمر أداء") -> "تاريخ إعلان أمر الأداء"
-                        uiState.selectedRule.actionName.contains("استئناف") || uiState.selectedRule.actionName.contains("نقض") -> "تاريخ صدور الحكم الحضوري أو إعلانه"
-                        uiState.selectedRule.actionName.contains("التماس") -> "تاريخ ثبوت الغش/الورقة أو إعلان الحكم"
-                        else -> "تاريخ الإعلان أو صدور القرار"
-                    }
+                    val triggerLabel = uiState.selectedRule?.triggerEventLabel?.ifBlank { null }
+                        ?: "تاريخ الواقعة المنشئة للميعاد"
 
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
@@ -615,82 +611,182 @@ fun CalculatorScreenContent(
                                     verticalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
                                     Text(
-                                        text = "• المادة 16 مرافعات: يوم لكل 50 كم بحد أقصى 4 أيام للمسافة المحلية.\n• المادة 17 مرافعات: 60 يوماً كحد أقصى لمن يكون موطنه بالخارج.",
+                                        text = "اختر نوع ميعاد المسافة الواجب تطبيقه وفقاً لقانون المرافعات:",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        lineHeight = 16.sp
+                                        fontWeight = FontWeight.Medium
                                     )
 
-                                    // Quick Distance Selection Presets
+                                    // Category Type Selector: NONE vs LOCAL vs ABROAD
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        listOf(0 to "بدون", 1 to "يوم (50 كم)", 2 to "يومان", 4 to "4 أيام (أقصى محلي)", 60 to "موطن بالخارج").forEach { (days, label) ->
-                                            val isSelected = uiState.additionalDistanceDaysInput == days.toString()
+                                        listOf(
+                                            com.ateflaw.legaldeadlines.domain.model.DistanceType.NONE to "بدون مسافة",
+                                            com.ateflaw.legaldeadlines.domain.model.DistanceType.LOCAL to "محلية (م16)",
+                                            com.ateflaw.legaldeadlines.domain.model.DistanceType.ABROAD to "بالخارج (م17)"
+                                        ).forEach { (dType, dLabel) ->
+                                            val isTypeSelected = uiState.distanceType == dType
                                             Surface(
                                                 shape = RoundedCornerShape(8.dp),
-                                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                                                border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                                                color = if (isTypeSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                                                border = BorderStroke(1.dp, if (isTypeSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
                                                 modifier = Modifier
                                                     .weight(1f)
-                                                    .clickable { onAdditionalDistanceDaysChanged(days.toString()) }
+                                                    .clickable {
+                                                        onDistanceTypeChanged(dType)
+                                                        isDistanceError = false
+                                                        distanceErrorText = null
+                                                    }
                                             ) {
                                                 Text(
-                                                    text = label,
+                                                    text = dLabel,
                                                     style = MaterialTheme.typography.labelSmall,
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                                    fontWeight = if (isTypeSelected) FontWeight.Bold else FontWeight.Normal,
+                                                    color = if (isTypeSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
                                                     textAlign = TextAlign.Center,
-                                                    modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp)
+                                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
                                                 )
                                             }
                                         }
                                     }
 
-                                    OutlinedTextField(
-                                        value = uiState.additionalDistanceDaysInput,
-                                        onValueChange = {
-                                            onAdditionalDistanceDaysChanged(it)
-                                            isDistanceError = false
-                                            distanceErrorText = null
-                                        },
-                                        placeholder = { Text("عدد الأيام") },
-                                        suffix = { Text("يوم") },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Default.Straighten,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary
+                                    when (uiState.distanceType) {
+                                        com.ateflaw.legaldeadlines.domain.model.DistanceType.NONE -> {
+                                            Text(
+                                                text = "محل إقامة الخصم في نفس دائرة المحكمة، لا تضاف أيام مسافة إضافية.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.outline,
+                                                fontSize = 11.sp
                                             )
-                                        },
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        isError = isDistanceError,
-                                        supportingText = {
-                                            if (isDistanceError) {
-                                                Text(
-                                                    text = distanceErrorText ?: "أرقام صحيحة فقط",
-                                                    color = MaterialTheme.colorScheme.error,
-                                                    fontWeight = FontWeight.SemiBold
-                                                )
-                                            }
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .focusRequester(distanceFocusRequester),
-                                        shape = RoundedCornerShape(10.dp),
-                                        singleLine = true,
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                                        )
-                                    )
+                                        }
+                                        com.ateflaw.legaldeadlines.domain.model.DistanceType.LOCAL -> {
+                                            Text(
+                                                text = "المادة 16 مرافعات: يوم لكل 50 كم بحد أقصى 4 أيام للمسافة المحلية.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontSize = 11.sp
+                                            )
 
-                                    // Red Reset/Remove Row
+                                            // Presets for local (1 to 4 days)
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                listOf(1 to "يوم (50 كم)", 2 to "يومان", 3 to "3 أيام", 4 to "4 أيام (أقصى)").forEach { (days, label) ->
+                                                    val isSelected = uiState.additionalDistanceDaysInput == days.toString()
+                                                    Surface(
+                                                        shape = RoundedCornerShape(8.dp),
+                                                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                                                        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                                                        modifier = Modifier
+                                                            .weight(1f)
+                                                            .clickable {
+                                                                onAdditionalDistanceDaysChanged(days.toString())
+                                                                isDistanceError = false
+                                                                distanceErrorText = null
+                                                            }
+                                                    ) {
+                                                        Text(
+                                                            text = label,
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                                            textAlign = TextAlign.Center,
+                                                            modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        com.ateflaw.legaldeadlines.domain.model.DistanceType.ABROAD -> {
+                                            Text(
+                                                text = "المادة 17 مرافعات: 60 يوماً كأصل عام لمن موطنه بالخارج، ويجوز حتى 90 يوماً.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontSize = 11.sp
+                                            )
+
+                                            // Presets for abroad
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                listOf(30 to "30 يوماً (مخفض)", 60 to "60 يوماً (متوسط/أحمر)", 90 to "90 يوماً (دول أخرى)").forEach { (days, label) ->
+                                                    val isSelected = uiState.additionalDistanceDaysInput == days.toString()
+                                                    Surface(
+                                                        shape = RoundedCornerShape(8.dp),
+                                                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                                                        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                                                        modifier = Modifier
+                                                            .weight(1f)
+                                                            .clickable {
+                                                                onAdditionalDistanceDaysChanged(days.toString())
+                                                                isDistanceError = false
+                                                                distanceErrorText = null
+                                                            }
+                                                    ) {
+                                                        Text(
+                                                            text = label,
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                                            textAlign = TextAlign.Center,
+                                                            modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (uiState.distanceType != com.ateflaw.legaldeadlines.domain.model.DistanceType.NONE) {
+                                        OutlinedTextField(
+                                            value = uiState.additionalDistanceDaysInput,
+                                            onValueChange = {
+                                                onAdditionalDistanceDaysChanged(it)
+                                                isDistanceError = false
+                                                distanceErrorText = null
+                                            },
+                                            label = { Text("عدد الأيام الفعلي") },
+                                            suffix = { Text("يوم") },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Default.Straighten,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            },
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            isError = isDistanceError,
+                                            supportingText = {
+                                                if (isDistanceError) {
+                                                    Text(
+                                                        text = distanceErrorText ?: "أرقام صحيحة فقط",
+                                                        color = MaterialTheme.colorScheme.error,
+                                                        fontWeight = FontWeight.SemiBold
+                                                    )
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .focusRequester(distanceFocusRequester),
+                                            shape = RoundedCornerShape(10.dp),
+                                            singleLine = true,
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                            )
+                                        )
+                                    }
+
+                                    // Reset / Remove Row
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clickable {
+                                                onDistanceTypeChanged(com.ateflaw.legaldeadlines.domain.model.DistanceType.NONE)
                                                 onAdditionalDistanceDaysChanged("0")
                                                 isAdditionalDistanceExpanded = false
                                             }
@@ -700,13 +796,13 @@ fun CalculatorScreenContent(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Delete,
-                                            contentDescription = "إزالة المسافة الإضافية",
+                                            contentDescription = "إلغاء ميعاد المسافة",
                                             tint = MaterialTheme.colorScheme.error,
                                             modifier = Modifier.size(18.dp)
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
-                                            text = "إزالة المسافة الإضافية",
+                                            text = "إلغاء ميعاد المسافة (العودة للوضع الافتراضي)",
                                             style = MaterialTheme.typography.labelMedium,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.error

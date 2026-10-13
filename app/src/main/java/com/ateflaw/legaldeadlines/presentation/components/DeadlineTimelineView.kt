@@ -178,7 +178,7 @@ fun CountdownBadge(
                 Icons.Default.Alarm
             )
         }
-        daysRemaining in 1..5 -> {
+        daysRemaining in 1L..5L -> {
             Quad(
                 Color(0xFFFFFBEB),
                 "متبقي $daysRemaining أيام (عاجل)",

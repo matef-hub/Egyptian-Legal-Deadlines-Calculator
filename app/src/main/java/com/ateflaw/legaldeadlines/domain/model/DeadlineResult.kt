@@ -19,6 +19,6 @@ data class DeadlineResult(
     val lawArticle: String,
     val notes: String,
     val actionSummary: String = "",
-    val milestones: List<CalculationMilestone> = emptyList()
+    val milestones: List<CalculationMilestone> = emptyList(),
+    val distanceType: DistanceType = DistanceType.NONE
 )
-

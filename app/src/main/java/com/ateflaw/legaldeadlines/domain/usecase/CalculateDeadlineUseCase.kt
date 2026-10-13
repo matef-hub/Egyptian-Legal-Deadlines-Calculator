@@ -2,6 +2,7 @@ package com.ateflaw.legaldeadlines.domain.usecase
 
 import com.ateflaw.legaldeadlines.domain.calculator.LegalDeadlineCalculator
 import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
+import com.ateflaw.legaldeadlines.domain.model.DistanceType
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.repository.HolidayRepository
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +20,7 @@ class CalculateDeadlineUseCase(
     suspend operator fun invoke(
         announcementDate: LocalDate,
         rule: LegalRule,
+        distanceType: DistanceType = DistanceType.NONE,
         additionalDistanceDays: Int = 0
     ): DeadlineResult = withContext(Dispatchers.Default) {
         // Fetch cached holidays once asynchronously to avoid disk I/O and runBlocking inside the loop
@@ -30,11 +32,25 @@ class CalculateDeadlineUseCase(
         calculator.calculate(
             announcementDate = announcementDate,
             rule = rule,
+            distanceType = distanceType,
             additionalDistanceDays = additionalDistanceDays,
             isHolidayProvider = { date ->
                 val name = holidayMap[date]
                 Pair(name != null, name)
             }
         )
+    }
+
+    suspend operator fun invoke(
+        announcementDate: LocalDate,
+        rule: LegalRule,
+        additionalDistanceDays: Int
+    ): DeadlineResult {
+        val distanceType = when {
+            additionalDistanceDays <= 0 -> DistanceType.NONE
+            additionalDistanceDays <= 4 -> DistanceType.LOCAL
+            else -> DistanceType.ABROAD
+        }
+        return invoke(announcementDate, rule, distanceType, additionalDistanceDays)
     }
 }
