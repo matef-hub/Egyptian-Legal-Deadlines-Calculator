@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">حاسبة المواعيد القانونية</string>
     <string name="nav_calculator">الحاسبة</string>
+    <string name="nav_holidays">العطلات</string>
     <string name="nav_saved">المحفوظات</string>
     <string name="nav_toggle_desc">التبديل بين الشاشات</string>
     <string name="nav_legal_deadlines_desc">المواعيد القانونية</string>
@@ -10,6 +11,14 @@
     <string name="official_working_day">يوم عمل رسمي</string>
     <string name="official_holiday">عطلة رسمية</string>
     <string name="database_holidays_count">قاعدة بيانات العطلات الرسمية المعتمدة: %1$d عطلة مسجلة</string>
+
+    <string name="holidays_title">جدول العطلات</string>
+    <string name="no_holidays_found">لا توجد عطلات مسجلة حالياً</string>
+    <string name="holidays_sync_btn">تحديث العطلات</string>
+    <string name="holidays_syncing">جاري التحديث...</string>
+    <string name="holidays_count_summary">العطلات الرسمية المسجلة (%1$d)</string>
+    <string name="holidays_governance_note">وفقاً لقرارات مجلس الوزراء المعمول بها، يتم غالباً ترحيل العطلات الرسمية الواقعة في منتصف الأسبوع (مثل يوم الثلاثاء) إلى يوم الخميس التالي المباشرة لضم العطلات.</string>
+    <string name="holiday_day_shifted">عطلة رسمية (الخميس/مرحّلة)</string>
 
     <string name="form_title">بيانات احتساب الميعاد</string>
     <string name="legal_action_label">الإجراء القانوني</string>

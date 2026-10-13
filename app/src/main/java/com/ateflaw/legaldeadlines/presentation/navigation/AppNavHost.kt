@@ -12,16 +12,19 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.ateflaw.legaldeadlines.presentation.screens.CalculatorScreen
+import com.ateflaw.legaldeadlines.presentation.screens.HolidaysScreen
 import com.ateflaw.legaldeadlines.presentation.screens.LandingScreen
 import com.ateflaw.legaldeadlines.presentation.screens.SavedDeadlinesScreen
 import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListViewModel
+import com.ateflaw.legaldeadlines.presentation.viewmodel.HolidaysViewModel
 
 @Composable
 fun AppNavHost(
     navController: NavHostController,
     mainViewModel: CalculatorViewModel,
     deadlineListViewModel: DeadlineListViewModel,
+    holidaysViewModel: HolidaysViewModel,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -57,6 +60,9 @@ fun AppNavHost(
         }
         composable(Screen.Calculator.route) {
             CalculatorScreen(viewModel = mainViewModel)
+        }
+        composable(Screen.Holidays.route) {
+            HolidaysScreen(viewModel = holidaysViewModel)
         }
         composable(Screen.SavedDeadlines.route) {
             SavedDeadlinesScreen(viewModel = deadlineListViewModel)

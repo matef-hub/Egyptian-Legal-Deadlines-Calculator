@@ -41,6 +41,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -76,10 +77,10 @@ import com.ateflaw.legaldeadlines.presentation.navigation.Screen
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListViewModel
+import com.ateflaw.legaldeadlines.presentation.viewmodel.HolidaysViewModel
 
 class MainActivity : ComponentActivity() {
 
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -105,6 +106,13 @@ class MainActivity : ComponentActivity() {
             DeadlineListViewModel.provideFactory(
                 getSavedDeadlinesUseCase = appContainer.getSavedDeadlinesUseCase,
                 deleteSavedDeadlineUseCase = appContainer.deleteSavedDeadlineUseCase
+            )
+        }
+
+        val holidaysViewModel: HolidaysViewModel by viewModels {
+            HolidaysViewModel.provideFactory(
+                getHolidaysUseCase = appContainer.getHolidaysUseCase,
+                syncHolidaysUseCase = appContainer.syncHolidaysUseCase
             )
         }
 
@@ -140,7 +148,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                BackHandler(enabled = currentRoute == Screen.SavedDeadlines.route) {
+                BackHandler(enabled = currentRoute == Screen.SavedDeadlines.route || currentRoute == Screen.Holidays.route) {
                     navigateTo(Screen.Calculator.route)
                 }
 
@@ -157,10 +165,10 @@ class MainActivity : ComponentActivity() {
                             ModernTopAppBar(
                                 currentRoute = currentRoute,
                                 onToggleScreen = {
-                                    val target = if (currentRoute != Screen.SavedDeadlines.route) {
-                                        Screen.SavedDeadlines.route
-                                    } else {
-                                        Screen.Calculator.route
+                                    val target = when (currentRoute) {
+                                        Screen.Calculator.route -> Screen.Holidays.route
+                                        Screen.Holidays.route -> Screen.SavedDeadlines.route
+                                        else -> Screen.Calculator.route
                                     }
                                     navigateTo(target)
                                 }
@@ -191,6 +199,7 @@ class MainActivity : ComponentActivity() {
                             navController = navController,
                             mainViewModel = calculatorViewModel,
                             deadlineListViewModel = deadlineListViewModel,
+                            holidaysViewModel = holidaysViewModel,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -246,10 +255,10 @@ private fun ModernTopAppBar(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = if (currentRoute == Screen.SavedDeadlines.route) {
-                                stringResource(R.string.nav_saved)
-                            } else {
-                                stringResource(R.string.nav_calculator)
+                            text = when (currentRoute) {
+                                Screen.SavedDeadlines.route -> stringResource(R.string.nav_saved)
+                                Screen.Holidays.route -> stringResource(R.string.nav_holidays)
+                                else -> stringResource(R.string.nav_calculator)
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary,
@@ -296,7 +305,7 @@ private fun FloatingBottomNavigationBar(
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .padding(bottom = 16.dp, top = 8.dp)
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 16.dp)
     ) {
         Surface(
             shape = RoundedCornerShape(32.dp),
@@ -312,7 +321,7 @@ private fun FloatingBottomNavigationBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                    .padding(horizontal = 6.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -326,7 +335,17 @@ private fun FloatingBottomNavigationBar(
                     modifier = Modifier.weight(1f)
                 )
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+
+                FloatingNavItem(
+                    selected = currentRoute == Screen.Holidays.route,
+                    onClick = { onNavigateTo(Screen.Holidays.route) },
+                    icon = Icons.Default.EventAvailable,
+                    label = stringResource(R.string.nav_holidays),
+                    modifier = Modifier.weight(1f)
+                )
+
+                Spacer(modifier = Modifier.width(4.dp))
 
                 FloatingNavItem(
                     selected = currentRoute == Screen.SavedDeadlines.route,
@@ -376,7 +395,7 @@ private fun RowScope.FloatingNavItem(
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 8.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -384,17 +403,17 @@ private fun RowScope.FloatingNavItem(
                 imageVector = icon,
                 contentDescription = label,
                 modifier = Modifier
-                    .size(22.dp)
+                    .size(20.dp)
                     .graphicsLayer {
                         scaleX = iconScale
                         scaleY = iconScale
                     }
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = label,
                 color = contentColor,
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -438,7 +457,13 @@ private fun FloatingNavItemPreview() {
                     selected = true,
                     onClick = {},
                     icon = Icons.Default.Calculate,
-                    label = "حاسبة المواعيد"
+                    label = "الحاسبة"
+                )
+                FloatingNavItem(
+                    selected = false,
+                    onClick = {},
+                    icon = Icons.Default.EventAvailable,
+                    label = "العطلات"
                 )
                 FloatingNavItem(
                     selected = false,
