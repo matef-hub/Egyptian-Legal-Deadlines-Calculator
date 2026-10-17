@@ -67,7 +67,7 @@ data class LegalRuleEntity(
     @ColumnInfo(name = "effective_from", defaultValue = "1968-11-01")
     val effectiveFrom: String = "1968-11-01",
 
-    @ColumnInfo(name = "effective_to")
+    @ColumnInfo(name = "effective_to", defaultValue = "NULL")
     val effectiveTo: String? = null,
 
     @ColumnInfo(name = "last_reviewed_at", defaultValue = "2026-10-13")

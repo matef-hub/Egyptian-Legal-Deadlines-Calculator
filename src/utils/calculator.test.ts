@@ -10,6 +10,7 @@ import {
   VERIFIED_HOLIDAY_YEARS
 } from './calculator';
 import { Holiday, LegalRule } from '../types';
+import { INITIAL_LEGAL_RULES } from '../data/legalRules';
 
 describe('Egyptian Legal Deadline Calculator — Web Unit Tests', () => {
   const sampleHoliday2026: Holiday[] = [
@@ -558,4 +559,54 @@ describe('Egyptian Legal Deadline Calculator — Web Unit Tests', () => {
     assert.throws(() => parseIsoDate('2026/02/15'), /صيغة التاريخ/);
     assert.throws(() => parseIsoDate('not-a-date'), /صيغة التاريخ/);
   });
+
+  // =========================================================================
+  // 14. Dataset Integrity & Legal Metadata Verification
+  // =========================================================================
+  it('verifies dataset integrity: officialSourceUrl is valid URL or empty, reviewStatus rules', () => {
+    assert.ok(INITIAL_LEGAL_RULES.length > 0, 'INITIAL_LEGAL_RULES must not be empty');
+
+    for (const rule of INITIAL_LEGAL_RULES) {
+      // Must not contain text descriptions in officialSourceUrl
+      if (rule.officialSourceUrl) {
+        assert.match(
+          rule.officialSourceUrl,
+          /^https?:\/\//,
+          `Rule ${rule.id} (${rule.actionName}) has invalid officialSourceUrl: "${rule.officialSourceUrl}"`
+        );
+      }
+      // Cannot be VERIFIED_ACCURATE without an actual valid URL
+      if (rule.reviewStatus === 'VERIFIED_ACCURATE') {
+        assert.ok(
+          rule.officialSourceUrl && rule.officialSourceUrl.startsWith('http'),
+          `Rule ${rule.id} marked VERIFIED_ACCURATE but lacks direct official URL`
+        );
+      }
+      // Must have valid effectiveFrom
+      assert.match(
+        rule.effectiveFrom || '',
+        /^\d{4}-\d{2}-\d{2}$/,
+        `Rule ${rule.id} lacks valid effectiveFrom`
+      );
+      // If effectiveTo is present, must be >= effectiveFrom
+      if (rule.effectiveTo) {
+        assert.match(
+          rule.effectiveTo,
+          /^\d{4}-\d{2}-\d{2}$/,
+          `Rule ${rule.id} has invalid effectiveTo format`
+        );
+        assert.ok(
+          rule.effectiveTo >= (rule.effectiveFrom || ''),
+          `Rule ${rule.id} effectiveTo is earlier than effectiveFrom`
+        );
+      }
+      // Mandatory metadata
+      assert.ok(rule.lawName && rule.lawName.trim().length > 0, `Rule ${rule.id} missing lawName`);
+      assert.ok(rule.triggerEventType, `Rule ${rule.id} missing triggerEventType`);
+      assert.ok(rule.triggerEventLabel, `Rule ${rule.id} missing triggerEventLabel`);
+      assert.ok(rule.courtType, `Rule ${rule.id} missing courtType`);
+      assert.ok(rule.category, `Rule ${rule.id} missing category`);
+    }
+  });
 });
+

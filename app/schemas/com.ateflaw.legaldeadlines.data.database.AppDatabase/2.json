@@ -1,0 +1,71 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "a1b2c3d4e5f6789012345678abcdef01",
+    "entities": [
+      {
+        "tableName": "legal_rules",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `action_name` TEXT NOT NULL, `duration` INTEGER NOT NULL, `unit` TEXT NOT NULL, `distance_days` INTEGER NOT NULL, `start_rule` TEXT NOT NULL, `law_article` TEXT NOT NULL, `notes` TEXT NOT NULL, `summary` TEXT NOT NULL)",
+        "fields": [
+          { "fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "actionName", "columnName": "action_name", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "duration", "columnName": "duration", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "unit", "columnName": "unit", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "distanceDays", "columnName": "distance_days", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "startRule", "columnName": "start_rule", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "lawArticle", "columnName": "law_article", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "notes", "columnName": "notes", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "summary", "columnName": "summary", "affinity": "TEXT", "notNull": true }
+        ],
+        "primaryKey": { "autoGenerate": true, "columnNames": ["id"] },
+        "indices": []
+      },
+      {
+        "tableName": "holidays",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `holiday_date` TEXT NOT NULL, `name` TEXT NOT NULL)",
+        "fields": [
+          { "fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "holidayDate", "columnName": "holiday_date", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "name", "columnName": "name", "affinity": "TEXT", "notNull": true }
+        ],
+        "primaryKey": { "autoGenerate": true, "columnNames": ["id"] },
+        "indices": [
+          {
+            "name": "index_holidays_holiday_date",
+            "unique": true,
+            "columnNames": ["holiday_date"],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_holidays_holiday_date` ON `${TABLE_NAME}` (`holiday_date`)"
+          }
+        ]
+      },
+      {
+        "tableName": "saved_deadlines",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `case_number` TEXT NOT NULL, `client_name` TEXT NOT NULL, `action_name` TEXT NOT NULL, `announcement_date` TEXT NOT NULL, `duration` INTEGER NOT NULL, `unit` TEXT NOT NULL, `distance_days` INTEGER NOT NULL, `final_deadline` TEXT NOT NULL, `law_article` TEXT NOT NULL, `calculation_explanation` TEXT NOT NULL, `notes` TEXT NOT NULL, `created_at` INTEGER NOT NULL)",
+        "fields": [
+          { "fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "caseNumber", "columnName": "case_number", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "clientName", "columnName": "client_name", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "actionName", "columnName": "action_name", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "announcementDate", "columnName": "announcement_date", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "duration", "columnName": "duration", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "unit", "columnName": "unit", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "distanceDays", "columnName": "distance_days", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "finalDeadline", "columnName": "final_deadline", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "lawArticle", "columnName": "law_article", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "calculationExplanation", "columnName": "calculation_explanation", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "notes", "columnName": "notes", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "createdAt", "columnName": "created_at", "affinity": "INTEGER", "notNull": true }
+        ],
+        "primaryKey": { "autoGenerate": true, "columnNames": ["id"] },
+        "indices": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a1b2c3d4e5f6789012345678abcdef01')"
+    ]
+  }
+}

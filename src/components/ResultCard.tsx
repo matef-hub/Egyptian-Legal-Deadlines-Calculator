@@ -142,15 +142,25 @@ ${result.explanation}
         {/* Card Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
+            {selectedRule.reviewStatus === 'VERIFIED_ACCURATE' ? (
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+            )}
             <div>
               <h3 className="text-base sm:text-lg font-bold text-slate-900">
-                نتيجة الاحتساب الإجرائي النهائي
+                {selectedRule.reviewStatus === 'VERIFIED_ACCURATE'
+                  ? 'نتيجة الاحتساب الإجرائي النهائي الموثق'
+                  : 'نتيجة الاحتساب الاسترشادي (قيد التدقيق)'}
               </h3>
               <p className="text-xs text-slate-500">
-                ميعاد قضائي محصن قانوناً وفقاً لمواد قانون المرافعات المصري
+                {selectedRule.reviewStatus === 'VERIFIED_ACCURATE'
+                  ? 'ميعاد قضائي محصن قانوناً وفقاً لمواد قانون المرافعات المصري'
+                  : 'قاعدة إجرائية قيد التدقيق التشريعي — يُرجى مراجعة نص القانون مباشرة'}
               </p>
             </div>
           </div>
@@ -175,6 +185,19 @@ ${result.explanation}
             )}
           </div>
         </div>
+
+        {/* Unreviewed Rule Alert */}
+        {selectedRule.reviewStatus === 'NEEDS_REVIEW' && (
+          <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold block">ملاحظة تدقيق هامة (قاعدة قيد التحقق):</span>
+              <p className="text-[11px] text-amber-800 leading-relaxed mt-0.5">
+                هذه النتيجة مستخرجة بناءً على بيانات تشريعية أولية قيد المراجعة ولم ترتبط برابط رسمي مباشر منشور بالجريدة الرسمية. يجب على المحامي الرجوع إلى نص القانون الأصلي المعتمد.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Hero Final Date Box */}
         <div className="bg-gradient-to-br from-[#0F2027] via-[#1B3542] to-[#203A43] text-white p-6 sm:p-8 rounded-2xl text-center space-y-3 shadow-xl relative overflow-hidden">

@@ -59,6 +59,8 @@ abstract class AppDatabase : RoomDatabase() {
          */
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
+                // Safeguard against duplicate dates in existing user databases before creating the unique index
+                db.execSQL("DELETE FROM holidays WHERE id NOT IN (SELECT MIN(id) FROM holidays GROUP BY holiday_date)")
                 db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_holidays_holiday_date ON holidays (holiday_date)")
             }
         }
@@ -189,7 +191,9 @@ abstract class AppDatabase : RoomDatabase() {
                                             LegalRuleSeedData.getInitialOfficialHolidays().map { HolidayEntity.fromDomain(it) }
                                         )
                                     }
-                                } catch (_: Exception) {}
+                                } catch (e: Exception) {
+                                    android.util.Log.e("AppDatabase", "Database seeding failed", e)
+                                }
                             }
                         }
                     })

@@ -32,9 +32,9 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
     article: 'المادة 227',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: 'https://lawhub.info/eg/?p=11332',
     effectiveFrom: '1968-11-01',
-    lastReviewedAt: '2026-10-13',
+    lastReviewedAt: '2026-10-17',
     reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
@@ -54,9 +54,9 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
     article: 'المادة 227 فقرة 2',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: 'https://lawhub.info/eg/?p=11332',
     effectiveFrom: '1968-11-01',
-    lastReviewedAt: '2026-10-13',
+    lastReviewedAt: '2026-10-17',
     reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
@@ -76,9 +76,9 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
     article: 'المادة 252',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: 'https://lawhub.info/eg/?p=11332',
     effectiveFrom: '1968-11-01',
-    lastReviewedAt: '2026-10-13',
+    lastReviewedAt: '2026-10-17',
     reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
@@ -89,7 +89,7 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     distanceDays: 0,
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 34 من القانون رقم 57 لسنة 1959 بشأن حالات وإجراءات الطعن أمام محكمة النقض',
-    notes: 'يحصل الطعن بالتقرير به في قلم كتاب المحكمة خلال ستين يوماً من تاريخ الحكم الحضوري مع إيداع الأسباب في ذات الميعاد.',
+    notes: 'يحصل الطعن بالتقرير به في قلم كتاب المحكمة خلال ستين يوماً من تاريخ الحكم الحضوري مع إيداع الأسباب في ذات الميعاد. يتطلب تدقيق السند في الجريدة الرسمية.',
     category: 'طرق الطعن الجنائية',
     triggerEventType: 'CRIMINAL_JUDGMENT',
     triggerEventLabel: 'تاريخ النطق بالحكم الجنائي الحضوري أو إعلانه',
@@ -98,10 +98,10 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'القانون رقم 57 لسنة 1959 بشأن حالات وإجراءات الطعن أمام محكمة النقض',
     article: 'المادة 34',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: '',
     effectiveFrom: '1959-03-21',
-    lastReviewedAt: '2026-10-13',
-    reviewStatus: 'VERIFIED_ACCURATE'
+    lastReviewedAt: '2026-10-17',
+    reviewStatus: 'NEEDS_REVIEW'
   },
   {
     id: 5,
@@ -111,7 +111,7 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     distanceDays: 0,
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 398 من قانون الإجراءات الجنائية رقم 150 لسنة 1950',
-    notes: 'تقبل المعارضة في الأحكام الغيابية الصادرة في الجنح والمخالفات خلال العشرة أيام التالية لإعلان الحكم الغيابي للمحكوم عليه.',
+    notes: 'تقبل المعارضة في الأحكام الغيابية الصادرة في الجنح والمخالفات خلال العشرة أيام التالية لإعلان الحكم الغيابي للمحكوم عليه. يسري حتى 2027-09-30.',
     category: 'طرق الطعن الجنائية',
     triggerEventType: 'IN_ABSENTIA_ANNOUNCEMENT',
     triggerEventLabel: 'تاريخ إعلان الحكم الغيابي للمحكوم عليه',
@@ -120,11 +120,11 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون الإجراءات الجنائية رقم 150 لسنة 1950',
     article: 'المادة 398',
-    officialSourceUrl: 'الوقائع المصرية',
+    officialSourceUrl: '',
     effectiveFrom: '1951-10-15',
     effectiveTo: '2027-09-30',
     lastReviewedAt: '2026-10-17',
-    reviewStatus: 'VERIFIED_ACCURATE'
+    reviewStatus: 'NEEDS_REVIEW'
   },
   {
     id: 6,
@@ -143,11 +143,11 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون الإجراءات الجنائية رقم 150 لسنة 1950',
     article: 'المادة 406',
-    officialSourceUrl: 'الوقائع المصرية',
+    officialSourceUrl: '',
     effectiveFrom: '1951-10-15',
     effectiveTo: '2027-09-30',
     lastReviewedAt: '2026-10-17',
-    reviewStatus: 'VERIFIED_ACCURATE'
+    reviewStatus: 'NEEDS_REVIEW'
   },
   {
     id: 7,
@@ -166,9 +166,9 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
     article: 'المادة 206',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: 'https://lawhub.info/eg/?p=11332',
     effectiveFrom: '1968-11-01',
-    lastReviewedAt: '2026-10-13',
+    lastReviewedAt: '2026-10-17',
     reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
@@ -188,9 +188,9 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
     article: 'المادتان 206 و227',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: 'https://lawhub.info/eg/?p=11332',
     effectiveFrom: '1968-11-01',
-    lastReviewedAt: '2026-10-13',
+    lastReviewedAt: '2026-10-17',
     reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
@@ -210,9 +210,9 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
     article: 'المادة 242',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: 'https://lawhub.info/eg/?p=11332',
     effectiveFrom: '1968-11-01',
-    lastReviewedAt: '2026-10-13',
+    lastReviewedAt: '2026-10-17',
     reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
@@ -232,9 +232,9 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
     article: 'المادة 66',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: 'https://lawhub.info/eg/?p=11332',
     effectiveFrom: '1968-11-01',
-    lastReviewedAt: '2026-10-13',
+    lastReviewedAt: '2026-10-17',
     reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
@@ -254,9 +254,9 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
     article: 'المادة 66',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: 'https://lawhub.info/eg/?p=11332',
     effectiveFrom: '1968-11-01',
-    lastReviewedAt: '2026-10-13',
+    lastReviewedAt: '2026-10-17',
     reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
@@ -276,10 +276,10 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون المرافعات المدنية والتجارية المعدل بالقانون 18 لسنة 1999',
     article: 'المادة 134',
-    officialSourceUrl: 'الجريدة الرسمية - العدد 19 مكرر في 1999/05/17',
+    officialSourceUrl: '',
     effectiveFrom: '1999-05-18',
-    lastReviewedAt: '2026-10-13',
-    reviewStatus: 'VERIFIED_ACCURATE'
+    lastReviewedAt: '2026-10-17',
+    reviewStatus: 'NEEDS_REVIEW'
   },
   {
     id: 13,
@@ -298,9 +298,9 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
     article: 'المادة 140',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: 'https://lawhub.info/eg/?p=11332',
     effectiveFrom: '1968-11-01',
-    lastReviewedAt: '2026-10-13',
+    lastReviewedAt: '2026-10-17',
     reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
@@ -320,9 +320,9 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
     article: 'المادة 82',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: 'https://lawhub.info/eg/?p=11332',
     effectiveFrom: '1968-11-01',
-    lastReviewedAt: '2026-10-13',
+    lastReviewedAt: '2026-10-17',
     reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
@@ -342,9 +342,9 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
     article: 'المادة 99',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: 'https://lawhub.info/eg/?p=11332',
     effectiveFrom: '1968-11-01',
-    lastReviewedAt: '2026-10-13',
+    lastReviewedAt: '2026-10-17',
     reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
@@ -364,9 +364,9 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون المرافعات المدنية والتجارية رقم 13 لسنة 1968',
     article: 'المادة 157',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: 'https://lawhub.info/eg/?p=11332',
     effectiveFrom: '1968-11-01',
-    lastReviewedAt: '2026-10-13',
+    lastReviewedAt: '2026-10-17',
     reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
@@ -377,7 +377,7 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     distanceDays: 0,
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 11 مكرر ثانياً من القانون رقم 25 لسنة 1929 المعدل بالقانون 100 لسنة 1985',
-    notes: 'للزوجة حق الاعتراض على إنذار الطاعة أمام محكمة الأسرة خلال ثلاثين يوماً من تاريخ إعلانها بالإنذار بصحيفة تبين أوجه اعتراضها.',
+    notes: 'للزوجة حق الاعتراض على إنذار الطاعة أمام محكمة الأسرة خلال ثلاثين يوماً من تاريخ إعلانها بالإنذار بصحيفة تبين أوجه اعتراضها. يتطلب التحقق من النشر الرسمي.',
     category: 'أحوال شخصية',
     triggerEventType: 'OBEDIENCE_WARNING_SERVICE',
     triggerEventLabel: 'تاريخ إعلان الزوجة بإنذار الطاعة على يد محضر',
@@ -386,10 +386,10 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'القانون رقم 25 لسنة 1929 المعدل بالقانون 100 لسنة 1985',
     article: 'المادة 11 مكرر ثانياً',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: '',
     effectiveFrom: '1985-07-04',
-    lastReviewedAt: '2026-10-13',
-    reviewStatus: 'VERIFIED_ACCURATE'
+    lastReviewedAt: '2026-10-17',
+    reviewStatus: 'NEEDS_REVIEW'
   },
   {
     id: 18,
@@ -399,7 +399,7 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     distanceDays: 0,
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 44 من قانون مجلس الدولة رقم 47 لسنة 1972',
-    notes: 'ميعاد الطعن أمام المحكمة الإدارية العليا ستون يوماً من تاريخ صدور الحكم المطعون فيه.',
+    notes: 'ميعاد الطعن أمام المحكمة الإدارية العليا ستون يوماً من تاريخ صدور الحكم المطعون فيه. يتطلب مراجعة النشر الرسمي.',
     category: 'قضاء إداري ومجلس الدولة',
     triggerEventType: 'ADMIN_JUDGMENT',
     triggerEventLabel: 'تاريخ صدور حكم محكمة القضاء الإداري',
@@ -408,10 +408,10 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون مجلس الدولة رقم 47 لسنة 1972',
     article: 'المادة 44',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: '',
     effectiveFrom: '1972-10-05',
-    lastReviewedAt: '2026-10-13',
-    reviewStatus: 'VERIFIED_ACCURATE'
+    lastReviewedAt: '2026-10-17',
+    reviewStatus: 'NEEDS_REVIEW'
   },
   {
     id: 19,
@@ -421,7 +421,7 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     distanceDays: 0,
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 24 من قانون مجلس الدولة رقم 47 لسنة 1972',
-    notes: 'ميعاد رفع دعوى الإلغاء ستون يوماً من تاريخ نشر القرار الإداري في الجريدة أو إعلانه للذوي الشأن أو العلم اليقيني به.',
+    notes: 'ميعاد رفع دعوى الإلغاء ستون يوماً من تاريخ نشر القرار الإداري في الجريدة أو إعلانه للذوي الشأن أو العلم اليقيني به. يتطلب مراجعة النشر الرسمي.',
     category: 'قضاء إداري ومجلس الدولة',
     triggerEventType: 'ADMIN_DECISION_PUBLICATION',
     triggerEventLabel: 'تاريخ نشر القرار الإداري أو إعلانه أو العلم اليقيني به',
@@ -430,10 +430,10 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون مجلس الدولة رقم 47 لسنة 1972',
     article: 'المادة 24',
-    officialSourceUrl: 'الجريدة الرسمية',
+    officialSourceUrl: '',
     effectiveFrom: '1972-10-05',
-    lastReviewedAt: '2026-10-13',
-    reviewStatus: 'VERIFIED_ACCURATE'
+    lastReviewedAt: '2026-10-17',
+    reviewStatus: 'NEEDS_REVIEW'
   },
   {
     id: 20,
@@ -443,7 +443,7 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     distanceDays: 0,
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 17 من القانون رقم 90 لسنة 1944 بشأن الرسوم القضائية في المواد المدنية',
-    notes: 'يجوز للمدين بالرسوم المعارضة في مقدارها بتقرير في قلم الكتاب خلال ثمانية أيام من تاريخ إعلانه بأمر التقدير.',
+    notes: 'يجوز للمدين بالرسوم المعارضة في مقدارها بتقرير في قلم الكتاب خلال ثمانية أيام من تاريخ إعلانه بأمر التقدير. يتطلب مراجعة النشر الرسمي.',
     category: 'رسوم قضائية',
     triggerEventType: 'FEES_ORDER_SERVICE',
     triggerEventLabel: 'تاريخ إعلان أمر تقدير الرسوم القضائية للمدين',
@@ -452,10 +452,10 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'القانون رقم 90 لسنة 1944 بشأن الرسوم القضائية في المواد المدنية',
     article: 'المادة 17',
-    officialSourceUrl: 'الوقائع المصرية',
+    officialSourceUrl: '',
     effectiveFrom: '1944-09-01',
-    lastReviewedAt: '2026-10-13',
-    reviewStatus: 'VERIFIED_ACCURATE'
+    lastReviewedAt: '2026-10-17',
+    reviewStatus: 'NEEDS_REVIEW'
   },
   {
     id: 37,
@@ -465,7 +465,7 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     distanceDays: 0,
     startRule: 'NEXT_DAY',
     lawArticle: 'قانون الإجراءات الجنائية رقم 174 لسنة 2025 المعدل بالقانون رقم 160 لسنة 2026',
-    notes: 'يبدأ سريان هذا الإجراء اعتباراً من 1 أكتوبر 2027 بموجب التعديل الصادر بالقانون رقم 160 لسنة 2026 لتأجيل موعد النفاذ.',
+    notes: 'يبدأ سريان هذا الإجراء اعتباراً من 1 أكتوبر 2027 بموجب التعديل الصادر بالقانون رقم 160 لسنة 2026 لتأجيل موعد النفاذ. قيد المراجعة حتى النشر الرسمي الكامل.',
     category: 'طرق الطعن الجنائية',
     triggerEventType: 'CRIMINAL_JUDGMENT',
     triggerEventLabel: 'تاريخ النطق بالحكم الجنائي الحضوري أو إعلانه',
@@ -474,11 +474,11 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     extensionPolicy: 'ARTICLE_18_COURTS',
     lawName: 'قانون الإجراءات الجنائية رقم 174 لسنة 2025 المعدل بالقانون 160 لسنة 2026',
     article: 'المادة 410',
-    officialSourceUrl: 'https://moj.gov.eg/backend/api/documents/download/20F3150C-29F1-487E-A0F0-FCCE10CB207B',
+    officialSourceUrl: '',
     effectiveFrom: '2027-10-01',
     effectiveTo: null,
     lastReviewedAt: '2026-10-17',
-    reviewStatus: 'VERIFIED_ACCURATE'
+    reviewStatus: 'NEEDS_REVIEW'
   }
 ];
 

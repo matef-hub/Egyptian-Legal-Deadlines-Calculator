@@ -2,28 +2,32 @@ name: CI Verification
 
 on:
   push:
-    branches: [main, develop, 'feature/**']
+    branches: [main, develop, 'feature/**', 'fix/**']
   pull_request:
-    branches: [main]
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  web-tests-and-build:
-    name: Web Calculator Lint, Test & Build
+  web-ci:
+    name: Web Calculator (Lint, Test, Build)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
-      - name: Install dependencies (clean reproducible install)
+      - name: Clean reproducible dependency installation
         run: npm ci
 
-      - name: Run TypeScript linting
+      - name: Run TypeScript typecheck / lint
         run: npm run lint
 
       - name: Run Web Procedural Unit Tests
@@ -32,8 +36,8 @@ jobs:
       - name: Run Web Production Build
         run: npm run build
 
-  android-verification:
-    name: Android Source & Build Verification
+  android-ci:
+    name: Android App (Lint, Test, Assemble)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -45,22 +49,34 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Verify No Tests In Production Source Sets
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Ensure Gradle Wrapper Executable
+        run: chmod +x gradlew
+
+      - name: Verify No Test Files In Production Source Sets
         run: |
           MISPLACED=$(find app/src/main -name "*Test*.kt" | wc -l)
           if [ "$MISPLACED" -gt 0 ]; then
-            echo "Error: Found test files in app/src/main!"
+            echo "::error::Found test files in production source set app/src/main:"
             find app/src/main -name "*Test*.kt"
             exit 1
           fi
-          echo "Production source sets verified clean of test files."
+          echo "Production source set clean of test files."
 
       - name: Verify JUnit Not In Production Source Sets
         run: |
           JUNIT_IMPORTS=$(grep -rn "org.junit" app/src/main/ || true)
           if [ -n "$JUNIT_IMPORTS" ]; then
-            echo "Error: JUnit imported in production source set:"
+            echo "::error::JUnit imported in production source set:"
             echo "$JUNIT_IMPORTS"
             exit 1
           fi
           echo "No JUnit imports found in production source set."
+
+      - name: Run Android Unit Tests, Assemble Debug APK & Lint
+        run: ./gradlew testDebugUnitTest assembleDebug lint --stacktrace

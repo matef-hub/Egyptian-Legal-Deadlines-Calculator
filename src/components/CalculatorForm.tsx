@@ -386,6 +386,18 @@ export const CalculatorForm: React.FC<CalculatorFormProps> = ({
           </div>
         </div>
 
+        {selectedRule.reviewStatus === 'NEEDS_REVIEW' && (
+          <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 flex items-start gap-2.5 shadow-2xs">
+            <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold block">تنبيه تدقيق تشريعي (قيد المراجعة - NEEDS_REVIEW):</span>
+              <p className="text-[11px] text-amber-800 leading-relaxed mt-0.5">
+                هذه القاعدة الإجرائية قيد المراجعة ولم تُربط برابط مباشر منشور بالجريدة الرسمية. يتم الاحتساب في وضع التجربة والمراجعة الاسترشادية ولا يُعتمد كنتيجة قطعية.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Calculate Action Button */}
         <div className="pt-2">
           <button
