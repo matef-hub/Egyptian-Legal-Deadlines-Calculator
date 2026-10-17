@@ -21,9 +21,9 @@ class CalculateDeadlineUseCase(
         announcementDate: LocalDate,
         rule: LegalRule,
         distanceType: DistanceType = DistanceType.NONE,
-        additionalDistanceDays: Int = 0
+        additionalDistanceDays: Int = 0,
+        judicialOrderDetails: String? = null
     ): DeadlineResult = withContext(Dispatchers.Default) {
-        // Fetch cached holidays once asynchronously to avoid disk I/O and runBlocking inside the loop
         val holidaysList = withContext(Dispatchers.IO) {
             holidayRepository.getAllHolidaysList()
         }
@@ -34,6 +34,7 @@ class CalculateDeadlineUseCase(
             rule = rule,
             distanceType = distanceType,
             additionalDistanceDays = additionalDistanceDays,
+            judicialOrderDetails = judicialOrderDetails,
             isHolidayProvider = { date ->
                 val name = holidayMap[date]
                 Pair(name != null, name)
@@ -49,8 +50,15 @@ class CalculateDeadlineUseCase(
         val distanceType = when {
             additionalDistanceDays <= 0 -> DistanceType.NONE
             additionalDistanceDays <= 4 -> DistanceType.LOCAL
-            else -> DistanceType.ABROAD
+            additionalDistanceDays == 15 -> DistanceType.BORDER_AREA
+            additionalDistanceDays == 60 -> DistanceType.ABROAD
+            else -> DistanceType.LOCAL
         }
-        return invoke(announcementDate, rule, distanceType, additionalDistanceDays)
+        return invoke(
+            announcementDate = announcementDate,
+            rule = rule,
+            distanceType = distanceType,
+            additionalDistanceDays = additionalDistanceDays
+        )
     }
 }

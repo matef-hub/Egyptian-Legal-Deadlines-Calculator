@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DeadlineResult, Holiday, LegalRule, SavedDeadline } from './types';
+import { DeadlineResult, DistanceType, Holiday, LegalRule, SavedDeadline } from './types';
 import { INITIAL_LEGAL_RULES, OFFICIAL_EGYPTIAN_HOLIDAYS } from './data/legalRules';
 import { calculateLegalDeadline, toIsoDate } from './utils/calculator';
 import { Header } from './components/Header';
@@ -20,7 +20,10 @@ export default function App() {
   // Form Inputs
   const [selectedRuleId, setSelectedRuleId] = useState<number>(INITIAL_LEGAL_RULES[0].id);
   const [announcementDate, setAnnouncementDate] = useState<string>(toIsoDate(new Date()));
+  const [distanceType, setDistanceType] = useState<DistanceType>('NONE');
   const [additionalDistanceDays, setAdditionalDistanceDays] = useState<number>(0);
+  const [judicialOrderDetails, setJudicialOrderDetails] = useState<string>('');
+  const [calculationError, setCalculationError] = useState<string | null>(null);
   const [caseNumber, setCaseNumber] = useState<string>('');
   const [clientName, setClientName] = useState<string>('');
 
@@ -52,19 +55,27 @@ export default function App() {
   const selectedRule = rules.find((r) => r.id === selectedRuleId) || rules[0];
 
   const handleCalculate = () => {
-    const calcResult = calculateLegalDeadline(
-      announcementDate,
-      selectedRule,
-      additionalDistanceDays,
-      holidays
-    );
-    setResult(calcResult);
-    setSaveSuccessNotice(false);
+    try {
+      const calcResult = calculateLegalDeadline({
+        announcementDate,
+        rule: selectedRule,
+        distanceType,
+        additionalDistanceDays,
+        holidays,
+        judicialOrderDetails: distanceType === 'ABROAD_JUDICIAL_REDUCTION' ? judicialOrderDetails : undefined
+      });
+      setResult(calcResult);
+      setCalculationError(null);
+      setSaveSuccessNotice(false);
 
-    // Smooth scroll down to result card on mobile
-    setTimeout(() => {
-      window.scrollTo({ top: 350, behavior: 'smooth' });
-    }, 100);
+      // Smooth scroll down to result card on mobile
+      setTimeout(() => {
+        window.scrollTo({ top: 350, behavior: 'smooth' });
+      }, 100);
+    } catch (err: any) {
+      setCalculationError(err?.message || 'حدث خطأ أثناء احتساب الميعاد');
+      setResult(null);
+    }
   };
 
   const handleSave = () => {
@@ -83,7 +94,10 @@ export default function App() {
       calculationExplanation: result.explanation,
       notes: result.notes,
       createdAt: Date.now(),
-      proactiveReminderDays: proactiveReminderDays > 0 ? proactiveReminderDays : undefined
+      proactiveReminderDays: proactiveReminderDays > 0 ? proactiveReminderDays : undefined,
+      distanceType,
+      judicialOrderDetails: distanceType === 'ABROAD_JUDICIAL_REDUCTION' ? judicialOrderDetails : undefined,
+      ruleSnapshot: `${selectedRule.actionName} | ${selectedRule.duration} ${selectedRule.unit} | ${selectedRule.lawArticle}`
     };
 
     setSavedDeadlines((prev) => [newDeadline, ...prev]);
@@ -124,16 +138,25 @@ export default function App() {
               setSelectedRuleId={(id) => {
                 setSelectedRuleId(id);
                 setResult(null);
+                setCalculationError(null);
                 setSaveSuccessNotice(false);
               }}
               announcementDate={announcementDate}
-              setAnnouncementDate={setAnnouncementDate}
+              setAnnouncementDate={(d) => {
+                setAnnouncementDate(d);
+                setCalculationError(null);
+              }}
+              distanceType={distanceType}
+              setDistanceType={setDistanceType}
               additionalDistanceDays={additionalDistanceDays}
               setAdditionalDistanceDays={setAdditionalDistanceDays}
+              judicialOrderDetails={judicialOrderDetails}
+              setJudicialOrderDetails={setJudicialOrderDetails}
               caseNumber={caseNumber}
               setCaseNumber={setCaseNumber}
               clientName={clientName}
               setClientName={setClientName}
+              calculationError={calculationError}
               onCalculate={handleCalculate}
             />
 

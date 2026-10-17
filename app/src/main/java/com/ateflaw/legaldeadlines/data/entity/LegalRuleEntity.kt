@@ -73,8 +73,8 @@ data class LegalRuleEntity(
     @ColumnInfo(name = "last_reviewed_at", defaultValue = "2026-10-13")
     val lastReviewedAt: String = "2026-10-13",
 
-    @ColumnInfo(name = "review_status", defaultValue = "VERIFIED_ACCURATE")
-    val reviewStatus: String = "VERIFIED_ACCURATE"
+    @ColumnInfo(name = "review_status", defaultValue = "NEEDS_REVIEW")
+    val reviewStatus: String = "NEEDS_REVIEW"
 ) {
     fun toDomain(): LegalRule = LegalRule(
         id = id,

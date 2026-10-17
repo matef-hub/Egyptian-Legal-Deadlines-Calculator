@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
         SavedDeadlineEntity::class
     ],
     version = 4,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
 
@@ -36,43 +36,122 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        /**
+         * Checks whether a column exists in a given table.
+         */
+        fun columnExists(db: SupportSQLiteDatabase, tableName: String, columnName: String): Boolean {
+            db.query("PRAGMA table_info(`$tableName`)").use { cursor ->
+                val nameIndex = cursor.getColumnIndex("name")
+                if (nameIndex != -1) {
+                    while (cursor.moveToNext()) {
+                        if (cursor.getString(nameIndex).equals(columnName, ignoreCase = true)) {
+                            return true
+                        }
+                    }
+                }
+            }
+            return false
+        }
+
+        /**
+         * Migration 1 -> 2:
+         * Ensure unique index on holidays.holiday_date exists to prevent duplicate dates.
+         */
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Version 1 to 2 schema migration
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_holidays_holiday_date ON holidays (holiday_date)")
             }
         }
 
+        /**
+         * Migration 2 -> 3:
+         * Add proactive_reminder_days column to saved_deadlines.
+         */
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Add proactive_reminder_days column without wiping existing client deadline data
-                try {
+                if (!columnExists(db, "saved_deadlines", "proactive_reminder_days")) {
                     db.execSQL("ALTER TABLE saved_deadlines ADD COLUMN proactive_reminder_days INTEGER DEFAULT NULL")
-                } catch (_: Exception) {
-                    // Column might already exist
                 }
             }
         }
 
+        /**
+         * Migration 3 -> 4:
+         * Add full legal rule metadata columns and saved deadline audit trail fields.
+         * Existing unreviewed records are labeled 'NEEDS_REVIEW' to maintain legal integrity.
+         */
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                try {
+                // Add columns to legal_rules atomically
+                if (!columnExists(db, "legal_rules", "trigger_event_type")) {
                     db.execSQL("ALTER TABLE legal_rules ADD COLUMN trigger_event_type TEXT NOT NULL DEFAULT 'ANNOUNCEMENT'")
+                }
+                if (!columnExists(db, "legal_rules", "trigger_event_label")) {
                     db.execSQL("ALTER TABLE legal_rules ADD COLUMN trigger_event_label TEXT NOT NULL DEFAULT 'تاريخ الإعلان أو صدور الحكم'")
+                }
+                if (!columnExists(db, "legal_rules", "court_type")) {
                     db.execSQL("ALTER TABLE legal_rules ADD COLUMN court_type TEXT NOT NULL DEFAULT 'مدني وتجاري'")
+                }
+                if (!columnExists(db, "legal_rules", "category")) {
                     db.execSQL("ALTER TABLE legal_rules ADD COLUMN category TEXT NOT NULL DEFAULT 'طرق الطعن'")
+                }
+                if (!columnExists(db, "legal_rules", "distance_policy")) {
                     db.execSQL("ALTER TABLE legal_rules ADD COLUMN distance_policy TEXT NOT NULL DEFAULT 'APPLICABLE'")
+                }
+                if (!columnExists(db, "legal_rules", "extension_policy")) {
                     db.execSQL("ALTER TABLE legal_rules ADD COLUMN extension_policy TEXT NOT NULL DEFAULT 'ARTICLE_18_COURTS'")
+                }
+                if (!columnExists(db, "legal_rules", "law_name")) {
                     db.execSQL("ALTER TABLE legal_rules ADD COLUMN law_name TEXT NOT NULL DEFAULT 'قانون المرافعات المدنية والتجارية'")
+                }
+                if (!columnExists(db, "legal_rules", "article")) {
                     db.execSQL("ALTER TABLE legal_rules ADD COLUMN article TEXT NOT NULL DEFAULT ''")
+                }
+                if (!columnExists(db, "legal_rules", "official_source_url")) {
                     db.execSQL("ALTER TABLE legal_rules ADD COLUMN official_source_url TEXT NOT NULL DEFAULT ''")
+                }
+                if (!columnExists(db, "legal_rules", "effective_from")) {
                     db.execSQL("ALTER TABLE legal_rules ADD COLUMN effective_from TEXT NOT NULL DEFAULT '1968-11-01'")
+                }
+                if (!columnExists(db, "legal_rules", "effective_to")) {
                     db.execSQL("ALTER TABLE legal_rules ADD COLUMN effective_to TEXT DEFAULT NULL")
+                }
+                if (!columnExists(db, "legal_rules", "last_reviewed_at")) {
                     db.execSQL("ALTER TABLE legal_rules ADD COLUMN last_reviewed_at TEXT NOT NULL DEFAULT '2026-10-13'")
-                    db.execSQL("ALTER TABLE legal_rules ADD COLUMN review_status TEXT NOT NULL DEFAULT 'VERIFIED_ACCURATE'")
+                }
+                if (!columnExists(db, "legal_rules", "review_status")) {
+                    // Do not automatically mark pre-existing records as VERIFIED_ACCURATE
+                    db.execSQL("ALTER TABLE legal_rules ADD COLUMN review_status TEXT NOT NULL DEFAULT 'NEEDS_REVIEW'")
+                }
 
+                // Add columns to saved_deadlines
+                if (!columnExists(db, "saved_deadlines", "rule_snapshot")) {
                     db.execSQL("ALTER TABLE saved_deadlines ADD COLUMN rule_snapshot TEXT NOT NULL DEFAULT ''")
+                }
+                if (!columnExists(db, "saved_deadlines", "distance_type")) {
                     db.execSQL("ALTER TABLE saved_deadlines ADD COLUMN distance_type TEXT NOT NULL DEFAULT 'NONE'")
-                } catch (_: Exception) {}
+                }
+            }
+        }
+
+        /**
+         * Direct Migration 1 -> 4 for upgrade paths skipping intermediate versions.
+         */
+        val MIGRATION_1_4 = object : Migration(1, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                MIGRATION_1_2.migrate(db)
+                MIGRATION_2_3.migrate(db)
+                MIGRATION_3_4.migrate(db)
+            }
+        }
+
+        /**
+         * Direct Migration 2 -> 4 for upgrade paths skipping version 3.
+         */
+        val MIGRATION_2_4 = object : Migration(2, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                MIGRATION_2_3.migrate(db)
+                MIGRATION_3_4.migrate(db)
             }
         }
 
@@ -83,8 +162,8 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "egyptian_legal_deadlines.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
-                    .fallbackToDestructiveMigrationOnDowngrade()
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_1_4, MIGRATION_2_4)
+                    // Destructive fallback intentionally omitted to prevent accidental loss of saved client deadlines
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

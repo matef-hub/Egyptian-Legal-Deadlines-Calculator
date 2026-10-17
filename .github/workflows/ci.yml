@@ -1,0 +1,66 @@
+name: CI Verification
+
+on:
+  push:
+    branches: [main, develop, 'feature/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  web-tests-and-build:
+    name: Web Calculator Lint, Test & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies (clean reproducible install)
+        run: npm ci
+
+      - name: Run TypeScript linting
+        run: npm run lint
+
+      - name: Run Web Procedural Unit Tests
+        run: npm test
+
+      - name: Run Web Production Build
+        run: npm run build
+
+  android-verification:
+    name: Android Source & Build Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Verify No Tests In Production Source Sets
+        run: |
+          MISPLACED=$(find app/src/main -name "*Test*.kt" | wc -l)
+          if [ "$MISPLACED" -gt 0 ]; then
+            echo "Error: Found test files in app/src/main!"
+            find app/src/main -name "*Test*.kt"
+            exit 1
+          fi
+          echo "Production source sets verified clean of test files."
+
+      - name: Verify JUnit Not In Production Source Sets
+        run: |
+          JUNIT_IMPORTS=$(grep -rn "org.junit" app/src/main/ || true)
+          if [ -n "$JUNIT_IMPORTS" ]; then
+            echo "Error: JUnit imported in production source set:"
+            echo "$JUNIT_IMPORTS"
+            exit 1
+          fi
+          echo "No JUnit imports found in production source set."

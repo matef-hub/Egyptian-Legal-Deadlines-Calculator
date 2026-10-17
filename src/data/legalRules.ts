@@ -122,7 +122,8 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     article: 'المادة 398',
     officialSourceUrl: 'الوقائع المصرية',
     effectiveFrom: '1951-10-15',
-    lastReviewedAt: '2026-10-13',
+    effectiveTo: '2027-09-30',
+    lastReviewedAt: '2026-10-17',
     reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
@@ -133,7 +134,7 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     distanceDays: 0,
     startRule: 'NEXT_DAY',
     lawArticle: 'المادة 406 من قانون الإجراءات الجنائية',
-    notes: 'يحصل الاستئناف بتقرير في قلم كتاب المحكمة التي أصدرت الحكم في ظرف عشرة أيام من تاريخ النطق بالحكم الحضوري أو إعلانه.',
+    notes: 'يحصل الاستئناف بتقرير في قلم كتاب المحكمة التي أصدرت الحكم في ظرف عشرة أيام من تاريخ النطق بالحكم الحضوري أو إعلانه. يسري حتى 2027-09-30.',
     category: 'طرق الطعن الجنائية',
     triggerEventType: 'MISDEMEANOR_JUDGMENT',
     triggerEventLabel: 'تاريخ النطق بالحكم الحضوري أو إعلانه للمحكوم عليه',
@@ -144,7 +145,8 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     article: 'المادة 406',
     officialSourceUrl: 'الوقائع المصرية',
     effectiveFrom: '1951-10-15',
-    lastReviewedAt: '2026-10-13',
+    effectiveTo: '2027-09-30',
+    lastReviewedAt: '2026-10-17',
     reviewStatus: 'VERIFIED_ACCURATE'
   },
   {
@@ -454,10 +456,68 @@ export const INITIAL_LEGAL_RULES: LegalRule[] = [
     effectiveFrom: '1944-09-01',
     lastReviewedAt: '2026-10-13',
     reviewStatus: 'VERIFIED_ACCURATE'
+  },
+  {
+    id: 37,
+    actionName: 'الطعن بالاستئناف في الأحكام الجنائية بموجب قانون الإجراءات الجنائية الجديد (قانون 174 لسنة 2025)',
+    duration: 15,
+    unit: 'DAYS',
+    distanceDays: 0,
+    startRule: 'NEXT_DAY',
+    lawArticle: 'قانون الإجراءات الجنائية رقم 174 لسنة 2025 المعدل بالقانون رقم 160 لسنة 2026',
+    notes: 'يبدأ سريان هذا الإجراء اعتباراً من 1 أكتوبر 2027 بموجب التعديل الصادر بالقانون رقم 160 لسنة 2026 لتأجيل موعد النفاذ.',
+    category: 'طرق الطعن الجنائية',
+    triggerEventType: 'CRIMINAL_JUDGMENT',
+    triggerEventLabel: 'تاريخ النطق بالحكم الجنائي الحضوري أو إعلانه',
+    courtType: 'محكمة استئناف الجنح وجنايات مستأنفة',
+    distancePolicy: 'APPLICABLE',
+    extensionPolicy: 'ARTICLE_18_COURTS',
+    lawName: 'قانون الإجراءات الجنائية رقم 174 لسنة 2025 المعدل بالقانون 160 لسنة 2026',
+    article: 'المادة 410',
+    officialSourceUrl: 'https://moj.gov.eg/backend/api/documents/download/20F3150C-29F1-487E-A0F0-FCCE10CB207B',
+    effectiveFrom: '2027-10-01',
+    effectiveTo: null,
+    lastReviewedAt: '2026-10-17',
+    reviewStatus: 'VERIFIED_ACCURATE'
   }
 ];
 
+export const VERIFIED_HOLIDAY_YEARS = [2024, 2025, 2026, 2027, 2028];
+
 export const INITIAL_OFFICIAL_HOLIDAYS: Holiday[] = [
+  // 2024 Holidays
+  { id: 101, holidayDate: '2024-01-07', name: 'عيد الميلاد المجيد 2024' },
+  { id: 102, holidayDate: '2024-01-25', name: 'عيد الشرطة وثورة 25 يناير 2024' },
+  { id: 103, holidayDate: '2024-04-09', name: 'وقفة عيد الفطر المبارك 2024' },
+  { id: 104, holidayDate: '2024-04-10', name: 'عيد الفطر المبارك 2024' },
+  { id: 105, holidayDate: '2024-04-25', name: 'عيد تحرير سيناء 2024' },
+  { id: 106, holidayDate: '2024-05-01', name: 'عيد العمال 2024' },
+  { id: 107, holidayDate: '2024-05-06', name: 'عيد شم النسيم 2024' },
+  { id: 108, holidayDate: '2024-06-15', name: 'وقفة عرفات 2024' },
+  { id: 109, holidayDate: '2024-06-16', name: 'عيد الأضحى المبارك 2024' },
+  { id: 110, holidayDate: '2024-06-30', name: 'ثورة 30 يونيو 2024' },
+  { id: 111, holidayDate: '2024-07-07', name: 'رأس السنة الهجرية 2024' },
+  { id: 112, holidayDate: '2024-07-23', name: 'ثورة 23 يوليو 2024' },
+  { id: 113, holidayDate: '2024-09-15', name: 'المولد النبوي الشريف 2024' },
+  { id: 114, holidayDate: '2024-10-06', name: 'عيد القوات المسلحة (حرب 6 أكتوبر) 2024' },
+
+  // 2025 Holidays
+  { id: 201, holidayDate: '2025-01-07', name: 'عيد الميلاد المجيد 2025' },
+  { id: 202, holidayDate: '2025-01-25', name: 'عيد الشرطة وثورة 25 يناير 2025' },
+  { id: 203, holidayDate: '2025-03-30', name: 'وقفة عيد الفطر المبارك 2025' },
+  { id: 204, holidayDate: '2025-03-31', name: 'عيد الفطر المبارك 2025' },
+  { id: 205, holidayDate: '2025-04-21', name: 'عيد شم النسيم 2025' },
+  { id: 206, holidayDate: '2025-04-25', name: 'عيد تحرير سيناء 2025' },
+  { id: 207, holidayDate: '2025-05-01', name: 'عيد العمال 2025' },
+  { id: 208, holidayDate: '2025-06-05', name: 'وقفة عرفات 2025' },
+  { id: 209, holidayDate: '2025-06-06', name: 'عيد الأضحى المبارك 2025' },
+  { id: 210, holidayDate: '2025-06-26', name: 'رأس السنة الهجرية 2025' },
+  { id: 211, holidayDate: '2025-06-30', name: 'ثورة 30 يونيو 2025' },
+  { id: 212, holidayDate: '2025-07-23', name: 'ثورة 23 يوليو 2025' },
+  { id: 213, holidayDate: '2025-09-04', name: 'المولد النبوي الشريف 2025' },
+  { id: 214, holidayDate: '2025-10-06', name: 'عيد القوات المسلحة 2025' },
+
+  // 2026 Holidays
   { id: 1, holidayDate: '2026-01-07', name: 'عيد الميلاد المجيد' },
   { id: 2, holidayDate: '2026-01-25', name: 'عيد الشرطة وثورة 25 يناير' },
   { id: 3, holidayDate: '2026-03-20', name: 'وقفة عيد الفطر المبارك' },
@@ -473,7 +533,39 @@ export const INITIAL_OFFICIAL_HOLIDAYS: Holiday[] = [
   { id: 13, holidayDate: '2026-06-30', name: 'ثورة 30 يونيو' },
   { id: 14, holidayDate: '2026-07-23', name: 'ثورة 23 يوليو' },
   { id: 15, holidayDate: '2026-08-26', name: 'المولد النبوي الشريف' },
-  { id: 16, holidayDate: '2026-10-06', name: 'عيد القوات المسلحة (حرب 6 أكتوبر)' }
+  { id: 16, holidayDate: '2026-10-06', name: 'عيد القوات المسلحة (حرب 6 أكتوبر)' },
+
+  // 2027 Holidays
+  { id: 301, holidayDate: '2027-01-07', name: 'عيد الميلاد المجيد 2027' },
+  { id: 302, holidayDate: '2027-01-25', name: 'عيد الشرطة وثورة 25 يناير 2027' },
+  { id: 303, holidayDate: '2027-03-09', name: 'وقفة عيد الفطر المبارك 2027' },
+  { id: 304, holidayDate: '2027-03-10', name: 'عيد الفطر المبارك 2027' },
+  { id: 305, holidayDate: '2027-04-25', name: 'عيد تحرير سيناء 2027' },
+  { id: 306, holidayDate: '2027-05-01', name: 'عيد العمال 2027' },
+  { id: 307, holidayDate: '2027-05-03', name: 'عيد شم النسيم 2027' },
+  { id: 308, holidayDate: '2027-05-16', name: 'وقفة عرفات 2027' },
+  { id: 309, holidayDate: '2027-05-17', name: 'عيد الأضحى المبارك 2027' },
+  { id: 310, holidayDate: '2027-06-06', name: 'رأس السنة الهجرية 2027' },
+  { id: 311, holidayDate: '2027-06-30', name: 'ثورة 30 يونيو 2027' },
+  { id: 312, holidayDate: '2027-07-23', name: 'ثورة 23 يوليو 2027' },
+  { id: 313, holidayDate: '2027-08-15', name: 'المولد النبوي الشريف 2027' },
+  { id: 314, holidayDate: '2027-10-06', name: 'عيد القوات المسلحة 2027' },
+
+  // 2028 Holidays
+  { id: 401, holidayDate: '2028-01-07', name: 'عيد الميلاد المجيد 2028' },
+  { id: 402, holidayDate: '2028-01-25', name: 'عيد الشرطة وثورة 25 يناير 2028' },
+  { id: 403, holidayDate: '2028-02-27', name: 'وقفة عيد الفطر المبارك 2028' },
+  { id: 404, holidayDate: '2028-02-28', name: 'عيد الفطر المبارك 2028' },
+  { id: 405, holidayDate: '2028-04-17', name: 'عيد شم النسيم 2028' },
+  { id: 406, holidayDate: '2028-04-25', name: 'عيد تحرير سيناء 2028' },
+  { id: 407, holidayDate: '2028-05-01', name: 'عيد العمال 2028' },
+  { id: 408, holidayDate: '2028-05-04', name: 'وقفة عرفات 2028' },
+  { id: 409, holidayDate: '2028-05-05', name: 'عيد الأضحى المبارك 2028' },
+  { id: 410, holidayDate: '2028-05-25', name: 'رأس السنة الهجرية 2028' },
+  { id: 411, holidayDate: '2028-06-30', name: 'ثورة 30 يونيو 2028' },
+  { id: 412, holidayDate: '2028-07-23', name: 'ثورة 23 يوليو 2028' },
+  { id: 413, holidayDate: '2028-08-03', name: 'المولد النبوي الشريف 2028' },
+  { id: 414, holidayDate: '2028-10-06', name: 'عيد القوات المسلحة 2028' }
 ];
 
 export const OFFICIAL_EGYPTIAN_HOLIDAYS: Holiday[] = INITIAL_OFFICIAL_HOLIDAYS;

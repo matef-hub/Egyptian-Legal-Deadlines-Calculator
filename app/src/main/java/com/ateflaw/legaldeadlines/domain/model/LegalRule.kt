@@ -25,5 +25,5 @@ data class LegalRule(
     val effectiveFrom: String = "1968-11-01", // تاريخ بدء النفاذ
     val effectiveTo: String? = null, // تاريخ انتهاء النفاذ إن وجد
     val lastReviewedAt: String = "2026-10-13", // تاريخ آخر مراجعة قانونية
-    val reviewStatus: String = "VERIFIED_ACCURATE" // حالة المراجعة القانونية
+    val reviewStatus: String = "NEEDS_REVIEW" // حالة المراجعة القانونية (الأصل أنها تحتاج مراجعة ما لم تدقق صراحة)
 )

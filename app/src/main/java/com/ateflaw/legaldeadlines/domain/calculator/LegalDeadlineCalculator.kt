@@ -15,69 +15,110 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Core Domain calculation engine for Egyptian procedural legal deadlines.
+ * Egyptian Procedural Legal Deadline Calculator.
  *
- * Adheres strictly to Egyptian Civil and Commercial Procedures Law (Law 13 of 1968):
- * - Article 15: Day of announcement/event is excluded if NEXT_DAY; deadlines in months/years
- *   expire on the corresponding day in the following month/year. If the corresponding day does
- *   not exist, it expires on the last day of that month/year (Court of Cassation).
- * - Article 16: Distance deadline for local travel (1 day per 50 km up to 4 days max).
- * - Article 17: Distance deadline for persons domiciled abroad (up to 60/90 days).
- * - Article 18: If the deadline expires on an official holiday or Friday, it extends to the first subsequent working day.
- * - Friday is always a weekly holiday and must be excluded.
- * - Saturday is a normal working day in Egyptian courts and must NEVER be excluded as a weekend.
- * - Official Egyptian national/cabinet holidays are excluded.
+ * Implements authoritative procedural rules under Egyptian Law:
+ * - Articles 15, 16, 17, and 18 of the Civil and Commercial Procedures Law No. 13 of 1968.
+ * - Friday is an official weekly holiday and must be excluded.
+ * - Saturday is a valid judicial working day in Egyptian courts and is NOT excluded.
+ * - Consecutive official holidays roll over to the first subsequent working day.
+ * - Clamps months and leap years according to procedural jurisprudence.
+ * - Enforces effective dates and transitional provisions.
  */
 class LegalDeadlineCalculator {
 
     private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.ENGLISH)
 
     /**
-     * Calculates the procedural deadline based on the announcement date, legal rule,
-     * explicit distance type, optional distance days, and an official holiday lookup provider.
+     * Primary strongly typed calculation contract.
      */
     fun calculate(
         announcementDate: LocalDate,
         rule: LegalRule,
         distanceType: DistanceType = DistanceType.NONE,
         additionalDistanceDays: Int = 0,
+        judicialOrderDetails: String? = null,
         isHolidayProvider: (LocalDate) -> Pair<Boolean, String?> = { Pair(false, null) }
     ): DeadlineResult {
-        // 1. Distance Days Validation according to Articles 16 & 17 of Procedures Law
+        // 1. Effective Date Validation & Transitional Provisions
+        val eventIso = announcementDate.toString()
+        if (rule.effectiveFrom.isNotBlank() && eventIso < rule.effectiveFrom) {
+            throw IllegalArgumentException(
+                "القاعدة القانونية المختارة (${rule.actionName}) غير سارية في تاريخ الواقعة ($eventIso)؛ حيث يبدأ سريانها في ${rule.effectiveFrom}."
+            )
+        }
+        if (!rule.effectiveTo.isNullOrBlank() && eventIso > rule.effectiveTo) {
+            throw IllegalArgumentException(
+                "القاعدة القانونية المختارة (${rule.actionName}) منتهية السريان في تاريخ الواقعة ($eventIso)؛ حيث انتهى سريانها في ${rule.effectiveTo}."
+            )
+        }
+
+        // 2. Distance Policy Check
+        if (rule.distancePolicy.equals("NOT_APPLICABLE", ignoreCase = true)) {
+            require(distanceType == DistanceType.NONE || distanceType == DistanceType.ABROAD_SERVED_IN_EGYPT) {
+                "هذا الإجراء القانوني (${rule.actionName}) لا يقبل تطبيق مواعيد المسافة وفقاً للقواعد الإجرائية المقررة."
+            }
+            require(additionalDistanceDays == 0) {
+                "لا يجوز إضافة ميعاد مسافة لهذا الإجراء (${rule.actionName}) لأن ميعاد المسافة غير منطبق عليه قانوناً."
+            }
+        }
+
+        // 3. Distance Days Statutory Validation
         val validatedDistanceDays: Int = when (distanceType) {
             DistanceType.NONE -> {
-                require(additionalDistanceDays == 0) { "لا يجوز إضافة أيام مسافة مع خيار (بدون مسافة)" }
+                require(additionalDistanceDays == 0) { "لا يجوز إضافة أيام مسافة مع خيار (بدون مسافة)." }
                 0
             }
             DistanceType.LOCAL -> {
                 require(additionalDistanceDays in 0..4) {
-                    "ميعاد المسافة المحلي لا يجوز أن يجاوز 4 أيام إعمالاً للمادة 16 من قانون المرافعات"
+                    "ميعاد المسافة المحلي لا يجوز أن يجاوز 4 أيام إعمالاً للمادة 16 من قانون المرافعات (يوم لكل 50 كم، وما زاد على 30 كم يعتبر 50 كم، بحد أقصى 4 أيام)."
                 }
                 additionalDistanceDays
             }
+            DistanceType.BORDER_AREA -> {
+                require(additionalDistanceDays == 0 || additionalDistanceDays == 15) {
+                    "ميعاد المسافة للمناطق الحدودية النائية محدد بنص القانون بـ 15 يوماً وفقاً للمادة 16 فقرة 2 مرافعات."
+                }
+                15
+            }
             DistanceType.ABROAD -> {
-                require(additionalDistanceDays in 0..90) {
-                    "ميعاد المسافة لمن موطنه بالخارج لا يجوز أن يجاوز 90 يوماً إعمالاً للمادة 17 من قانون المرافعات"
+                require(additionalDistanceDays == 0 || additionalDistanceDays == 60) {
+                    "ميعاد المسافة العادي لمن موطنه بالخارج محدد بنص المادة 17 مرافعات بـ 60 يوماً ولا يجوز زيادته إلى 90 يوماً."
+                }
+                60
+            }
+            DistanceType.ABROAD_JUDICIAL_REDUCTION -> {
+                require(additionalDistanceDays in 1..59) {
+                    "ميعاد المسافة المنقوص بأمر قضائي لمن موطنه بالخارج يجب أن يكون بين 1 و 59 يوماً وفقاً للمادة 17 فقرة 2 مرافعات."
+                }
+                require(!judicialOrderDetails.isNullOrBlank()) {
+                    "يلزم إثبات بيانات وسند الأمر القضائي الصادر بإنقاص ميعاد المسافة وفقاً للمادة 17 فقرة 2 مرافعات."
                 }
                 additionalDistanceDays
+            }
+            DistanceType.ABROAD_SERVED_IN_EGYPT -> {
+                require(additionalDistanceDays == 0) {
+                    "من أُعلن لشخصه أثناء وجوده في مصر لا يسري عليه ميعاد مسافة وفقاً للمادة 17 فقرة 3 مرافعات."
+                }
+                0
             }
         }
 
         val totalDistanceDays = rule.distanceDays + validatedDistanceDays
 
-        // 2. Determine Start Date based on rule.startRule (Article 15 Procedures Law)
+        // 4. Start Date Calculation (Article 15 Procedures Law)
         val startDate = when (rule.startRule) {
             StartRule.SAME_DAY -> announcementDate
             StartRule.NEXT_DAY -> announcementDate.plusDays(1)
         }
 
-        // 3. Compute Base End Date according to Article 15 Paragraph 4 and Court of Cassation
+        // 5. Base End Date
         val baseEndDate = calculateBaseEndDate(announcementDate, startDate, rule)
 
-        // 4. Add Distance Days (Article 16 or 17 Procedures Law)
+        // 6. Provisional Date with Distance
         val provisionalDate = baseEndDate.plusDays(totalDistanceDays.toLong())
 
-        // 5. Final Deadline Adjustment Loop (Article 18 Procedures Law)
+        // 7. Final Deadline Adjustment Loop (Article 18 Procedures Law)
         var currentDate = provisionalDate
         val excludedDays = mutableListOf<ExcludedDay>()
 
@@ -103,10 +144,9 @@ class LegalDeadlineCalculator {
 
         val finalDeadline = currentDate
 
-        // 6. Build Structured Milestones for Interactive Timeline
+        // 8. Milestones
         val milestones = mutableListOf<CalculationMilestone>()
 
-        // Milestone 1: Trigger Event
         val triggerTitle = rule.triggerEventLabel.ifBlank { "الواقعة المنشئة للميعاد" }
         milestones.add(
             CalculationMilestone(
@@ -118,7 +158,6 @@ class LegalDeadlineCalculator {
             )
         )
 
-        // Milestone 2: Counting Start
         milestones.add(
             CalculationMilestone(
                 type = MilestoneType.COUNTING_START,
@@ -133,7 +172,6 @@ class LegalDeadlineCalculator {
             )
         )
 
-        // Milestone 3: Base Deadline End
         milestones.add(
             CalculationMilestone(
                 type = MilestoneType.BASE_DEADLINE,
@@ -144,34 +182,38 @@ class LegalDeadlineCalculator {
             )
         )
 
-        // Milestone 4: Distance extension if applicable
         if (totalDistanceDays > 0 && distanceType != DistanceType.NONE) {
+            val distDesc = when (distanceType) {
+                DistanceType.LOCAL -> "إضافة $totalDistanceDays أيام مسافة محلية (المادة 16 مرافعات)."
+                DistanceType.BORDER_AREA -> "إضافة 15 يوماً مسافة للمناطق الحدودية النائية (المادة 16 فقرة 2 مرافعات)."
+                DistanceType.ABROAD -> "إضافة 60 يوماً ميعاد مسافة لمن موطنه بالخارج (المادة 17 مرافعات)."
+                DistanceType.ABROAD_JUDICIAL_REDUCTION -> "إضافة $totalDistanceDays يوماً مسافة منقوصة بأمر قضائي: $judicialOrderDetails (المادة 17 فقرة 2)."
+                else -> "إضافة $totalDistanceDays أيام مسافة طريق."
+            }
             milestones.add(
                 CalculationMilestone(
                     type = MilestoneType.DISTANCE_EXTENSION,
                     date = provisionalDate,
                     title = "إضافة ميعاد مسافة الطريق",
-                    description = "إضافة $totalDistanceDays أيام مسافة (${distanceType.arabicDisplayName}) ليمتد الميعاد المبدئي إلى (${provisionalDate.format(dateFormatter)}).",
+                    description = "$distDesc ليمتد الميعاد المبدئي إلى (${provisionalDate.format(dateFormatter)}).",
                     legalBasis = distanceType.statutoryBasis
                 )
             )
         }
 
-        // Milestone 5: Excluded Days & Holiday Extensions
-        excludedDays.forEach { excluded ->
+        excludedDays.forEachIndexed { index, excluded ->
             milestones.add(
                 CalculationMilestone(
                     type = MilestoneType.HOLIDAY_EXTENSION,
                     date = excluded.date,
-                    title = "امتداد الميعاد لمصادفة عطلة",
-                    description = "مصادفة تاريخ ${excluded.date.format(dateFormatter)} (${getArabicDayName(excluded.date.dayOfWeek)}) [${excluded.reason.substringAfterLast("—").trim()}]، ويمتد الميعاد إعمالاً للمادة 18 مرافعات إلى أول يوم عمل.",
-                    legalBasis = "المادة 18 من قانون المرافعات (امتداد العطلات)",
+                    title = "امتداد بسبب عطلة [${index + 1}]",
+                    description = "${excluded.reason}، ويمتد الميعاد لليوم التالي وفقاً للمادة 18 مرافعات.",
+                    legalBasis = "المادة 18 من قانون المرافعات المدنية والتجارية",
                     isExcludedDay = true
                 )
             )
         }
 
-        // Milestone 6: Final Binding Deadline
         milestones.add(
             CalculationMilestone(
                 type = MilestoneType.FINAL_DEADLINE,
@@ -183,7 +225,6 @@ class LegalDeadlineCalculator {
             )
         )
 
-        // 7. Generate Comprehensive Arabic Explanation
         val explanation = generateArabicExplanation(
             announcementDate = announcementDate,
             startDate = startDate,
@@ -193,7 +234,8 @@ class LegalDeadlineCalculator {
             totalDistanceDays = totalDistanceDays,
             provisionalDate = provisionalDate,
             excludedDays = excludedDays,
-            finalDeadline = finalDeadline
+            finalDeadline = finalDeadline,
+            judicialOrderDetails = judicialOrderDetails
         )
 
         return DeadlineResult(
@@ -211,12 +253,13 @@ class LegalDeadlineCalculator {
             notes = rule.notes,
             actionSummary = rule.summary.ifBlank { rule.actionName },
             milestones = milestones,
-            distanceType = distanceType
+            distanceType = distanceType,
+            judicialOrderDetails = judicialOrderDetails
         )
     }
 
     /**
-     * Backward-compatible overload accepting additionalDistanceDays directly.
+     * Backward-compatible overload.
      */
     fun calculate(
         announcementDate: LocalDate,
@@ -227,24 +270,20 @@ class LegalDeadlineCalculator {
         val distanceType = when {
             additionalDistanceDays <= 0 -> DistanceType.NONE
             additionalDistanceDays <= 4 -> DistanceType.LOCAL
-            else -> DistanceType.ABROAD
+            additionalDistanceDays == 15 -> DistanceType.BORDER_AREA
+            additionalDistanceDays == 60 -> DistanceType.ABROAD
+            else -> DistanceType.LOCAL
         }
         return calculate(
             announcementDate = announcementDate,
             rule = rule,
             distanceType = distanceType,
             additionalDistanceDays = additionalDistanceDays,
+            judicialOrderDetails = null,
             isHolidayProvider = isHolidayProvider
         )
     }
 
-    /**
-     * Strictly computes base end date according to Article 15 of Egyptian Procedures Law:
-     * - Days: (duration - 1) added to startDate.
-     * - Months: Clamps to last day of target month if corresponding day does not exist.
-     * - Years: Clamps Feb 29 to Feb 28 on non-leap years.
-     * - Hours: Converts hours to days safely.
-     */
     fun calculateBaseEndDate(
         announcementDate: LocalDate,
         startDate: LocalDate,
@@ -287,7 +326,8 @@ class LegalDeadlineCalculator {
         totalDistanceDays: Int,
         provisionalDate: LocalDate,
         excludedDays: List<ExcludedDay>,
-        finalDeadline: LocalDate
+        finalDeadline: LocalDate,
+        judicialOrderDetails: String?
     ): String {
         val sb = StringBuilder()
 
@@ -318,10 +358,16 @@ class LegalDeadlineCalculator {
         sb.append("٥. ميعاد المسافة: ")
         if (distanceType == DistanceType.NONE && totalDistanceDays == 0) {
             sb.append("لا يوجد ميعاد مسافة (محل النزاع بنفس الدائرة القضائية).\n")
+        } else if (distanceType == DistanceType.ABROAD_SERVED_IN_EGYPT) {
+            sb.append("لا يسري ميعاد المسافة لمن أعلن لشخصه أثناء وجوده في مصر (المادة 17 فقرة 3 مرافعات).\n")
         } else {
             sb.append(distanceType.arabicDisplayName)
                 .append(" — إجمالي: ").append(totalDistanceDays).append(" يوم")
-                .append(" (").append(distanceType.statutoryBasis).append(")\n")
+                .append(" (").append(distanceType.statutoryBasis).append(")")
+            if (!judicialOrderDetails.isNullOrBlank()) {
+                sb.append(" [سند الأمر القضائي: ").append(judicialOrderDetails).append("]")
+            }
+            sb.append("\n")
         }
 
         sb.append("٦. الميعاد المبدئي (قبل تطبيق امتداد العطلات): ")
@@ -356,9 +402,9 @@ class LegalDeadlineCalculator {
                 DayOfWeek.SATURDAY -> "السبت"
                 DayOfWeek.SUNDAY -> "الأحد"
                 DayOfWeek.MONDAY -> "الاثنين"
-                DayOfWeek.TUESDAY -> "الثلاثاء"
-                DayOfWeek.WEDNESDAY -> "الأربعاء"
                 DayOfWeek.THURSDAY -> "الخميس"
+                DayOfWeek.WEDNESDAY -> "الأربعاء"
+                DayOfWeek.TUESDAY -> "الثلاثاء"
                 DayOfWeek.FRIDAY -> "الجمعة"
             }
         }

@@ -3,7 +3,7 @@ package com.ateflaw.legaldeadlines.domain.model
 import java.time.LocalDate
 
 /**
- * Result output of the Egyptian legal deadline calculation engine.
+ * Result output of the Egyptian legal deadline calculation engine with full auditability.
  */
 data class DeadlineResult(
     val startDate: LocalDate,
@@ -20,5 +20,7 @@ data class DeadlineResult(
     val notes: String,
     val actionSummary: String = "",
     val milestones: List<CalculationMilestone> = emptyList(),
-    val distanceType: DistanceType = DistanceType.NONE
+    val distanceType: DistanceType = DistanceType.NONE,
+    val judicialOrderDetails: String? = null,
+    val warnings: List<String> = emptyList()
 )

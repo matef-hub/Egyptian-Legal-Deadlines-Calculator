@@ -2,7 +2,17 @@ export type StartRule = 'SAME_DAY' | 'NEXT_DAY';
 
 export type DurationUnit = 'DAYS' | 'MONTHS' | 'YEARS' | 'HOURS';
 
-export type DistanceType = 'NONE' | 'LOCAL' | 'ABROAD';
+/**
+ * Statutory Distance types under Articles 16, 17, and 18
+ * of Egyptian Civil and Commercial Procedures Law No. 13 of 1968.
+ */
+export type DistanceType =
+  | 'NONE'
+  | 'LOCAL'
+  | 'BORDER_AREA'
+  | 'ABROAD'
+  | 'ABROAD_JUDICIAL_REDUCTION'
+  | 'ABROAD_SERVED_IN_EGYPT';
 
 export interface LegalRule {
   id: number;
@@ -71,6 +81,8 @@ export interface DeadlineResult {
   notes: string;
   milestones?: CalculationMilestone[];
   distanceType?: DistanceType;
+  judicialOrderDetails?: string;
+  warnings?: string[];
 }
 
 export interface SavedDeadline {
@@ -90,4 +102,14 @@ export interface SavedDeadline {
   proactiveReminderDays?: number;
   ruleSnapshot?: string;
   distanceType?: DistanceType;
+  judicialOrderDetails?: string;
+}
+
+export interface CalculateDeadlineParams {
+  announcementDate: string;
+  rule: LegalRule;
+  distanceType?: DistanceType;
+  additionalDistanceDays?: number;
+  holidays?: Holiday[];
+  judicialOrderDetails?: string;
 }
