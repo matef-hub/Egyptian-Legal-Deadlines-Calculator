@@ -741,6 +741,30 @@ fun CalculatorScreenContent(
                                                 }
                                             }
                                         }
+                                        com.ateflaw.legaldeadlines.domain.model.DistanceType.BORDER_AREA -> {
+                                            Text(
+                                                text = "المادة 16 فقرة 2 مرافعات: ميعاد المسافة 15 يوماً للمناطق الحدودية النائية.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontSize = 11.sp
+                                            )
+                                        }
+                                        com.ateflaw.legaldeadlines.domain.model.DistanceType.ABROAD_JUDICIAL_REDUCTION -> {
+                                            Text(
+                                                text = "المادة 17 فقرة 2 مرافعات: يجوز إنقاص ميعاد الستين يوماً بأمر على عريضة.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontSize = 11.sp
+                                            )
+                                        }
+                                        com.ateflaw.legaldeadlines.domain.model.DistanceType.ABROAD_SERVED_IN_EGYPT -> {
+                                            Text(
+                                                text = "المادة 17 فقرة 3 مرافعات: لا يسري ميعاد مسافة الخارج على من أُعلن لشخصه بمصر.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.outline,
+                                                fontSize = 11.sp
+                                            )
+                                        }
                                     }
 
                                     if (uiState.distanceType != com.ateflaw.legaldeadlines.domain.model.DistanceType.NONE) {

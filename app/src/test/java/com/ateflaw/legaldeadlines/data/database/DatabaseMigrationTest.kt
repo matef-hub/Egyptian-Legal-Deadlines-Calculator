@@ -4,9 +4,6 @@ import android.database.Cursor
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteQuery
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.sql.DriverManager
@@ -72,39 +69,44 @@ class DatabaseMigrationTest {
         override fun beginTransaction() {}
         override fun beginTransactionNonExclusive() {}
         override fun beginTransactionReadOnly() {}
+        override fun beginTransactionWithListener(transactionListener: android.database.sqlite.SQLiteTransactionListener) {}
+        override fun beginTransactionWithListenerNonExclusive(transactionListener: android.database.sqlite.SQLiteTransactionListener) {}
         override fun endTransaction() {}
         override fun setTransactionSuccessful() {}
         override fun inTransaction(): Boolean = false
-        override fun isDbLockedByCurrentThread(): Boolean = false
+        override val isDbLockedByCurrentThread: Boolean get() = false
         override fun yieldIfContendedSafely(): Boolean = false
-        override fun yieldIfContendedSafely(sleepAmount: Long): Boolean = false
-        override fun getVersion(): Int = 0
-        override fun setVersion(version: Int) {}
-        override fun getMaximumSize(): Long = 0
+        override fun yieldIfContendedSafely(sleepAfterYieldDelayMillis: Long): Boolean = false
+        override var version: Int
+            get() = 0
+            set(_) {}
+        override val maximumSize: Long get() = 0
         override fun setMaximumSize(numBytes: Long): Long = 0
-        override fun getPageSize(): Long = 0
-        override fun setPageSize(numBytes: Long) {}
+        override var pageSize: Long
+            get() = 0
+            set(_) {}
         override fun compileStatement(sql: String): androidx.sqlite.db.SupportSQLiteStatement = throw UnsupportedOperationException()
         override fun insert(table: String, conflictAlgorithm: Int, values: android.content.ContentValues): Long = throw UnsupportedOperationException()
         override fun delete(table: String, whereClause: String?, whereArgs: Array<out Any?>?): Int = throw UnsupportedOperationException()
         override fun update(table: String, conflictAlgorithm: Int, values: android.content.ContentValues, whereClause: String?, whereArgs: Array<out Any?>?): Int = throw UnsupportedOperationException()
         override fun needUpgrade(newVersion: Int): Boolean = false
-        override fun getPath(): String? = null
+        override val path: String? get() = null
         override fun setLocale(locale: java.util.Locale) {}
         override fun setMaxSqlCacheSize(cacheSize: Int) {}
-        override fun setForeignKeyConstraintsEnabled(enable: Boolean) {}
+        override fun setForeignKeyConstraintsEnabled(enabled: Boolean) {}
         override fun enableWriteAheadLogging(): Boolean = false
         override fun disableWriteAheadLogging() {}
-        override fun isWriteAheadLoggingEnabled(): Boolean = false
-        override fun getAttachedDbs(): List<android.util.Pair<String, String>>? = null
-        override fun isDatabaseIntegrityOk(): Boolean = true
-        override fun isOpen(): Boolean = !connection.isClosed
-        override fun isReadOnly(): Boolean = false
+        override val isWriteAheadLoggingEnabled: Boolean get() = false
+        override val attachedDbs: List<android.util.Pair<String, String>>? get() = null
+        override val isDatabaseIntegrityOk: Boolean get() = true
+        override val isOpen: Boolean get() = !connection.isClosed
+        override val isReadOnly: Boolean get() = false
     }
 
     /**
      * Cursor wrapper over JDBC ResultSet for table_info and verification queries.
      */
+    @Suppress("OVERRIDE_DEPRECATION")
     private class ResultSetCursor(
         private val resultSet: ResultSet,
         private val statement: java.sql.Statement
@@ -157,6 +159,7 @@ class DatabaseMigrationTest {
         override fun getType(columnIndex: Int): Int = 0
         override fun getBlob(columnIndex: Int): ByteArray? = null
         override fun copyStringToBuffer(columnIndex: Int, buffer: android.database.CharArrayBuffer?) {}
+        @Suppress("OVERRIDE_DEPRECATION")
         override fun deactivate() {}
         override fun requery(): Boolean = false
         override fun registerContentObserver(observer: android.database.ContentObserver?) {}
@@ -215,8 +218,7 @@ class DatabaseMigrationTest {
 
     @Test
     fun testMigration1To2_withDuplicateHolidayDates_deduplicatesSafely() {
-        val db = TestSupportSQLiteDatabase()
-        try {
+        TestSupportSQLiteDatabase().use { db ->
             createSchemaV1(db)
 
             // Insert realistic duplicate holiday dates
@@ -232,15 +234,12 @@ class DatabaseMigrationTest {
                 assertTrue(cursor.moveToNext())
                 assertEquals(2, cursor.getInt(0))
             }
-        } finally {
-            db.close()
         }
     }
 
     @Test
     fun testMigrationPath_1_to_2_to_3_to_4_preservesAllData() {
-        val db = TestSupportSQLiteDatabase()
-        try {
+        TestSupportSQLiteDatabase().use { db ->
             createSchemaV1(db)
 
             // Seed user data in v1
@@ -276,15 +275,12 @@ class DatabaseMigrationTest {
                 assertEquals("ANNOUNCEMENT", cursor.getString(2))
                 assertTrue(cursor.isNull(3)) // effective_to DEFAULT NULL
             }
-        } finally {
-            db.close()
         }
     }
 
     @Test
     fun testDirectMigration_1_to_4_matchesSequential() {
-        val db = TestSupportSQLiteDatabase()
-        try {
+        TestSupportSQLiteDatabase().use { db ->
             createSchemaV1(db)
 
             db.execSQL("""
@@ -306,15 +302,12 @@ class DatabaseMigrationTest {
                 assertEquals("سعيد علي", cursor.getString(0))
                 assertEquals("NONE", cursor.getString(1))
             }
-        } finally {
-            db.close()
         }
     }
 
     @Test
     fun testDirectMigration_2_to_4_and_2_to_3_to_4() {
-        val db = TestSupportSQLiteDatabase()
-        try {
+        TestSupportSQLiteDatabase().use { db ->
             createSchemaV1(db)
             AppDatabase.MIGRATION_1_2.migrate(db) // Now at v2
 
@@ -332,8 +325,6 @@ class DatabaseMigrationTest {
                 assertTrue(cursor.moveToNext())
                 assertEquals("محمود حسن", cursor.getString(0))
             }
-        } finally {
-            db.close()
         }
     }
 }

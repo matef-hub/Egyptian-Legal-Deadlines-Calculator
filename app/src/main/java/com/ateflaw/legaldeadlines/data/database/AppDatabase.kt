@@ -165,7 +165,7 @@ abstract class AppDatabase : RoomDatabase() {
                     "egyptian_legal_deadlines.db"
                 )
                     .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_1_4, MIGRATION_2_4)
-                    // Destructive fallback intentionally omitted to prevent accidental loss of saved client deadlines
+                    .fallbackToDestructiveMigrationOnDowngrade(true)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

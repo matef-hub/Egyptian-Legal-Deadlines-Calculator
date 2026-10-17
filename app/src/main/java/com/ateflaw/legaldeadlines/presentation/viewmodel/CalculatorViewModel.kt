@@ -199,7 +199,7 @@ class CalculatorViewModel(
         }
 
         if (rule.distancePolicy.equals("NOT_APPLICABLE", ignoreCase = true) &&
-            (distanceType != DistanceType.NONE && distanceType != DistanceType.ABROAD_SERVED_IN_EGYPT || distanceDays > 0)
+            (distanceType != DistanceType.NONE && distanceType != DistanceType.ABROAD_SERVED_IN_EGYPT)
         ) {
             _uiState.update {
                 it.copy(errorMessage = "القاعدة القانونية المختارة (${rule.actionName}) لا يقبل تطبيق مواعيد المسافة عليها وفقاً للقواعد الإجرائية المقررة")
