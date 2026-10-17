@@ -22,6 +22,7 @@ data class MainUiState(
 
     val isCalculating: Boolean = false,
     val result: DeadlineResult? = null,
+    val proactiveReminderDays: Int? = 3,
     val errorMessage: String? = null,
     val successMessage: String? = null,
     val isSavedSuccessfully: Boolean = false

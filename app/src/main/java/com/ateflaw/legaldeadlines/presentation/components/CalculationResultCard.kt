@@ -66,15 +66,17 @@ import java.time.ZoneId
 fun CalculationResultCard(
     result: DeadlineResult,
     isSaved: Boolean,
-    onSaveClick: () -> Unit,
-    onBackClick: () -> Unit,
+    initialReminderDays: Int? = 3,
+    onReminderDaysChanged: (Int?) -> Unit = {},
+    onSaveClick: (Int?) -> Unit = {},
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val finalDateFormatted = DateFormatterUtils.formatArabicFullDate(result.finalDeadline)
     val startDateFormatted = DateFormatterUtils.formatArabicFullDate(result.startDate)
     val dayNameArabic = DateFormatterUtils.getArabicDayName(result.finalDeadline.dayOfWeek)
     val context = LocalContext.current
-    var proactiveReminderDays by remember { mutableIntStateOf(3) }
+    var proactiveReminderDays by remember(initialReminderDays) { mutableIntStateOf(initialReminderDays ?: 0) }
 
     // 1. Add FINAL DEADLINE to Calendar (Target Date = finalDeadline)
     val onAddFinalDeadlineToCalendar = {
@@ -367,7 +369,10 @@ fun CalculationResultCard(
                                 .weight(1f)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(pillBgColor)
-                                .clickable { proactiveReminderDays = days }
+                                .clickable {
+                                    proactiveReminderDays = days
+                                    onReminderDaysChanged(if (days == 0) null else days)
+                                }
                                 .padding(vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -442,7 +447,7 @@ fun CalculationResultCard(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Button(
-                        onClick = onSaveClick,
+                        onClick = { onSaveClick(if (proactiveReminderDays == 0) null else proactiveReminderDays) },
                         enabled = !isSaved,
                         modifier = Modifier
                             .weight(1f)

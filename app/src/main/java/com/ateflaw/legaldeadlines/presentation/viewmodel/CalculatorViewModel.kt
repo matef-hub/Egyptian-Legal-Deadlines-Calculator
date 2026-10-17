@@ -202,7 +202,11 @@ class CalculatorViewModel(
         _uiState.update { it.copy(result = null, isSavedSuccessfully = false, errorMessage = null) }
     }
 
-    fun saveCurrentDeadline() {
+    fun onProactiveReminderDaysChanged(days: Int?) {
+        _uiState.update { it.copy(proactiveReminderDays = days) }
+    }
+
+    fun saveCurrentDeadline(proactiveDays: Int? = _uiState.value.proactiveReminderDays) {
         val currentState = _uiState.value
         val result = currentState.result ?: return
         val rule = currentState.selectedRule ?: return
@@ -218,6 +222,7 @@ class CalculatorViewModel(
                     }
                 }
 
+                val reminderDaysToSave = proactiveDays ?: currentState.proactiveReminderDays
                 val deadlineToSave = SavedDeadline(
                     caseNumber = currentState.caseNumber.trim(),
                     clientName = currentState.clientName.trim(),
@@ -231,6 +236,7 @@ class CalculatorViewModel(
                     calculationExplanation = result.explanation,
                     notes = result.notes,
                     createdAt = System.currentTimeMillis(),
+                    proactiveReminderDays = reminderDaysToSave,
                     ruleSnapshot = ruleSnapshotText,
                     distanceType = currentState.distanceType.name
                 )

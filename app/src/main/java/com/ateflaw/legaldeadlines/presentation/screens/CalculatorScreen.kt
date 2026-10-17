@@ -134,7 +134,8 @@ fun CalculatorScreen(
         onClientNameChanged = viewModel::onClientNameChanged,
         onCalculateDeadline = viewModel::calculateDeadline,
         onResetCalculation = viewModel::resetCalculation,
-        onSaveCurrentDeadline = viewModel::saveCurrentDeadline,
+        onSaveCurrentDeadline = { days -> viewModel.saveCurrentDeadline(days) },
+        onReminderDaysChanged = viewModel::onProactiveReminderDaysChanged,
         onDismissMessages = viewModel::dismissMessages,
         modifier = modifier
     )
@@ -152,7 +153,8 @@ fun CalculatorScreenContent(
     onClientNameChanged: (String) -> Unit,
     onCalculateDeadline: () -> Unit,
     onResetCalculation: () -> Unit,
-    onSaveCurrentDeadline: () -> Unit,
+    onSaveCurrentDeadline: (Int?) -> Unit,
+    onReminderDaysChanged: (Int?) -> Unit = {},
     onDismissMessages: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1018,7 +1020,9 @@ fun CalculatorScreenContent(
                     CalculationResultCard(
                         result = result,
                         isSaved = uiState.isSavedSuccessfully,
-                        onSaveClick = { onSaveCurrentDeadline() },
+                        initialReminderDays = uiState.proactiveReminderDays,
+                        onReminderDaysChanged = onReminderDaysChanged,
+                        onSaveClick = { days -> onSaveCurrentDeadline(days) },
                         onBackClick = { onResetCalculation() }
                     )
                 } else {
@@ -1142,7 +1146,7 @@ fun CalculatorScreenPreview() {
             onClientNameChanged = {},
             onCalculateDeadline = {},
             onResetCalculation = {},
-            onSaveCurrentDeadline = {},
+            onSaveCurrentDeadline = { _ -> },
             onDismissMessages = {}
         )
     }
@@ -1194,7 +1198,7 @@ fun CalculatorScreenWithResultPreview() {
             onClientNameChanged = {},
             onCalculateDeadline = {},
             onResetCalculation = {},
-            onSaveCurrentDeadline = {},
+            onSaveCurrentDeadline = { _ -> },
             onDismissMessages = {}
         )
     }
