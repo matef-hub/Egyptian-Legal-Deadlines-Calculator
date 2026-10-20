@@ -644,4 +644,70 @@ class LegalDeadlineCalculatorTest {
         assertTrue(result.explanation.contains("٧. الأيام المستبعدة"))
         assertTrue(result.explanation.contains("٨. الميعاد النهائي واجب الالتزام به"))
     }
+
+    /**
+     * Test 24: Unreviewed rule produces statutory warning to prevent presenting as verified statutory deadline.
+     */
+    @Test
+    fun test24_unreviewedRule_producesProminentStatutoryWarning() {
+        val announcementDate = LocalDate.of(2026, 10, 1)
+        val unverifiedRule = LegalRule(
+            id = 999,
+            actionName = "إجراء غير مدقق تشريعياً",
+            duration = 30,
+            unit = DurationUnit.DAYS,
+            reviewStatus = "NEEDS_REVIEW"
+        )
+
+        val result = calculator.calculate(announcementDate, unverifiedRule)
+        assertFalse(result.warnings.isEmpty())
+        assertTrue(result.warnings.any { it.contains("قيد المراجعة") })
+
+        val verifiedRule = unverifiedRule.copy(reviewStatus = "VERIFIED_ACCURATE")
+        val verifiedResult = calculator.calculate(announcementDate, verifiedRule)
+        assertTrue(verifiedResult.warnings.isEmpty())
+    }
+
+    /**
+     * Test 25: Month calculation clamps to last day of target month (August 31 + 1 Month = September 30).
+     */
+    @Test
+    fun test25_monthCalculation_clampsAugust31ToSeptember30() {
+        val announcementDate = LocalDate.of(2026, 8, 30) // Next day is Aug 31
+        val oneMonthRule = LegalRule(
+            id = 100,
+            actionName = "ميعاد شهر",
+            duration = 1,
+            unit = DurationUnit.MONTHS,
+            startRule = StartRule.SAME_DAY
+        )
+
+        // Aug 31 + 1 month = Sept 30 (clamped, since Sept has 30 days)
+        val result = calculator.calculate(LocalDate.of(2026, 8, 31), oneMonthRule)
+        assertEquals(LocalDate.of(2026, 9, 30), result.provisionalDate)
+    }
+
+    /**
+     * Test 26: Leap year clamp (Feb 29 on leap year, Feb 28 on non-leap year).
+     */
+    @Test
+    fun test26_leapYearCalculation_handlesFebruaryCorrectly() {
+        // 2028 is a leap year; 2026 is non-leap
+        val rule = LegalRule(
+            id = 101,
+            actionName = "ميعاد شهر من يناير",
+            duration = 1,
+            unit = DurationUnit.MONTHS,
+            startRule = StartRule.SAME_DAY
+        )
+
+        // Jan 31, 2026 + 1 month = Feb 28, 2026
+        val nonLeapResult = calculator.calculate(LocalDate.of(2026, 1, 31), rule)
+        assertEquals(LocalDate.of(2026, 2, 28), nonLeapResult.provisionalDate)
+
+        // Jan 31, 2028 + 1 month = Feb 29, 2028
+        val leapResult = calculator.calculate(LocalDate.of(2028, 1, 31), rule)
+        assertEquals(LocalDate.of(2028, 2, 29), leapResult.provisionalDate)
+    }
 }
+

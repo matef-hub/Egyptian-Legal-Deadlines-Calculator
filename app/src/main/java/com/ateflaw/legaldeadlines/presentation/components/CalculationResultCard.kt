@@ -315,6 +315,34 @@ fun CalculationResultCard(
                 }
             }
 
+            // Prominent Statutory Review Status Warning (if rule is under review)
+            if (result.warnings.isNotEmpty()) {
+                result.warnings.forEach { warning ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.errorContainer)
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = warning,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
+            }
+
             // Proactive Alert Configuration Selector
             Column(
                 modifier = Modifier

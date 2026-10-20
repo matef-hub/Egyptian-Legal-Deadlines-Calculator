@@ -238,6 +238,11 @@ class LegalDeadlineCalculator {
             judicialOrderDetails = judicialOrderDetails
         )
 
+        val warnings = mutableListOf<String>()
+        if (rule.reviewStatus.equals("NEEDS_REVIEW", ignoreCase = true)) {
+            warnings.add("تنبيه تدقيق: هذه القاعدة القانونية قيد المراجعة والتدقيق التشريعي، ولم تُعتمد بعد كميعاد قطعي موثق رسمياً.")
+        }
+
         return DeadlineResult(
             startDate = startDate,
             provisionalDate = provisionalDate,
@@ -254,7 +259,8 @@ class LegalDeadlineCalculator {
             actionSummary = rule.summary.ifBlank { rule.actionName },
             milestones = milestones,
             distanceType = distanceType,
-            judicialOrderDetails = judicialOrderDetails
+            judicialOrderDetails = judicialOrderDetails,
+            warnings = warnings
         )
     }
 

@@ -1,0 +1,893 @@
+PROJECT: Egyptian Legal Deadlines Calculator
+Repository: https://github.com/matef-hub/Egyptian-Legal-Deadlines-Calculator
+Platform: Native Android
+Language: Kotlin
+UI Framework: Jetpack Compose + Material 3
+
+YOUR ROLE
+
+Act as a senior mobile product designer, an award-level editorial UI/UX designer, and a senior Android engineer specializing in Kotlin and Jetpack Compose.
+
+Your task is to redesign and implement the UI of the EXISTING Android application inside the imported repository.
+
+Do not create a new application.
+Do not create a web application.
+Do not return mockups instead of code.
+Do not stop after producing a design plan.
+Do not merely describe the changes you would make.
+
+Inspect the existing project, implement the redesign directly in its actual source files, and verify the resulting application through available build and test tools.
+
+The result must look like a carefully art-directed, professionally designed Egyptian legal product created by an experienced human design team, not a generic AI-generated dashboard or a standard Material 3 template.
+
+==================================================
+1. UNDERSTAND THE EXISTING PROJECT BEFORE EDITING
+==================================================
+
+First inspect the existing repository and identify the current architecture, source files, UI components, state flows, navigation, theme, resources, and tests.
+
+The existing Android package and namespace are:
+
+com.ateflaw.legaldeadlines
+
+The project already uses Kotlin, Jetpack Compose, Material 3, Clean Architecture, Room, ViewModels, repositories, and use cases.
+
+The current presentation package contains the following important screens and components:
+
+Screens:
+- presentation/screens/LandingScreen.kt
+- presentation/screens/CalculatorScreen.kt
+- presentation/screens/HolidaysScreen.kt
+- presentation/screens/SavedDeadlinesScreen.kt
+
+Shared components:
+- presentation/components/CalculationResultCard.kt
+- presentation/components/DeadlineTimelineView.kt
+- presentation/components/HolidayStatusBar.kt
+- presentation/components/SavedDeadlineItem.kt
+- presentation/components/ConfirmDeleteDialog.kt
+
+Application shell and navigation:
+- presentation/MainActivity.kt
+- presentation/navigation/AppNavHost.kt
+- presentation/navigation/Screen.kt
+
+Theme:
+- presentation/ui/theme/Color.kt
+- presentation/ui/theme/Theme.kt
+- presentation/ui/theme/Type.kt
+
+Relevant domain models already include:
+- DeadlineResult
+- CalculationMilestone
+- SavedDeadline
+- LegalRule
+- Holiday
+
+The calculation result model already contains fields for the final deadline, explanation, legal article, notes, excluded days, distance information, milestones, and warnings.
+
+The saved-deadline model already contains case number, client name, procedural action, announcement date, duration, distance days, final deadline, legal basis, calculation explanation, reminder settings, and a saved rule snapshot.
+
+Inspect the actual current versions of these files before changing them. This inventory is a starting point, not an instruction to assume that every file still has exactly the same implementation.
+
+Inspect MainActivity and the existing navigation carefully. The current application has an initial landing screen and three primary working destinations: the calculator, holiday schedule, and saved deadlines.
+
+Do not overwrite existing work blindly. Preserve any pre-existing user modifications and make focused, coherent changes.
+
+==================================================
+2. CORE OBJECTIVE: A DISTINCTIVE LEGAL EDITORIAL DESIGN
+==================================================
+
+The current design direction needs to move beyond generic mobile-app styling.
+
+Create a proprietary visual language based on this concept:
+
+"THE JUDICIAL LEDGER"
+
+Think of a contemporary Egyptian lawyer's professional case register, a carefully typeset legal journal, and an exceptionally clear procedural instrument translated into a mobile interface.
+
+The visual identity should feel:
+- Sophisticated and professional.
+- Confident, quiet, precise, and authoritative.
+- Distinctively Arabic in typography and composition.
+- Contemporary without looking trendy or disposable.
+- Premium without resembling a luxury-shopping application.
+- Visually memorable without distracting from legal dates and procedural information.
+
+Use the supplied Behance project solely as a reference for design quality, composition, hierarchy, and the presentation of a polished legal product.
+
+Do not copy its logo, branding, illustrations, screens, booking flows, or distinctive individual layouts.
+
+This application is a working procedural deadline calculator for Egyptian legal professionals. It is not a lawyer directory, appointment-booking application, generic productivity dashboard, or case-management application with invented features.
+
+The interface must communicate one central promise:
+
+A lawyer should be able to identify the relevant procedural action, enter the triggering date, calculate the deadline, understand the calculation, and preserve or calendar the result with minimal friction.
+
+Prioritize information hierarchy and operational clarity over decoration.
+
+==================================================
+3. DESIGN SYSTEM AND COLOR PALETTE
+==================================================
+
+Replace the repetitive visual treatment of the existing screens with one consistent, carefully art-directed design system.
+
+Use this palette as the starting point:
+
+BACKGROUND / WARM PAPER
+#F4F0E7
+
+PRIMARY SURFACE / CLEAN PAPER
+#FBF9F3
+
+PRIMARY INK / DEEP NAVY
+#172F45
+
+SECONDARY INK / DARK SLATE
+#354654
+
+ANTIQUE BRASS / DECORATIVE ACCENT
+#B18B4C
+
+DARK BRASS / READABLE GOLD TEXT
+#795A29
+
+MUTED OXBLOOD / URGENT STATUS
+#914C43
+
+COURTROOM GREEN / POSITIVE STATUS
+#35664F
+
+SECONDARY TEXT
+#716F69
+
+HAIRLINE DIVIDER
+#D9D0C1
+
+WHITE
+#FFFFFF
+
+Use warm paper as the main light-theme background, deep navy as the primary text and action color, and restrained antique brass as a secondary accent.
+
+Use oxblood for genuinely urgent or overdue information and green for positive statuses. Never use status colors merely as decoration.
+
+Important color rules:
+
+1. Do not use bright yellow gold for long text.
+2. Do not use low-contrast gold text on cream backgrounds.
+3. Do not rely on color alone to communicate an alert.
+4. Verify readable contrast for primary text, secondary text, inputs, icons, status labels, and buttons.
+5. Keep the majority of the interface neutral.
+6. Use brass sparingly for fine rules, small numeric markers, active navigation details, and selected emphasis.
+7. Implement a coordinated dark theme as well, because the existing application supports system-based light and dark themes.
+8. Do not use dynamic system accent colors that destroy the brand identity. Preserve a deliberate legal palette in both themes.
+
+Prefer solid surfaces and controlled tonal differences.
+
+A very subtle native-drawn paper or ledger motif may be used where it genuinely improves the composition, but it must never impair readability.
+
+Do not add images to the application simply to make it look designed.
+
+==================================================
+4. ART DIRECTION: HOW TO MAKE THE INTERFACE FEEL HUMAN-DESIGNED
+==================================================
+
+Use editorial composition rather than standard dashboard composition.
+
+Build a visual hierarchy using:
+
+- Strong Arabic headings aligned consistently to the right.
+- Asymmetric but balanced layouts.
+- Small section numbers such as 01, 02, and 03.
+- Thin horizontal rules and carefully controlled vertical rules.
+- Distinct title, subtitle, label, value, and explanatory-text styles.
+- Large but disciplined date typography.
+- Generous whitespace around primary information.
+- Carefully aligned baselines and consistent margins.
+- A limited number of deliberately placed outlined or filled surfaces.
+- Purposeful grouping of information.
+- Subtle, functional interaction feedback.
+
+The interface may borrow the editorial feeling of a printed legal register, but must remain unmistakably a modern Android application.
+
+Do not create a literal paper-document simulation that makes controls difficult to identify.
+
+Avoid:
+- A giant gavel or scales icon in the center of every screen.
+- Generic AI-generated courthouse illustrations.
+- Repeated cards containing one icon and three lines of text.
+- Identical rounded rectangles around every field and section.
+- Excessive pill-shaped components.
+- Excessive shadows or elevation.
+- Glassmorphism.
+- Neon gradients.
+- Oversized decorative illustrations.
+- Floating ornaments that do not support the task.
+- Fake premium effects.
+- Large blank hero sections that push essential functionality below the fold.
+- Artificial statistics, decorative charts, fake progress, or invented activity.
+- Emoji used as interface icons.
+- Excessive entrance animations.
+- Generic English labels inserted into an Arabic interface for visual effect.
+
+Do not create decorative content merely to occupy empty space.
+
+The interface should remain elegant even if all decorative elements are removed.
+
+Prefer a small number of strong, deliberate compositional decisions over many visual effects.
+
+==================================================
+5. TYPOGRAPHY, ARABIC, RTL, AND DATE FORMATTING
+==================================================
+
+Arabic is the application's primary language.
+
+Preserve full right-to-left behavior throughout the entire UI.
+
+The application already defines a Dubai font family in its typography resources. Reuse the existing font assets and improve the typography hierarchy before considering additional fonts.
+
+Do not download external font files or introduce unnecessary dependencies.
+
+Use typography deliberately:
+
+- Screen titles: prominent, compact, authoritative Arabic headings.
+- Section headings: medium-weight with a clear hierarchy.
+- Main date values: larger, highly legible numerals.
+- Field labels: concise and visually distinct from field values.
+- Explanations and legal bases: comfortable line height and readable contrast.
+- Metadata: restrained and secondary, never so small that it becomes inaccessible.
+
+Do not make all text bold.
+
+Do not use arbitrary font sizes from screen to screen.
+
+Establish reusable Material 3 text styles where appropriate.
+
+Preserve the application's existing Arabic date-formatting utilities and legal-date semantics.
+
+Never insert fabricated dates, fake current-date labels, or hardcoded example deadlines into the actual running screens.
+
+Use real values from the application's state.
+
+Support Arabic RTL layout, long Arabic procedural names, small phones, larger font settings, and text wrapping without clipping.
+
+Mixed Arabic and numeric text must render correctly.
+
+==================================================
+6. APPLICATION SHELL AND NAVIGATION
+==================================================
+
+Redesign the shared application shell in MainActivity without replacing the existing navigation architecture.
+
+Create a restrained top app bar and a carefully composed bottom navigation bar.
+
+The bottom navigation should clearly distinguish exactly these three existing primary destinations:
+
+1. حاسبة المواعيد
+2. العطلات
+3. المحفوظات
+
+Use appropriate native Material icons and concise Arabic labels.
+
+The active destination should be identifiable through a restrained combination of color, typography, and a small line or other subtle indicator.
+
+Do not put the entire navigation inside an oversized floating capsule.
+
+Do not use decorative navigation icons without meaningful labels.
+
+Keep the navigation visually quiet so that the working content remains dominant.
+
+Preserve:
+- Existing route identifiers.
+- Landing-screen navigation behavior.
+- Back-button handling.
+- Single-top navigation behavior where already implemented.
+- Saved navigation-state behavior.
+- Existing ViewModel instances and state collection.
+
+Keep the landing screen free of the working screens' bottom navigation if that is the existing behavior.
+
+Make the system status bar and navigation bar appropriate for both themes. Respect system insets and edge-to-edge layout.
+
+All navigation items must work.
+
+==================================================
+7. SCREEN ONE: LANDING SCREEN
+==================================================
+
+File:
+presentation/screens/LandingScreen.kt
+
+Redesign the landing screen as an editorial cover for a serious legal instrument.
+
+It should immediately establish the application's identity and direct the lawyer toward the primary task.
+
+Composition:
+
+A. HEADER
+
+Use a compact brand header with the existing application name and a restrained legal or procedural designation.
+
+Do not invent a new brand identity, new company name, or unsupported institutional affiliation.
+
+Use a typographic treatment rather than an oversized stock-style icon.
+
+B. MAIN HEADING
+
+Use a strong Arabic headline, for example:
+
+"حاسبة المواعيد القانونية"
+
+A short supporting line may communicate the application's purpose, but must not make unsupported claims about legal accuracy or official certification.
+
+C. SIGNATURE VISUAL
+
+Create an understated visual motif using native Compose drawing, simple geometric lines, a calendar grid, a procedural timeline, or a docket-register detail.
+
+The graphic should be specific to legal deadline calculation.
+
+It should feel designed as part of the identity, not downloaded from an icon collection and enlarged.
+
+Do not use an AI-generated raster illustration.
+
+D. PRIMARY ACTION
+
+Provide one visually dominant action:
+
+"ابدأ حساب ميعاد"
+
+Connect it to the existing calculator navigation.
+
+E. SECONDARY CONTENT
+
+Include only useful information that can be obtained from existing application state.
+
+Do not add decorative statistics, fake case counts, fictitious holiday counts, unimplemented shortcuts, or invented activity summaries.
+
+Correct the existing landing-screen presentation if it displays fabricated fallback counts or simulates a readiness sequence without reflecting actual state.
+
+Never show a fabricated number of loaded legal rules or holidays.
+
+If data is loading, show a restrained loading state.
+
+If actual data is ready, display a ready state only where that state is supported by real data.
+
+Do not falsely claim that legal rules or official holidays have been independently verified.
+
+The landing screen should not feel like a generic onboarding page or splash screen copied from a template.
+
+It should feel like the cover of a carefully designed Egyptian legal working tool.
+
+==================================================
+8. SCREEN TWO: LEGAL DEADLINE CALCULATOR
+==================================================
+
+File:
+presentation/screens/CalculatorScreen.kt
+
+This is the most important screen in the application.
+
+Redesign it as a clear, well-composed procedural workflow rather than a long stack of generic cards.
+
+The form and the result must be visually connected, with enough whitespace to distinguish sections without making users scroll unnecessarily.
+
+Use these content sections:
+
+SECTION 01 — بيانات الإجراء
+
+A. PROCEDURAL ACTION SELECTOR
+
+Clearly identify the selected legal action.
+
+Use the existing legal-rules data source and current selection behavior.
+
+Where the selected rule includes a duration and legal article, show those actual values in a quiet, compact metadata treatment.
+
+Long Arabic action names must wrap correctly.
+
+Do not invent new procedural actions or modify the contents of the statutory rules library.
+
+B. TRIGGERING DATE
+
+Present the existing date-picker control as an important, easily identifiable input.
+
+Use the correct procedural label for the date currently represented by the existing state and selected rule.
+
+Do not rename the field in a way that changes its legal meaning.
+
+Keep the date-picker interaction and selected date fully functional.
+
+C. CASE CONTEXT
+
+Maintain the existing case-number and client-name fields.
+
+Arrange the fields in a way that responds well to screen width. Do not force two columns on narrow devices.
+
+D. DISTANCE CONFIGURATION
+
+Preserve the current distance-related options, distance type, and additional distance-days input.
+
+Display controls appropriate to the existing selected distance type.
+
+Do not replace legally meaningful choices with an arbitrary slider.
+
+Do not change the legal rules governing local distance, distance from abroad, or additional distance days.
+
+Where an existing legal explanation is available, present it unobtrusively.
+
+SECTION 02 — CALCULATE
+
+Use one clearly dominant primary button:
+
+"احسب الميعاد"
+
+Its hierarchy should come from strong typography, color, proportion, and placement rather than an oversized rounded gradient.
+
+Preserve loading, enabled, and disabled states.
+
+The button must call the existing calculation callback.
+
+Do not move calculation logic into a Composable or duplicate the calculation engine.
+
+SECTION 03 — RESULT
+
+When a result exists, present it as the second part of the same visual workflow.
+
+Create a memorable but sober result composition.
+
+The final legally calculated date should be the primary visual element.
+
+Display:
+- The final deadline from DeadlineResult.finalDeadline.
+- The actual remaining-day calculation and deadline status where supported.
+- The existing action summary.
+- The legal article or legal basis supplied by the result.
+- The existing calculation explanation.
+- Relevant notes.
+- Relevant warnings.
+- Existing distance and excluded-day information when applicable.
+
+Give the final date strong typographic prominence without surrounding it with an unnecessarily oversized card.
+
+Use a restrained accent treatment for the remaining-day status:
+- Overdue.
+- Due today.
+- Approaching.
+- Upcoming.
+
+Calculate and label these states correctly against the actual current date.
+
+Never display a hardcoded countdown.
+
+SECTION 04 — PROCEDURAL TIMELINE
+
+Redesign the existing DeadlineTimelineView as a native Compose editorial timeline.
+
+Use the actual CalculationMilestone list already supplied by DeadlineResult.milestones.
+
+The component should show the real procedural stages available from the result model, including relevant stages such as:
+- Triggering event.
+- Start of counting.
+- Original deadline.
+- Applicable distance extension.
+- Holiday or Friday extension.
+- Final deadline.
+
+Use only milestones actually supplied by the model.
+
+If the milestone list is empty, omit the timeline or present an appropriate empty state. Never fabricate intermediate legal events to fill the visual layout.
+
+The timeline should be readable on a narrow phone in RTL.
+
+Use a disciplined vertical rule, restrained markers, actual dates, short explanations, and legal-basis text where provided.
+
+Expanded milestone details should remain accessible without allowing one item to expand accidentally when another is selected.
+
+SECTION 05 — RESULT ACTIONS
+
+Preserve existing working actions:
+- Save the calculated deadline.
+- Add the actual final deadline to the device calendar.
+- Configure and add the proactive reminder when supported.
+- Reset or return from the current result where currently supported.
+
+Keep the final-deadline calendar event and the proactive-reminder event distinct.
+
+A proactive reminder must use its actual calculated reminder date, not the final deadline date.
+
+Maintain existing callbacks and ViewModel behavior.
+
+Do not introduce buttons that look functional but do nothing.
+
+==================================================
+9. SCREEN THREE: HOLIDAY SCHEDULE
+==================================================
+
+File:
+presentation/screens/HolidaysScreen.kt
+
+Redesign the holiday schedule as a carefully typeset calendar register.
+
+This screen should feel different from the calculator while sharing the same brand identity.
+
+The information architecture should prioritize the date and the actual holiday name.
+
+Use:
+
+A. SCREEN HEADER
+
+A restrained title:
+
+"جدول العطلات"
+
+Add a short explanation if appropriate.
+
+B. SYNC STATUS
+
+Make the current data state understandable without giving it undue visual prominence.
+
+Reuse existing loading, synchronization, result, and error states.
+
+If synchronization is in progress, show a clear progress indicator and appropriate feedback.
+
+If synchronization fails, communicate the failure and retain access to available locally cached information.
+
+Do not pretend that synchronization succeeded.
+
+Do not invent a last-verified timestamp or an official-source certification that the current application does not actually store.
+
+Display synchronization metadata only if it is available from the existing state or has been implemented accurately.
+
+C. FILTERS
+
+Preserve the current holiday filtering behavior and ensure every filter still works.
+
+Use compact, editorial controls with clear Arabic labels rather than oversized pill collections.
+
+Do not silently change the meaning of an existing filter.
+
+D. HOLIDAY LIST
+
+Create a refined, date-led list with:
+- Clearly aligned dates.
+- Arabic holiday names.
+- Subdued month/year context when helpful.
+- Thin separators.
+- A small number of meaningful status treatments.
+
+Prefer a well-designed list or timeline over individual oversized cards.
+
+Distinguish important dates using restrained accents.
+
+Preserve the actual holiday data and its source.
+
+The UI must never invent a holiday, alter its date, or imply that Saturday is an official weekly court holiday.
+
+Respect the application's existing treatment of Friday, Saturday, and official holidays. Saturday is treated as a court working day by the existing project's stated procedural rules.
+
+E. REFRESH ACTION
+
+Keep the existing refresh/synchronization action fully functional.
+
+Give feedback through the existing state and snackbar behavior.
+
+Preserve loading, empty, error, and populated-list states.
+
+Do not implement a new data source, API, database, or synchronization mechanism merely for visual purposes.
+
+==================================================
+10. SCREEN FOUR: SAVED DEADLINES
+==================================================
+
+File:
+presentation/screens/SavedDeadlinesScreen.kt
+
+Redesign the saved-deadlines screen as a professional procedural register.
+
+It should be easy to scan quickly, even when many deadlines are saved.
+
+A. HEADER
+
+Use:
+
+"المواعيد المحفوظة"
+
+Show the number of saved deadlines only when derived from the actual collection.
+
+Do not invent sample cases in production.
+
+B. DEADLINE ITEMS
+
+Redesign SavedDeadlineItem with a compact, distinctive composition.
+
+Each item should make the following information easy to identify:
+- The final deadline date.
+- The procedural action.
+- The case number when present.
+- The client name when present.
+- The applicable legal article.
+- The current deadline status.
+
+Use date typography, small section labels, and fine dividers instead of nesting the content in repeated heavy cards.
+
+C. STATUS
+
+Where calculated accurately, identify:
+- Overdue deadlines.
+- Deadlines due today.
+- Upcoming deadlines.
+- Approaching deadlines.
+
+Use text as well as color to communicate status.
+
+Never calculate status from fabricated dates.
+
+Never omit a deadline simply because its status is not upcoming.
+
+D. EXPANDED DETAILS
+
+Preserve the existing expandable behavior.
+
+When expanded, present the existing explanation, notes, distance information, saved rule snapshot where already supported, and other relevant stored information.
+
+Do not silently recalculate a historical saved deadline based on a modified legal rule.
+
+Respect the saved calculation data and rule snapshot already present in the model.
+
+E. ACTIONS
+
+Preserve all existing working actions in SavedDeadlineItem:
+- Delete with confirmation.
+- Add the final deadline to the calendar.
+- Add the proactive reminder where supported.
+- Expand and collapse the item.
+
+The deletion confirmation dialog should match the new visual language and remain accessible.
+
+Keep destructive actions visually distinct and require the existing confirmation behavior.
+
+Do not remove useful functionality to simplify the UI.
+
+==================================================
+11. REDESIGN THE SHARED COMPONENTS
+==================================================
+
+Apply the same art direction consistently to:
+
+- CalculationResultCard.kt
+- DeadlineTimelineView.kt
+- HolidayStatusBar.kt
+- SavedDeadlineItem.kt
+- ConfirmDeleteDialog.kt
+
+Avoid making all components look identical.
+
+The result card should emphasize the final date.
+
+The timeline should communicate sequence and causality.
+
+The holiday status component should communicate actual data status.
+
+Saved items should optimize scanning and comparison.
+
+The delete dialog should be concise and unambiguous.
+
+Do not add unnecessary containers around components that already have a clear visual boundary.
+
+Use consistent values for spacing, typography, corner radii, borders, and icon sizes.
+
+Prefer the existing Material 3 components when they support the design. Use custom Compose layouts only when they offer a clear improvement.
+
+==================================================
+12. IMPLEMENTATION RULES
+==================================================
+
+This must be a real Jetpack Compose implementation.
+
+Do not generate images, image assets, concept screenshots, HTML mockups, React components, or a separate prototype.
+
+Do not use raster screenshots as UI backgrounds.
+
+Construct the visuals using native Compose:
+- Layout primitives.
+- Material 3 components.
+- Shapes.
+- Typography.
+- Vector icons.
+- Simple Canvas drawing only where useful.
+
+Keep the project self-contained.
+
+Do not add dependencies unless they are demonstrably necessary.
+
+Preserve existing font files and resources.
+
+Create small reusable composables when they meaningfully reduce duplication.
+
+Use immutable UI data where appropriate, stable keys in lists, and sensible state handling.
+
+Preserve the existing ViewModel and unidirectional data flow.
+
+Collect flows using the project's existing lifecycle-aware state collection conventions where appropriate.
+
+Keep business logic out of presentation components.
+
+Do not add expensive work to the Compose recomposition path.
+
+Use LazyColumn for long lists when appropriate.
+
+Do not use fixed heights that clip Arabic text.
+
+Respect:
+- System insets.
+- On-screen keyboard.
+- Date-picker dialogs.
+- Small phone screens.
+- Large font accessibility settings.
+- Light and dark themes.
+- Touch-target sizes.
+- Scroll behavior.
+- RTL layout direction.
+
+Use restrained transitions only where they improve orientation or feedback. Keep motion short and purposeful.
+
+Avoid artificial loading animations and show truthful loading states.
+
+All new interactive controls must be wired to real behavior.
+
+==================================================
+13. STRICT FUNCTIONAL AND LEGAL SAFEGUARDS
+==================================================
+
+THIS IS A UI REDESIGN, NOT A REWRITE OF THE LEGAL ENGINE.
+
+Do not modify the core legal-calculation behavior.
+
+Do not modify:
+- domain/calculator/LegalDeadlineCalculator.kt
+- domain/usecase/CalculateDeadlineUseCase.kt
+- Domain models or their legal semantics.
+- LegalRuleSeedData.kt.
+- Room entities, DAOs, database schema, migrations, or migration tests.
+- Holiday calculation or synchronization services.
+- Repository logic.
+- API integrations.
+- API-key configuration.
+- Legal rule durations or statutory article mappings.
+
+Do not change:
+- Application ID.
+- Namespace or Kotlin package names.
+- Minimum SDK or target SDK.
+- Kotlin, Android Gradle Plugin, Compose, Room, or other dependency versions.
+- Build configuration or release signing.
+- CI workflows.
+- Existing route identifiers unless a genuine, necessary navigation defect requires a minimal correction.
+
+Do not introduce new legal rules, legal advice, invented statute citations, or unsupported claims of official verification.
+
+Do not delete user data, recreate the database, alter Room migrations, or use destructive migration as a shortcut.
+
+Do not remove existing features because they are inconvenient to redesign.
+
+If a presentation change cannot be completed without touching protected business logic, inspect the dependency and make the smallest safe change necessary. Explain the reason in the final implementation report.
+
+If a value is unavailable from the current UI state, omit it or display an honest unavailable state. Never fabricate a value just to complete a visual composition.
+
+==================================================
+14. DARK THEME, ACCESSIBILITY, AND RESPONSIVE BEHAVIOR
+==================================================
+
+The interface must be designed, not merely recolored, for both light and dark themes.
+
+Light theme:
+- Warm neutral background.
+- Deep navy text.
+- Antique brass accents.
+- Restrained positive and urgent status colors.
+
+Dark theme:
+- Deep, comfortable background.
+- Clearly separated dark surfaces.
+- Readable light text.
+- Muted brass accents with adequate contrast.
+- Status colors adjusted for dark surfaces.
+
+Preserve the existing system theme preference behavior.
+
+Accessibility requirements:
+- Readable Arabic labels.
+- Semantic descriptions for meaningful icons.
+- Sufficient contrast.
+- Large enough touch targets.
+- Clear keyboard and focus behavior.
+- No status information communicated by color alone.
+- No clipped text at increased font scales.
+- Logical RTL focus and navigation behavior.
+
+Test layouts at approximately 320dp, 360dp, and 411dp screen widths, or the closest supported preview/device configurations.
+
+The calculator, result, navigation, and key actions must remain usable on compact devices.
+
+==================================================
+15. TECHNICAL VALIDATION AND TESTING
+==================================================
+
+After implementing the redesign, do not stop at editing files.
+
+Perform the following checks using the available Android development environment.
+
+1. Inspect the final changes and ensure they are limited to the intended presentation, theme, and required UI-resource files.
+
+2. Build the debug application with the repository's Gradle wrapper when available:
+
+   ./gradlew assembleDebug
+
+3. Run the existing unit tests:
+
+   ./gradlew test
+
+4. Run Android lint if it is available and practical.
+
+5. Fix any compilation errors, unresolved imports, missing resources, incorrect Compose APIs, or broken previews introduced by your changes.
+
+6. Verify that:
+   - The application opens correctly.
+   - The landing screen navigates to the calculator.
+   - The bottom navigation reaches all three destinations.
+   - The action selector continues to work.
+   - The date picker updates the correct state.
+   - Case-number and client-name input remain functional.
+   - Distance configuration retains its existing behavior.
+   - Calculation uses the existing legal engine.
+   - The displayed result matches the actual calculation output.
+   - The milestone timeline uses real data.
+   - Saving a deadline persists through the existing repository.
+   - Saved deadlines display the correct persisted fields.
+   - Delete confirmation and deletion still work.
+   - Calendar integration remains intact.
+   - The proactive reminder uses the actual reminder date.
+   - Holiday filters remain functional.
+   - Holiday refresh, loading, and error feedback remain intact.
+   - Empty and populated list states work.
+   - Light and dark themes render properly.
+   - RTL text and numeric dates do not clip or overlap.
+
+7. Do not claim that a build or test passed unless the tool actually executed it and returned a successful result.
+
+If the environment cannot run a command, report it accurately and continue with the checks that are available.
+
+Do not make unrelated changes to achieve a successful build.
+
+==================================================
+16. COMPLETION CRITERIA
+==================================================
+
+The task is complete only when the redesigned interface is implemented in the existing project and the available validation has been performed.
+
+The final result must:
+- Look substantially different from the existing generic card-heavy interface.
+- Have a coherent editorial legal identity.
+- Feel specifically designed for Egyptian lawyers.
+- Be clearly distinguishable from generic AI-generated mobile UI.
+- Preserve all existing calculation and storage behavior.
+- Preserve the existing app architecture and legal rule data.
+- Work in Arabic RTL.
+- Remain usable on real phone-sized layouts.
+- Retain the application's core functionality.
+- Compile successfully if the available environment supports the build.
+
+Do not finish by giving me another design proposal or a list of instructions for me to implement manually.
+
+Make the changes directly in the imported project.
+
+At the end, provide a concise implementation report containing:
+1. What changed visually.
+2. The exact files changed.
+3. Features preserved.
+4. Build and test results, distinguishing executed checks from unexecuted checks.
+5. Any remaining issues requiring my attention.
+
+Do not deploy the application, publish a release, change repository settings, delete branches, or push changes to a remote repository without my explicit authorization.
+
+Begin by examining the current repository, then implement the complete UI redesign.
