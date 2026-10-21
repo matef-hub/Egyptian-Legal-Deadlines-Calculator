@@ -144,6 +144,7 @@ fun CalculatorScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalculatorScreenContent(
+    modifier: Modifier = Modifier,
     uiState: MainUiState,
     onRuleSelected: (LegalRule?) -> Unit,
     onAnnouncementDateChanged: (LocalDate) -> Unit,
@@ -155,8 +156,7 @@ fun CalculatorScreenContent(
     onResetCalculation: () -> Unit,
     onSaveCurrentDeadline: (Int?) -> Unit,
     onReminderDaysChanged: (Int?) -> Unit = {},
-    onDismissMessages: () -> Unit,
-    modifier: Modifier = Modifier
+    onDismissMessages: () -> Unit
 ) {
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()

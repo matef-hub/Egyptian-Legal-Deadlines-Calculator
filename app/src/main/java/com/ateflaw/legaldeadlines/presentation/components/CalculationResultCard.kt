@@ -439,7 +439,7 @@ fun CalculationResultCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "إضافة الميعاد النهائي للتقويم (${finalDateFormatted})",
+                        text = "إضافة الميعاد للاجندة ($finalDateFormatted)",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -565,6 +565,37 @@ private fun ResultDetailRow(
 @Preview(showBackground = true, name = "Calculation Result Card")
 @Composable
 fun CalculationResultCardPreview() {
+    val sampleMilestones = listOf(
+        com.ateflaw.legaldeadlines.domain.model.CalculationMilestone(
+            type = com.ateflaw.legaldeadlines.domain.model.MilestoneType.TRIGGER_EVENT,
+            date = LocalDate.of(2026, 9, 23),
+            title = "تاريخ الإعلان أو صدور الحكم",
+            description = "تاريخ صدور الحكم أو الإعلان به وفقاً للمادة 82 من قانون المرافعات.",
+            legalBasis = "المادة 82 من قانون المرافعات المدنية والتجارية"
+        ),
+        com.ateflaw.legaldeadlines.domain.model.CalculationMilestone(
+            type = com.ateflaw.legaldeadlines.domain.model.MilestoneType.COUNTING_START,
+            date = LocalDate.of(2026, 9, 24),
+            title = "بدء سريان الميعاد الإجرائي",
+            description = "يبدأ الاحتساب من اليوم التالي إعمالاً للمادة 15 مرافعات.",
+            legalBasis = "المادة 15 من قانون المرافعات المدنية والتجارية"
+        ),
+        com.ateflaw.legaldeadlines.domain.model.CalculationMilestone(
+            type = com.ateflaw.legaldeadlines.domain.model.MilestoneType.BASE_DEADLINE,
+            date = LocalDate.of(2026, 11, 22),
+            title = "نهاية المدة القانونية الأصلية",
+            description = "انقضاء مدة الميعاد الأصلية.",
+            legalBasis = "المادة 82 من قانون المرافعات المدنية والتجارية"
+        ),
+        com.ateflaw.legaldeadlines.domain.model.CalculationMilestone(
+            type = com.ateflaw.legaldeadlines.domain.model.MilestoneType.FINAL_DEADLINE,
+            date = LocalDate.of(2026, 11, 22),
+            title = "الميعاد النهائي واجب الالتزام به",
+            description = "آخر يوم عمل لإيداع الصحيفة.",
+            legalBasis = "المادتان 15 و 18 من قانون المرافعات"
+        )
+    )
+
     val sampleResult = DeadlineResult(
         startDate = LocalDate.of(2026, 10, 2),
         provisionalDate = LocalDate.of(2026, 11, 10),
@@ -574,6 +605,7 @@ fun CalculationResultCardPreview() {
         additionalDistanceDays = 0,
         totalDistanceDays = 0,
         excludedDays = emptyList(),
+        milestones = sampleMilestones,
         finalDeadline = LocalDate.of(2026, 11, 10),
         explanation = "شرح تفصيلي للميعاد الإجرائي",
         lawArticle = "المادة 227 من قانون المرافعات المدنية والتجارية",

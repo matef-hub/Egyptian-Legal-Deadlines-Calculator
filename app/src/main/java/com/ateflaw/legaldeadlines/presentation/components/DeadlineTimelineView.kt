@@ -7,6 +7,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,7 +48,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -104,7 +104,10 @@ fun DeadlineTimelineView(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -120,7 +123,7 @@ fun DeadlineTimelineView(
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f, fill = false)) {
                         Text(
                             text = "المسار الإجرائي لسريان الميعاد",
                             style = MaterialTheme.typography.titleMedium,
@@ -134,6 +137,8 @@ fun DeadlineTimelineView(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 CountdownBadge(finalDeadline = finalDeadline)
             }
@@ -217,7 +222,8 @@ fun CountdownBadge(
                 text = badgeText,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = badgeColor
+                color = badgeColor,
+                maxLines = 1
             )
         }
     }
@@ -248,6 +254,7 @@ private fun TimelineNodeItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .height(IntrinsicSize.Min)
             .clickable { expanded = !expanded }
             .padding(vertical = 3.dp),
         horizontalArrangement = Arrangement.Start
@@ -281,7 +288,8 @@ private fun TimelineNodeItem(
                 Box(
                     modifier = Modifier
                         .width(2.dp)
-                        .height(38.dp)
+                        .weight(1f)
+                        .padding(vertical = 2.dp)
                         .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                 )
             }
@@ -295,11 +303,7 @@ private fun TimelineNodeItem(
                 .weight(1f)
                 .padding(bottom = if (isLast) 0.dp else 12.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = milestone.title,
                     style = MaterialTheme.typography.bodyMedium,
@@ -308,6 +312,7 @@ private fun TimelineNodeItem(
                 )
 
                 milestone.legalBasis?.let { basis ->
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = basis,
                         style = MaterialTheme.typography.labelSmall,
@@ -318,7 +323,7 @@ private fun TimelineNodeItem(
                 }
             }
 
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
