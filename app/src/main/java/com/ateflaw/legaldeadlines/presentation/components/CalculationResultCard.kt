@@ -57,23 +57,38 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
+import com.ateflaw.legaldeadlines.presentation.ui.theme.AntiqueBrass
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
+import com.ateflaw.legaldeadlines.presentation.components.custom.BlueprintResultBox
+import com.ateflaw.legaldeadlines.presentation.components.custom.ProceduralTimeline
+import com.ateflaw.legaldeadlines.presentation.components.custom.TimelineNode
+import com.ateflaw.legaldeadlines.presentation.ui.theme.JudicialNavy
+import com.ateflaw.legaldeadlines.presentation.ui.theme.TerracottaSeal
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Surface
+
+private fun String.toArabicDigits(): String {
+    return this.replace("0", "٠").replace("1", "١").replace("2", "٢").replace("3", "٣")
+        .replace("4", "٤").replace("5", "٥").replace("6", "٦").replace("7", "٧")
+        .replace("8", "٨").replace("9", "٩")
+}
 
 @Composable
 fun CalculationResultCard(
+    modifier: Modifier = Modifier,
     result: DeadlineResult,
     isSaved: Boolean,
     initialReminderDays: Int? = 3,
     onReminderDaysChanged: (Int?) -> Unit = {},
     onSaveClick: (Int?) -> Unit = {},
-    onBackClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onBackClick: () -> Unit = {}
 ) {
-    val finalDateFormatted = DateFormatterUtils.formatArabicFullDate(result.finalDeadline)
-    val startDateFormatted = DateFormatterUtils.formatArabicFullDate(result.startDate)
+    val finalDateFormatted = DateFormatterUtils.formatArabicFullDate(result.finalDeadline).toArabicDigits()
+    val startDateFormatted = DateFormatterUtils.formatArabicFullDate(result.startDate).toArabicDigits()
     val dayNameArabic = DateFormatterUtils.getArabicDayName(result.finalDeadline.dayOfWeek)
     val context = LocalContext.current
     var proactiveReminderDays by remember(initialReminderDays) { mutableIntStateOf(initialReminderDays ?: 0) }
@@ -145,378 +160,105 @@ fun CalculationResultCard(
         }
     }
 
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-        ),
-        border = CardDefaults.outlinedCardBorder().copy(
-            brush = SolidColor(MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.3f))
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    BlueprintResultBox(
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header Row: Check Icon + Title "الميعاد النهائي"
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "الميعاد النهائي",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                )
-
                 Icon(
-                    imageVector = Icons.Default.CheckCircle,
+                    imageVector = Icons.Default.CalendarMonth,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = Modifier.size(28.dp)
+                    tint = AntiqueBrass
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "آخر يوم قانوني",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = JudicialNavy
                 )
             }
 
             // Big Highlighted Final Date Display
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Text(
+                text = finalDateFormatted,
+                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 32.sp),
+                fontWeight = FontWeight.Bold,
+                color = JudicialNavy
+            )
+
+            val remainingDays = ChronoUnit.DAYS.between(LocalDate.now(), result.finalDeadline)
+            val remainingText = if (remainingDays > 0) "باقي ${remainingDays.toString().toArabicDigits()} يوماً" 
+                                else if (remainingDays == 0L) "اليوم هو آخر ميعاد" 
+                                else "انقضى الميعاد منذ ${(-remainingDays).toString().toArabicDigits()} يوماً"
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = TerracottaSeal
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarMonth,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = finalDateFormatted,
-                        style = MaterialTheme.typography.headlineLarge.copy(fontSize = 28.sp),
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
                 Text(
-                    text = dayNameArabic,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
+                    text = remainingText,
+                    color = androidx.compose.ui.graphics.Color.White,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold
                 )
             }
 
-            // Interactive Procedural Lifecycle Timeline
-            if (result.milestones.isNotEmpty()) {
-                DeadlineTimelineView(
-                    milestones = result.milestones,
-                    finalDeadline = result.finalDeadline
+            Spacer(modifier = Modifier.height(8.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Straighten, // Using available icon
+                    contentDescription = null,
+                    tint = JudicialNavy,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "المسار الزمني للإجراء",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = JudicialNavy
                 )
             }
 
-            // Structured Table / Rows Inside Surface Card Container
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                ) {
-                    // Row 1: Duration
-                    ResultDetailRow(
-                        icon = Icons.Default.HourglassTop,
-                        label = "مدة الميعاد",
-                        value = "${result.duration} ${if (result.duration == 13L || result.duration == 15L) "يوماً" else result.unit.arabicDisplayName}"
-                    )
-
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
-                        modifier = Modifier.padding(horizontal = 14.dp)
-                    )
-
-                    // Row 2: Legal Action / Statutory Basis
-                    ResultDetailRow(
-                        icon = Icons.Default.Gavel,
-                        label = "الإجراء وسنده",
-                        value = result.actionSummary.ifBlank { result.lawArticle.ifBlank { "صحيفة دعوى" } }
-                    )
-
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
-                        modifier = Modifier.padding(horizontal = 14.dp)
-                    )
-
-                    // Row 3: Start Date
-                    ResultDetailRow(
-                        icon = Icons.Default.CalendarMonth,
-                        label = "تاريخ السريان",
-                        value = startDateFormatted
-                    )
-
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
-                        modifier = Modifier.padding(horizontal = 14.dp)
-                    )
-
-                    // Row 4: Distance Days (Articles 16 and 17)
-                    ResultDetailRow(
-                        icon = Icons.Default.Straighten,
-                        label = "أيام المسافة",
-                        value = "${result.totalDistanceDays} يوم"
-                    )
-                }
-            }
-
-            // Professional Legal Disclaimer & Note
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
-                    .padding(12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .padding(top = 2.dp)
-                    )
-
-                    Text(
-                        text = "تنبيه مهني: الحساب استرشادي وفقاً للمواد 15 و16 و17 و18 من قانون المرافعات وقرارات العطلات الرسمية، ويلزم التحقق من وقائع الخصومة وحضورها واستثناءاتها.",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        lineHeight = 18.sp
-                    )
-                }
-            }
-
-            // Prominent Statutory Review Status Warning (if rule is under review)
-            if (result.warnings.isNotEmpty()) {
-                result.warnings.forEach { warning ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.errorContainer)
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            text = warning,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    }
-                }
-            }
-
-            // Proactive Alert Configuration Selector
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(14.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "التنبيه الاستباقي للتقويم:",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    if (proactiveReminderDays > 0) {
-                        val proactiveDate = result.finalDeadline.minusDays(proactiveReminderDays.toLong())
-                        Text(
-                            text = "بتاريخ ${DateFormatterUtils.formatArabicFullDate(proactiveDate)} (قبل $proactiveReminderDays أيام)",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    listOf(1 to "يوم", 3 to "3 أيام", 5 to "5 أيام", 7 to "أسبوع", 0 to "بدون").forEach { (days, label) ->
-                        val isSelected = proactiveReminderDays == days
-                        val pillBgColor by animateColorAsState(
-                            targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-                            label = "ProactivePillBg"
-                        )
-                        val pillTextColor by animateColorAsState(
-                            targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-                            label = "ProactivePillText"
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(pillBgColor)
-                                .clickable {
-                                    proactiveReminderDays = days
-                                    onReminderDaysChanged(if (days == 0) null else days)
-                                }
-                                .padding(vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = label,
-                                fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = pillTextColor,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Separated Calendar Actions:
-            // 1. Add Final Deadline (at finalDeadline)
-            // 2. Add Proactive Reminder (at proactiveDate)
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    onClick = onAddFinalDeadlineToCalendar,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
+            val announcementDate = result.milestones.find { it.type == com.ateflaw.legaldeadlines.domain.model.MilestoneType.TRIGGER_EVENT }?.date ?: result.startDate.minusDays(1)
+            
+            ProceduralTimeline(
+                nodes = listOf(
+                    TimelineNode(
+                        number = "1",
+                        title = "الإعلان",
+                        date = "${announcementDate.dayOfMonth} ${DateFormatterUtils.getArabicMonthName(announcementDate.monthValue)}".toArabicDigits()
                     ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarMonth,
-                        contentDescription = null
+                    TimelineNode(
+                        number = "2",
+                        title = "بداية السريان",
+                        date = "${result.startDate.dayOfMonth} ${DateFormatterUtils.getArabicMonthName(result.startDate.monthValue)}".toArabicDigits()
+                    ),
+                    TimelineNode(
+                        number = "3",
+                        title = "الميعاد النهائي",
+                        date = "${result.finalDeadline.dayOfMonth} ${DateFormatterUtils.getArabicMonthName(result.finalDeadline.monthValue)}".toArabicDigits(),
+                        isFinal = true
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "إضافة الميعاد النهائي للتقويم (${finalDateFormatted})",
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-
-                if (proactiveReminderDays > 0) {
-                    val pDate = result.finalDeadline.minusDays(proactiveReminderDays.toLong())
-                    OutlinedButton(
-                        onClick = onAddProactiveAlertToCalendar,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(46.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.NotificationsActive,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "إضافة تنبيه استباقي للتقويم (${DateFormatterUtils.formatArabicFullDate(pDate)})",
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Button(
-                        onClick = { onSaveClick(if (proactiveReminderDays == 0) null else proactiveReminderDays) },
-                        enabled = !isSaved,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(46.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Bookmark,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = if (isSaved) "تم الحفظ بالمحفوظات" else "حفظ الميعاد",
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    OutlinedButton(
-                        onClick = onBackClick,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(46.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "احتساب جديد",
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
+                )
+            )
         }
     }
 }

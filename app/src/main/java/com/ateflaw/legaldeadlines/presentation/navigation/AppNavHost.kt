@@ -55,6 +55,9 @@ fun AppNavHost(
                     navController.navigate(Screen.Calculator.route) {
                         popUpTo(Screen.Landing.route) { inclusive = true }
                     }
+                },
+                onNavigateToAgenda = {
+                    navController.navigate(Screen.SavedDeadlines.route)
                 }
             )
         }
