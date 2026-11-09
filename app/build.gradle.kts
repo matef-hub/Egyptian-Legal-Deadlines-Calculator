@@ -143,6 +143,8 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.room.testing)
+    // Required by the JVM-only Room migration test fixture (DriverManager jdbc:sqlite:).
+    testImplementation("org.xerial:sqlite-jdbc:3.46.1.0")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     add("androidTestImplementation", platform(libs.androidx.compose.bom))
