@@ -29,7 +29,7 @@ class CalculateDeadlineUseCase(
         }
         val holidayMap: Map<LocalDate, String> = holidaysList.associate { it.holidayDate to it.name }
 
-        calculator.calculate(
+        val result = calculator.calculate(
             announcementDate = announcementDate,
             rule = rule,
             distanceType = distanceType,
@@ -40,6 +40,21 @@ class CalculateDeadlineUseCase(
                 Pair(name != null, name)
             }
         )
+
+        // The holiday cache is not a substitute for published government decisions.
+        // Particularly for an empty year, the calculator must never suggest that
+        // no holidays existed merely because none were stored locally.
+        val coveredYears = holidaysList.map { it.holidayDate.year }.toSet()
+        val yearRange = minOf(announcementDate.year, result.finalDeadline.year)..
+            maxOf(announcementDate.year, result.finalDeadline.year)
+        val missingYears = yearRange.filterNot { it in coveredYears }
+        val holidayWarnings = buildList {
+            if (missingYears.isNotEmpty()) {
+                add("تحذير: قاعدة العطلات المحلية لا تحتوي بيانات لسنوات ${missingYears.joinToString("، ")}؛ وقد يتغير الميعاد النهائي بعد التحقق من الإجازات الرسمية.")
+            }
+            add("تنبيه: تواريخ العطلات المخزنة لا تتضمن مستند قرار رسمي؛ راجع قرارات الإجازات المتعلقة بالجهة المختصة قبل الاعتماد على الميعاد.")
+        }
+        result.copy(warnings = result.warnings + holidayWarnings)
     }
 
     suspend operator fun invoke(
