@@ -1,0 +1,6 @@
+{
+  "name": "حاسبة المواعيد القانونية",
+  "description": "حاسبة المواعيد القانونية والإجرائية المصرية وفقاً لقواعد الإجراءات والعطلات الرسمية واعتبار السبت يوم عمل",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

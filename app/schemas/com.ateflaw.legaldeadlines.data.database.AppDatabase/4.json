@@ -1,0 +1,87 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "c3d4e5f6789012345678abcdef012345",
+    "entities": [
+      {
+        "tableName": "legal_rules",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `action_name` TEXT NOT NULL, `duration` INTEGER NOT NULL, `unit` TEXT NOT NULL, `distance_days` INTEGER NOT NULL, `start_rule` TEXT NOT NULL, `law_article` TEXT NOT NULL, `notes` TEXT NOT NULL, `summary` TEXT NOT NULL DEFAULT '', `trigger_event_type` TEXT NOT NULL DEFAULT 'ANNOUNCEMENT', `trigger_event_label` TEXT NOT NULL DEFAULT 'تاريخ الإعلان أو صدور الحكم', `court_type` TEXT NOT NULL DEFAULT 'مدني وتجاري', `category` TEXT NOT NULL DEFAULT 'طرق الطعن', `distance_policy` TEXT NOT NULL DEFAULT 'APPLICABLE', `extension_policy` TEXT NOT NULL DEFAULT 'ARTICLE_18_COURTS', `law_name` TEXT NOT NULL DEFAULT 'قانون المرافعات المدنية والتجارية', `article` TEXT NOT NULL DEFAULT '', `official_source_url` TEXT NOT NULL DEFAULT '', `effective_from` TEXT NOT NULL DEFAULT '1968-11-01', `effective_to` TEXT DEFAULT NULL, `last_reviewed_at` TEXT NOT NULL DEFAULT '2026-10-13', `review_status` TEXT NOT NULL DEFAULT 'NEEDS_REVIEW')",
+        "fields": [
+          { "fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "actionName", "columnName": "action_name", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "duration", "columnName": "duration", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "unit", "columnName": "unit", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "distanceDays", "columnName": "distance_days", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "startRule", "columnName": "start_rule", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "lawArticle", "columnName": "law_article", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "notes", "columnName": "notes", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "summary", "columnName": "summary", "affinity": "TEXT", "notNull": true, "defaultValue": "''" },
+          { "fieldPath": "triggerEventType", "columnName": "trigger_event_type", "affinity": "TEXT", "notNull": true, "defaultValue": "'ANNOUNCEMENT'" },
+          { "fieldPath": "triggerEventLabel", "columnName": "trigger_event_label", "affinity": "TEXT", "notNull": true, "defaultValue": "'تاريخ الإعلان أو صدور الحكم'" },
+          { "fieldPath": "courtType", "columnName": "court_type", "affinity": "TEXT", "notNull": true, "defaultValue": "'مدني وتجاري'" },
+          { "fieldPath": "category", "columnName": "category", "affinity": "TEXT", "notNull": true, "defaultValue": "'طرق الطعن'" },
+          { "fieldPath": "distancePolicy", "columnName": "distance_policy", "affinity": "TEXT", "notNull": true, "defaultValue": "'APPLICABLE'" },
+          { "fieldPath": "extensionPolicy", "columnName": "extension_policy", "affinity": "TEXT", "notNull": true, "defaultValue": "'ARTICLE_18_COURTS'" },
+          { "fieldPath": "lawName", "columnName": "law_name", "affinity": "TEXT", "notNull": true, "defaultValue": "'قانون المرافعات المدنية والتجارية'" },
+          { "fieldPath": "article", "columnName": "article", "affinity": "TEXT", "notNull": true, "defaultValue": "''" },
+          { "fieldPath": "officialSourceUrl", "columnName": "official_source_url", "affinity": "TEXT", "notNull": true, "defaultValue": "''" },
+          { "fieldPath": "effectiveFrom", "columnName": "effective_from", "affinity": "TEXT", "notNull": true, "defaultValue": "'1968-11-01'" },
+          { "fieldPath": "effectiveTo", "columnName": "effective_to", "affinity": "TEXT", "notNull": false, "defaultValue": "NULL" },
+          { "fieldPath": "lastReviewedAt", "columnName": "last_reviewed_at", "affinity": "TEXT", "notNull": true, "defaultValue": "'2026-10-13'" },
+          { "fieldPath": "reviewStatus", "columnName": "review_status", "affinity": "TEXT", "notNull": true, "defaultValue": "'NEEDS_REVIEW'" }
+        ],
+        "primaryKey": { "autoGenerate": true, "columnNames": ["id"] },
+        "indices": []
+      },
+      {
+        "tableName": "holidays",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `holiday_date` TEXT NOT NULL, `name` TEXT NOT NULL)",
+        "fields": [
+          { "fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "holidayDate", "columnName": "holiday_date", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "name", "columnName": "name", "affinity": "TEXT", "notNull": true }
+        ],
+        "primaryKey": { "autoGenerate": true, "columnNames": ["id"] },
+        "indices": [
+          {
+            "name": "index_holidays_holiday_date",
+            "unique": true,
+            "columnNames": ["holiday_date"],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_holidays_holiday_date` ON `${TABLE_NAME}` (`holiday_date`)"
+          }
+        ]
+      },
+      {
+        "tableName": "saved_deadlines",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `case_number` TEXT NOT NULL, `client_name` TEXT NOT NULL, `action_name` TEXT NOT NULL, `announcement_date` TEXT NOT NULL, `duration` INTEGER NOT NULL, `unit` TEXT NOT NULL, `distance_days` INTEGER NOT NULL, `final_deadline` TEXT NOT NULL, `law_article` TEXT NOT NULL, `calculation_explanation` TEXT NOT NULL, `notes` TEXT NOT NULL, `proactive_reminder_days` INTEGER, `created_at` INTEGER NOT NULL, `rule_snapshot` TEXT NOT NULL DEFAULT '', `distance_type` TEXT NOT NULL DEFAULT 'NONE')",
+        "fields": [
+          { "fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "caseNumber", "columnName": "case_number", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "clientName", "columnName": "client_name", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "actionName", "columnName": "action_name", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "announcementDate", "columnName": "announcement_date", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "duration", "columnName": "duration", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "unit", "columnName": "unit", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "distanceDays", "columnName": "distance_days", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "finalDeadline", "columnName": "final_deadline", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "lawArticle", "columnName": "law_article", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "calculationExplanation", "columnName": "calculation_explanation", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "notes", "columnName": "notes", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "proactiveReminderDays", "columnName": "proactive_reminder_days", "affinity": "INTEGER", "notNull": false },
+          { "fieldPath": "createdAt", "columnName": "created_at", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "ruleSnapshot", "columnName": "rule_snapshot", "affinity": "TEXT", "notNull": true, "defaultValue": "''" },
+          { "fieldPath": "distanceType", "columnName": "distance_type", "affinity": "TEXT", "notNull": true, "defaultValue": "'NONE'" }
+        ],
+        "primaryKey": { "autoGenerate": true, "columnNames": ["id"] },
+        "indices": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c3d4e5f6789012345678abcdef012345')"
+    ]
+  }
+}
