@@ -228,13 +228,13 @@ fun CalculatorScreenContent(
         derivedStateOf {
             val query = searchQuery.trim()
             if (query.isBlank() || (uiState.selectedRule != null && query == uiState.selectedRule.actionName)) {
-                uiState.rules.take(5)
+                uiState.rules.take(30)
             } else {
                 uiState.rules.filter { rule ->
                     rule.actionName.contains(query, ignoreCase = true) ||
                     rule.lawArticle.contains(query, ignoreCase = true) ||
                     rule.notes.contains(query, ignoreCase = true)
-                }.take(5)
+                }.take(30)
             }
         }
     }
