@@ -498,6 +498,16 @@ fun CalculatorScreenContent(
                                 modifier = Modifier.padding(start = 12.dp, top = 4.dp)
                             )
                         }
+                        if (uiState.selectedRule != null &&
+                            !uiState.selectedRule.reviewStatus.equals("VERIFIED_ACCURATE", ignoreCase = true)
+                        ) {
+                            Text(
+                                text = "تنبيه: لم تتم مراجعة هذه القاعدة قانونياً بعد؛ النتيجة استرشادية وليست ميعاداً معتمداً.",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                            )
+                        }
                     }
 
                     val statutoryDistance = uiState.selectedRule?.distanceDays ?: 15
