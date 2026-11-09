@@ -94,40 +94,13 @@ fun LandingScreenContent(
     onNavigateToCalculator: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val initialReady = rules.isNotEmpty()
-    var targetProgress by remember(rules) { mutableFloatStateOf(if (initialReady) 1.0f else 0.35f) }
-    var currentStageText by remember(rules, totalHolidaysCount) {
-        mutableStateOf(
-            if (initialReady) "اكتملت جاهزية المحرك الإجرائي ($totalHolidaysCount عطلة معتمدة)"
-            else "تحميل نصوص ومواعيد قانون المرافعات المصري..."
-        )
-    }
-    var isDataReady by remember(rules) { mutableStateOf(initialReady) }
-
-    val animatedProgress by animateFloatAsState(
-        targetValue = targetProgress,
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
-        label = "LandingProgress"
-    )
-
-    // Monitor data readiness and animate stages
-    LaunchedEffect(Unit) {
-        // Stage 1
-        targetProgress = 0.35f
-        currentStageText = "تحميل نصوص ومواعيد قانون المرافعات المصري..."
-        delay(350.milliseconds)
-
-        // Stage 2
-        val loadedRulesCount = if (rules.isNotEmpty()) rules.size else 20
-        targetProgress = 0.70f
-        currentStageText = "تم تحميل $loadedRulesCount ميعاداً إجرائياً، جاري فحص العطلات الرسمية..."
-        delay(350.milliseconds)
-
-        // Stage 3: Ready
-        val holidaysCount = if (totalHolidaysCount > 0) totalHolidaysCount else 16
-        targetProgress = 1.0f
-        currentStageText = "اكتملت جاهزية المحرك الإجرائي ($holidaysCount عطلة معتمدة)"
-        isDataReady = true
+    // Readiness must reflect actual persisted rules, not simulated progress.
+    val isDataReady = rules.isNotEmpty()
+    val animatedProgress = if (isDataReady) 1.0f else 0.0f
+    val currentStageText = if (isDataReady) {
+        "تم تحميل ${rules.size} قاعدة قانونية، و${totalHolidaysCount} عطلة مسجلة (تستلزم التحقق من مصدرها)."
+    } else {
+        "جارٍ تحميل القواعد القانونية من قاعدة البيانات..."
     }
 
     Box(
