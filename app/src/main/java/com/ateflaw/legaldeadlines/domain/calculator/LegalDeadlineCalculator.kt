@@ -53,6 +53,21 @@ class LegalDeadlineCalculator {
         judicialOrderDetails: String? = null,
         isHolidayProvider: (LocalDate) -> Pair<Boolean, String?> = { Pair(false, null) }
     ): DeadlineResult {
+        // Do not fabricate a deadline for a rule which only defines a procedural
+        // condition (for example: "before closure of pleadings") instead of days.
+        require(rule.duration > 0) {
+            "هذا الإجراء مرتبط بشرط أو واقعة قانونية وليس بميعاد عددي قابل للحساب تلقائياً. راجع نص القاعدة."
+        }
+        require(rule.unit != DurationUnit.HOURS) {
+            "مواعيد الساعات تتطلب وقت الواقعة بالساعة والدقيقة، ولا يمكن حسابها من تاريخ يوم فقط."
+        }
+        require(rule.distanceDays >= 0 && additionalDistanceDays >= 0) {
+            "لا يجوز أن يكون ميعاد المسافة قيمة سالبة."
+        }
+        require(rule.extensionPolicy == "ARTICLE_18_COURTS") {
+            "سياسة امتداد هذا الإجراء غير مدعومة بالمحرك الحالي، ويجب مراجعة كيفية حساب العطلات قبل اعتماد النتيجة."
+        }
+
         // 1. Effective Date Validation & Transitional Provisions
         val eventIso = announcementDate.toString()
         if (rule.effectiveFrom.isNotBlank() && eventIso < rule.effectiveFrom) {
@@ -252,6 +267,12 @@ class LegalDeadlineCalculator {
         )
 
         val warnings = mutableListOf<String>()
+        if (!rule.reviewStatus.equals("VERIFIED_ACCURATE", ignoreCase = true)) {
+            warnings.add("تنبيه: هذه القاعدة القانونية قيد المراجعة ولم يتم اعتماد صحتها التشريعية بعد. النتيجة استرشادية ويلزم الرجوع إلى النص الرسمي قبل اتخاذ الإجراء.")
+        }
+        if (rule.officialSourceUrl.isBlank()) {
+            warnings.add("لم يُرفق رابط مصدر تشريعي موثق لهذه القاعدة؛ يجب التحقق من السند القانوني.")
+        }
         return DeadlineResult(
             startDate = startDate,
             provisionalDate = provisionalDate,
