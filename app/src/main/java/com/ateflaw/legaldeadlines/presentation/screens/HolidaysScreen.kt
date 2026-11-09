@@ -223,7 +223,7 @@ fun HolidaysScreenContent(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "العطلات الرسمية (${filteredHolidays.size.toString().toArabicDigits()})",
+                                    text = "العطلات المسجلة (${filteredHolidays.size.toString().toArabicDigits()})",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary

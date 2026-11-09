@@ -276,9 +276,17 @@ class CalculatorViewModel(
                     append("معرف القاعدة: ").append(rule.id)
                     append(" | الاسم: ").append(rule.actionName)
                     append(" | حالة المراجعة: ").append(rule.reviewStatus)
+                    append(" | مصدر القانون: ").append(rule.officialSourceUrl)
+                    append(" | بداية السريان: ").append(rule.effectiveFrom)
+                    append(" | نهاية السريان: ").append(rule.effectiveTo ?: "مفتوح")
                     append(" | آخر مراجعة: ").append(rule.lastReviewedAt)
                     append(" | المدة: ").append(rule.duration.toString().toArabicDigits()).append(" ").append(rule.unit.arabicDisplayName)
                     append(" | ").append(rule.lawArticle.toArabicDigits())
+                    append(" | تاريخ الواقعة: ").append(currentState.announcementDate)
+                    append(" | نوع المسافة: ").append(currentState.distanceType.name)
+                    append(" | أيام المسافة: ").append(result.totalDistanceDays)
+                    append(" | الميعاد النهائي: ").append(result.finalDeadline)
+                    append(" | تحذيرات: ").append(result.warnings.joinToString(" // "))
                     if (rule.triggerEventLabel.isNotBlank()) {
                         append(" | الواقعة: ").append(rule.triggerEventLabel)
                     }

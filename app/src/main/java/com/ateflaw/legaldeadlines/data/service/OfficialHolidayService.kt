@@ -40,11 +40,11 @@ class OfficialHolidayService(
     }
 
     suspend fun isHoliday(date: LocalDate): Boolean = withContext(Dispatchers.IO) {
-        holidayDao.isHoliday(date.toString())
+        holidayDao.getHoliday(date.toString())?.let { it.verificationStatus == "VERIFIED_OFFICIAL" && it.sourceUrl.startsWith("https://") } ?: false
     }
 
     suspend fun getHolidayName(date: LocalDate): String? = withContext(Dispatchers.IO) {
-        holidayDao.getHoliday(date.toString())?.name
+        holidayDao.getHoliday(date.toString())?.takeIf { it.verificationStatus == "VERIFIED_OFFICIAL" && it.sourceUrl.startsWith("https://") }?.name
     }
 
     suspend fun insertHolidays(holidays: List<Holiday>) = withContext(Dispatchers.IO) {
@@ -62,11 +62,11 @@ class OfficialHolidayService(
             }
 
             val apiKey = BuildConfig.CALENDARIFIC_API_KEY
-            if (apiKey.isBlank() || apiKey == "4U1Wx9QF6QNlFclYWubgy5lMGT8Mqr59") {
+            if (apiKey.isBlank() || apiKey == "YOUR_API_KEY") {
                 // If API key is not configured, explicitly communicate reliance on verified local database
                 val localCount = holidayDao.count()
                 return@withContext Result.failure(
-                    IllegalStateException("يتم الاعتماد على قاعدة البيانات المحلية المعتمدة ($localCount عطلة مسجلة).")
+                    IllegalStateException("لا يوجد مفتاح لمصدر العطلات الخارجي. توجد $localCount عطلة محلية مرشحة، ويلزم قرار رسمي للتحقق منها.")
                 )
             }
 
@@ -93,7 +93,9 @@ class OfficialHolidayService(
                             Holiday(
                                 id = 0,
                                 holidayDate = parsedDate,
-                                name = name
+                                name = name,
+                                verificationStatus = "THIRD_PARTY_UNVERIFIED",
+                                sourceUrl = "https://calendarific.com/"
                             )
                         } catch (_: Exception) {
                             null
