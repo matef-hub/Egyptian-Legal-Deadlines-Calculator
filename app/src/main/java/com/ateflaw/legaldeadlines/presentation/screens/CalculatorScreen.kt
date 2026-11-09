@@ -115,6 +115,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 import java.time.ZoneId
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -1129,7 +1130,7 @@ fun CalculatorScreenContent(
     // DatePickerDialog Component
     if (showDatePickerDialog) {
         val initialEpochMillis = uiState.announcementDate
-            .atStartOfDay(ZoneId.systemDefault())
+            .atStartOfDay(ZoneOffset.UTC)
             .toInstant()
             .toEpochMilli()
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialEpochMillis)
@@ -1141,7 +1142,7 @@ fun CalculatorScreenContent(
                     onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
                             val selectedLocalDate = Instant.ofEpochMilli(millis)
-                                .atZone(ZoneId.systemDefault())
+                                .atZone(ZoneOffset.UTC)
                                 .toLocalDate()
                             onAnnouncementDateChanged(selectedLocalDate)
                         }
