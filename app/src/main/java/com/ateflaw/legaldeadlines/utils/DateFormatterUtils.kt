@@ -7,6 +7,21 @@ import java.util.Locale
 
 object DateFormatterUtils {
 
+    fun String.toArabicDigits(): String {
+        var result = this
+        result = result.replace('0', '٠')
+        result = result.replace('1', '١')
+        result = result.replace('2', '٢')
+        result = result.replace('3', '٣')
+        result = result.replace('4', '٤')
+        result = result.replace('5', '٥')
+        result = result.replace('6', '٦')
+        result = result.replace('7', '٧')
+        result = result.replace('8', '٨')
+        result = result.replace('9', '٩')
+        return result
+    }
+
     private val standardFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ENGLISH)
 
     private val arabicMonthNames = arrayOf(
@@ -48,7 +63,7 @@ object DateFormatterUtils {
      */
     fun formatArabicFullDate(date: LocalDate): String {
         val monthName = getArabicMonthName(date.monthValue)
-        return "${date.dayOfMonth} $monthName ${date.year}"
+        return "${date.dayOfMonth} $monthName ${date.year}".toArabicDigits()
     }
 
     /**
@@ -68,7 +83,7 @@ object DateFormatterUtils {
     fun formatDisplayDate(date: LocalDate): String {
         val d = if (date.dayOfMonth < 10) "0${date.dayOfMonth}" else "${date.dayOfMonth}"
         val m = if (date.monthValue < 10) "0${date.monthValue}" else "${date.monthValue}"
-        return "\u200E${date.year}/$m/$d\u200E"
+        return "\u200E${date.year}/$m/$d\u200E".toArabicDigits()
     }
 
     fun parseIsoDate(isoString: String): LocalDate {

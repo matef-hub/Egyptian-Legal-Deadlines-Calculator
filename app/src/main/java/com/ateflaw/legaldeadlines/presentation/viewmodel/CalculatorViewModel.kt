@@ -12,6 +12,7 @@ import com.ateflaw.legaldeadlines.domain.usecase.GetHolidaysUseCase
 import com.ateflaw.legaldeadlines.domain.usecase.GetLegalRulesUseCase
 import com.ateflaw.legaldeadlines.domain.usecase.SaveDeadlineUseCase
 import com.ateflaw.legaldeadlines.domain.usecase.SyncHolidaysUseCase
+import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -171,7 +172,7 @@ class CalculatorViewModel(
                 val days = currentState.additionalDistanceDaysInput.toIntOrNull()
                 if (days == null || days !in 0..4) {
                     _uiState.update {
-                        it.copy(errorMessage = "ميعاد المسافة المحلي لا يجوز أن يجاوز 4 أيام إعمالاً للمادة 16 من قانون المرافعات (يوم لكل 50 كم، وما زاد على 30 كم يعتبر 50 كم، بحد أقصى 4 أيام)")
+                        it.copy(errorMessage = "ميعاد المسافة المحلي لا يجوز أن يجاوز ٤ أيام إعمالاً للمادة ١٦ من قانون المرافعات (يوم لكل ٥٠ كم، وما زاد على ٣٠ كم يعتبر ٥٠ كم، بحد أقصى ٤ أيام)")
                     }
                     return
                 }
@@ -183,7 +184,7 @@ class CalculatorViewModel(
                 val days = currentState.additionalDistanceDaysInput.toIntOrNull()
                 if (days == null || days !in 1..59) {
                     _uiState.update {
-                        it.copy(errorMessage = "ميعاد المسافة المنقوص بأمر قضائي لمن موطنه بالخارج يجب أن يكون بين 1 و 59 يوماً وفقاً للمادة 17 فقرة 2 مرافعات")
+                        it.copy(errorMessage = "ميعاد المسافة المنقوص بأمر قضائي لمن موطنه بالخارج يجب أن يكون بين ١ و ٥٩ يوماً وفقاً للمادة ١٧ فقرة ٢ مرافعات")
                     }
                     return
                 }
@@ -252,8 +253,8 @@ class CalculatorViewModel(
             try {
                 val ruleSnapshotText = buildString {
                     append(rule.actionName)
-                    append(" | المدة: ").append(rule.duration).append(" ").append(rule.unit.arabicDisplayName)
-                    append(" | ").append(rule.lawArticle)
+                    append(" | المدة: ").append(rule.duration.toString().toArabicDigits()).append(" ").append(rule.unit.arabicDisplayName)
+                    append(" | ").append(rule.lawArticle.toArabicDigits())
                     if (rule.triggerEventLabel.isNotBlank()) {
                         append(" | الواقعة: ").append(rule.triggerEventLabel)
                     }

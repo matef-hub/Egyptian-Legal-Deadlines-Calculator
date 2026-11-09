@@ -61,6 +61,7 @@ import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTh
 import com.ateflaw.legaldeadlines.presentation.viewmodel.HolidaysUiState
 import com.ateflaw.legaldeadlines.presentation.viewmodel.HolidaysViewModel
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
+import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import kotlinx.coroutines.delay
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -222,7 +223,7 @@ fun HolidaysScreenContent(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "العطلات الرسمية (${filteredHolidays.size})",
+                                    text = "العطلات الرسمية (${filteredHolidays.size.toString().toArabicDigits()})",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary

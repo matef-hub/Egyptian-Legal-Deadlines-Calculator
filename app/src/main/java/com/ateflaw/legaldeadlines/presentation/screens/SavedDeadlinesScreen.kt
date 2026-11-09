@@ -45,6 +45,7 @@ import com.ateflaw.legaldeadlines.presentation.components.SavedDeadlineItem
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListUiState
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListViewModel
+import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 import kotlin.time.Duration.Companion.milliseconds
@@ -130,7 +131,7 @@ fun SavedDeadlinesScreenContent(
                     ) {
                         item {
                             Text(
-                                text = "المواعيد المسجلة (${uiState.deadlines.size})",
+                                text = "المواعيد المسجلة (${uiState.deadlines.size.toString().toArabicDigits()})",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,

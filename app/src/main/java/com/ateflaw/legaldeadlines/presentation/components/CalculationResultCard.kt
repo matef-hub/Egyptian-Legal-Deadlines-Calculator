@@ -59,6 +59,7 @@ import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
+import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -80,9 +81,9 @@ fun CalculationResultCard(
 
     // 1. Add FINAL DEADLINE to Calendar (Target Date = finalDeadline)
     val onAddFinalDeadlineToCalendar = {
-        val title = "⚖️ ميعاد قانوني ملزم: ${result.actionSummary.ifBlank { result.lawArticle }}"
+        val title = "⚖️ ميعاد قانوني ملزم: ${result.actionSummary.ifBlank { result.lawArticle }}".toArabicDigits()
         val description = "الميعاد النهائي واجب الالتزام: $dayNameArabic، $finalDateFormatted\n" +
-            "السند التشريعي: ${result.lawArticle}\n\n" +
+            "السند التشريعي: ${result.lawArticle.toArabicDigits()}\n\n" +
             result.explanation
 
         try {
@@ -114,11 +115,11 @@ fun CalculationResultCard(
         val proactiveFormatted = DateFormatterUtils.formatArabicFullDate(proactiveDate)
         val proactiveDayName = DateFormatterUtils.getArabicDayName(proactiveDate.dayOfWeek)
 
-        val title = "🔔 تنبيه استباقي: ميعاد ${result.actionSummary.ifBlank { result.lawArticle }} (متبقي $proactiveDays أيام)"
-        val description = "تنبيه إجرائي استباقي قبل فوات الميعاد بـ $proactiveDays أيام.\n" +
+        val title = "🔔 تنبيه استباقي: ميعاد ${result.actionSummary.ifBlank { result.lawArticle }} (متبقي ${proactiveDays.toString().toArabicDigits()} أيام)".toArabicDigits()
+        val description = "تنبيه إجرائي استباقي قبل فوات الميعاد بـ ${proactiveDays.toString().toArabicDigits()} أيام.\n" +
             "تاريخ التنبيه: $proactiveDayName، $proactiveFormatted.\n" +
             "الميعاد النهائي الملزم: $dayNameArabic، $finalDateFormatted.\n" +
-            "السند: ${result.lawArticle}\n\n" +
+            "السند: ${result.lawArticle.toArabicDigits()}\n\n" +
             "الإجراء المطلوب: تجهيز صحيفة الطعن أو الدعوى ومستنداتها وإيداعها بقلم الكتاب مبكراً.\n\n" +
             result.explanation
 
@@ -243,7 +244,7 @@ fun CalculationResultCard(
                     ResultDetailRow(
                         icon = Icons.Default.HourglassTop,
                         label = "مدة الميعاد",
-                        value = "${result.duration} ${if (result.duration == 13L || result.duration == 15L) "يوماً" else result.unit.arabicDisplayName}"
+                        value = "${result.duration}".toArabicDigits() + " ${if (result.duration == 13L || result.duration == 15L) "يوماً" else result.unit.arabicDisplayName}"
                     )
 
                     HorizontalDivider(
@@ -255,7 +256,7 @@ fun CalculationResultCard(
                     ResultDetailRow(
                         icon = Icons.Default.Gavel,
                         label = "الإجراء وسنده",
-                        value = result.actionSummary.ifBlank { result.lawArticle.ifBlank { "صحيفة دعوى" } }
+                        value = result.actionSummary.ifBlank { result.lawArticle.ifBlank { "صحيفة دعوى" } }.toArabicDigits()
                     )
 
                     HorizontalDivider(
@@ -279,7 +280,7 @@ fun CalculationResultCard(
                     ResultDetailRow(
                         icon = Icons.Default.Straighten,
                         label = "أيام المسافة",
-                        value = "${result.totalDistanceDays} يوم"
+                        value = "${result.totalDistanceDays}".toArabicDigits() + " يوم"
                     )
                 }
             }
@@ -334,7 +335,7 @@ fun CalculationResultCard(
                     if (proactiveReminderDays > 0) {
                         val proactiveDate = result.finalDeadline.minusDays(proactiveReminderDays.toLong())
                         Text(
-                            text = "بتاريخ ${DateFormatterUtils.formatArabicFullDate(proactiveDate)} (قبل $proactiveReminderDays أيام)",
+                            text = "بتاريخ ${DateFormatterUtils.formatArabicFullDate(proactiveDate)} (قبل ${proactiveReminderDays.toString().toArabicDigits()} أيام)",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold
@@ -348,7 +349,7 @@ fun CalculationResultCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    listOf(1 to "يوم", 3 to "3 أيام", 5 to "5 أيام", 7 to "أسبوع", 0 to "بدون").forEach { (days, label) ->
+                    listOf(1 to "١ يوم", 3 to "٣ أيام", 5 to "٥ أيام", 7 to "أسبوع", 0 to "بدون").forEach { (days, label) ->
                         val isSelected = proactiveReminderDays == days
                         val pillBgColor by animateColorAsState(
                             targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),

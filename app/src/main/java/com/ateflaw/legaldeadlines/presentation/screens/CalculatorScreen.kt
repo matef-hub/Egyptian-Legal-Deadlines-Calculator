@@ -107,6 +107,7 @@ import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.presentation.components.CalculationResultCard
 import com.ateflaw.legaldeadlines.presentation.components.HolidayStatusBar
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
+import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.MainUiState
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
@@ -456,7 +457,7 @@ fun CalculatorScreenContent(
                                                         )
                                                         Spacer(modifier = Modifier.height(2.dp))
                                                         Text(
-                                                            text = "المدة: ${rule.duration} ${rule.unit.arabicDisplayName} | السند: ${rule.lawArticle}",
+                                                            text = "المدة: ${rule.duration.toString().toArabicDigits()} ${rule.unit.arabicDisplayName} | السند: ${rule.lawArticle.toArabicDigits()}",
                                                             style = MaterialTheme.typography.bodySmall,
                                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                             textAlign = TextAlign.Right,

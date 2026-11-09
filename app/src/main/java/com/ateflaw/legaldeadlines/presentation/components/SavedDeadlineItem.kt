@@ -57,7 +57,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ateflaw.legaldeadlines.domain.model.SavedDeadline
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
+import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import java.time.ZoneId
+import androidx.core.net.toUri
 
 @Composable
 fun SavedDeadlineItem(
@@ -72,12 +74,12 @@ fun SavedDeadlineItem(
 
     val onAddFinalDeadlineToCalendar = {
         val title = if (deadline.caseNumber.isNotBlank()) {
-            "⚖️ ميعاد قانوني: ${deadline.actionName} (دعوى ${deadline.caseNumber})"
+            "⚖️ ميعاد قانوني: ${deadline.actionName} (دعوى ${deadline.caseNumber})".toArabicDigits()
         } else {
-            "⚖️ ميعاد قانوني: ${deadline.actionName}"
+            "⚖️ ميعاد قانوني: ${deadline.actionName}".toArabicDigits()
         }
         val descriptionText = "الميعاد النهائي واجب الالتزام: $dayNameArabic، $finalDateFormatted\n" +
-            "السند التشريعي: ${deadline.lawArticle}\n\n" +
+            "السند التشريعي: ${deadline.lawArticle.toArabicDigits()}\n\n" +
             deadline.calculationExplanation
 
         try {
@@ -98,7 +100,7 @@ fun SavedDeadlineItem(
                 Uri.encode(title) +
                 "&dates=$cleanStart/$nextDay&details=" +
                 Uri.encode(descriptionText)
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(webUrl)))
+            context.startActivity(Intent(Intent.ACTION_VIEW, webUrl.toUri()))
         }
     }
 
@@ -109,15 +111,15 @@ fun SavedDeadlineItem(
         val proactiveDayName = DateFormatterUtils.getArabicDayName(proactiveDate.dayOfWeek)
 
         val title = if (deadline.caseNumber.isNotBlank()) {
-            "🔔 تنبيه استباقي: ${deadline.actionName} (دعوى ${deadline.caseNumber})"
+            "🔔 تنبيه استباقي: ${deadline.actionName} (دعوى ${deadline.caseNumber})".toArabicDigits()
         } else {
-            "🔔 تنبيه استباقي: ${deadline.actionName}"
+            "🔔 تنبيه استباقي: ${deadline.actionName}".toArabicDigits()
         }
 
-        val descriptionText = "تنبيه إجرائي استباقي قبل فوات الميعاد بـ $proactiveDays أيام.\n" +
+        val descriptionText = "تنبيه إجرائي استباقي قبل فوات الميعاد بـ ${proactiveDays.toString().toArabicDigits()} أيام.\n" +
             "تاريخ التنبيه: $proactiveDayName، $proactiveFormatted.\n" +
             "الميعاد النهائي الملزم: $dayNameArabic، $finalDateFormatted.\n" +
-            "السند: ${deadline.lawArticle}\n\n" +
+            "السند: ${deadline.lawArticle.toArabicDigits()}\n\n" +
             "الإجراء المطلوب: سرعة قيد الطعن وإيداع الصحيفة بقلم الكتاب.\n\n" +
             deadline.calculationExplanation
 
@@ -140,7 +142,7 @@ fun SavedDeadlineItem(
                 Uri.encode(title) +
                 "&dates=$cleanStart/$nextDay&details=" +
                 Uri.encode(descriptionText)
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(webUrl)))
+            context.startActivity(Intent(Intent.ACTION_VIEW, webUrl.toUri()))
         }
     }
 
@@ -276,7 +278,7 @@ fun SavedDeadlineItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = deadline.caseNumber,
+                        text = deadline.caseNumber.toArabicDigits(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -360,7 +362,7 @@ fun SavedDeadlineItem(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "تنبيه استباقي: قبل الميعاد بـ ${deadline.proactiveReminderDays} أيام",
+                            text = "تنبيه استباقي: قبل الميعاد بـ ${deadline.proactiveReminderDays.toString().toArabicDigits()} أيام",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.tertiary,
                             fontWeight = FontWeight.Medium
@@ -419,7 +421,7 @@ fun SavedDeadlineItem(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = deadline.lawArticle,
+                            text = deadline.lawArticle.toArabicDigits(),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface
                         )

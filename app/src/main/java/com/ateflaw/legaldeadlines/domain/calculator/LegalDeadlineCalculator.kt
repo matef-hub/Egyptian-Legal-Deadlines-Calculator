@@ -29,6 +29,19 @@ class LegalDeadlineCalculator {
 
     private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.ENGLISH)
 
+    private fun String.toArabicDigits(): String {
+        return this.replace('0', '٠')
+            .replace('1', '١')
+            .replace('2', '٢')
+            .replace('3', '٣')
+            .replace('4', '٤')
+            .replace('5', '٥')
+            .replace('6', '٦')
+            .replace('7', '٧')
+            .replace('8', '٨')
+            .replace('9', '٩')
+    }
+
     /**
      * Primary strongly typed calculation contract.
      */
@@ -128,12 +141,12 @@ class LegalDeadlineCalculator {
 
             if (dayOfWeek == DayOfWeek.FRIDAY) {
                 val dayNameArabic = getArabicDayName(dayOfWeek)
-                val formattedDate = currentDate.format(dateFormatter)
+                val formattedDate = currentDate.format(dateFormatter).toArabicDigits()
                 excludedDays.add(ExcludedDay(currentDate, "$formattedDate — $dayNameArabic — عطلة أسبوعية"))
                 currentDate = currentDate.plusDays(1)
             } else if (isOfficialHoliday) {
                 val holidayDesc = holidayName ?: "عطلة رسمية معتمدة"
-                val formattedDate = currentDate.format(dateFormatter)
+                val formattedDate = currentDate.format(dateFormatter).toArabicDigits()
                 excludedDays.add(ExcludedDay(currentDate, "$formattedDate — عطلة رسمية — $holidayDesc"))
                 currentDate = currentDate.plusDays(1)
             } else {
@@ -153,7 +166,7 @@ class LegalDeadlineCalculator {
                 type = MilestoneType.TRIGGER_EVENT,
                 date = announcementDate,
                 title = triggerTitle,
-                description = "$triggerTitle (${announcementDate.format(dateFormatter)}) (${getArabicDayName(announcementDate.dayOfWeek)}).",
+                description = "$triggerTitle (${announcementDate.format(dateFormatter).toArabicDigits()}) (${getArabicDayName(announcementDate.dayOfWeek)}).",
                 legalBasis = rule.lawArticle.ifBlank { rule.lawName }
             )
         )
@@ -164,11 +177,11 @@ class LegalDeadlineCalculator {
                 date = startDate,
                 title = "بدء سريان الميعاد الإجرائي",
                 description = if (rule.startRule == StartRule.NEXT_DAY) {
-                    "يبدأ احتساب الميعاد من اليوم التالي للواقعة (${startDate.format(dateFormatter)}) ولا يُحسب يوم الواقعة نفسه إعمالاً للمادة 15 مرافعات."
+                    "يبدأ احتساب الميعاد من اليوم التالي للواقعة (${startDate.format(dateFormatter).toArabicDigits()}) ولا يُحسب يوم الواقعة نفسه إعمالاً للمادة ١٥ مرافعات."
                 } else {
-                    "يبدأ احتساب الميعاد من نفس يوم الواقعة (${startDate.format(dateFormatter)}) وفقاً للقاعدة المقررة."
+                    "يبدأ احتساب الميعاد من نفس يوم الواقعة (${startDate.format(dateFormatter).toArabicDigits()}) وفقاً للقاعدة المقررة."
                 },
-                legalBasis = "المادة 15 من قانون المرافعات المدنية والتجارية"
+                legalBasis = "المادة ١٥ من قانون المرافعات المدنية والتجارية"
             )
         )
 
@@ -177,26 +190,27 @@ class LegalDeadlineCalculator {
                 type = MilestoneType.BASE_DEADLINE,
                 date = baseEndDate,
                 title = "نهاية المدة القانونية الأصلية",
-                description = "انقضاء مدة الميعاد الأصلية (${rule.duration} ${rule.unit.arabicDisplayName}) في (${baseEndDate.format(dateFormatter)}) (${getArabicDayName(baseEndDate.dayOfWeek)}).",
-                legalBasis = rule.lawArticle.ifBlank { rule.article }
+                description = "انقضاء مدة الميعاد الأصلية (${rule.duration.toString().toArabicDigits()} ${rule.unit.arabicDisplayName}) في (${baseEndDate.format(dateFormatter).toArabicDigits()}) (${getArabicDayName(baseEndDate.dayOfWeek)}).",
+                legalBasis = rule.lawArticle.ifBlank { rule.article }.toArabicDigits()
             )
         )
 
         if (totalDistanceDays > 0 && distanceType != DistanceType.NONE) {
+            val totalDistStr = totalDistanceDays.toString().toArabicDigits()
             val distDesc = when (distanceType) {
-                DistanceType.LOCAL -> "إضافة $totalDistanceDays أيام مسافة محلية (المادة 16 مرافعات)."
-                DistanceType.BORDER_AREA -> "إضافة 15 يوماً مسافة للمناطق الحدودية النائية (المادة 16 فقرة 2 مرافعات)."
-                DistanceType.ABROAD -> "إضافة 60 يوماً ميعاد مسافة لمن موطنه بالخارج (المادة 17 مرافعات)."
-                DistanceType.ABROAD_JUDICIAL_REDUCTION -> "إضافة $totalDistanceDays يوماً مسافة منقوصة بأمر قضائي: $judicialOrderDetails (المادة 17 فقرة 2)."
-                else -> "إضافة $totalDistanceDays أيام مسافة طريق."
+                DistanceType.LOCAL -> "إضافة $totalDistStr أيام مسافة محلية (المادة ١٦ مرافعات)."
+                DistanceType.BORDER_AREA -> "إضافة ١٥ يوماً مسافة للمناطق الحدودية النائية (المادة ١٦ فقرة ٢ مرافعات)."
+                DistanceType.ABROAD -> "إضافة ٦٠ يوماً ميعاد مسافة لمن موطنه بالخارج (المادة ١٧ مرافعات)."
+                DistanceType.ABROAD_JUDICIAL_REDUCTION -> "إضافة $totalDistStr يوماً مسافة منقوصة بأمر قضائي: $judicialOrderDetails (المادة ١٧ فقرة ٢)."
+                else -> "إضافة $totalDistStr أيام مسافة طريق."
             }
             milestones.add(
                 CalculationMilestone(
                     type = MilestoneType.DISTANCE_EXTENSION,
                     date = provisionalDate,
                     title = "إضافة ميعاد مسافة الطريق",
-                    description = "$distDesc ليمتد الميعاد المبدئي إلى (${provisionalDate.format(dateFormatter)}).",
-                    legalBasis = distanceType.statutoryBasis
+                    description = "$distDesc ليمتد الميعاد المبدئي إلى (${provisionalDate.format(dateFormatter).toArabicDigits()}).",
+                    legalBasis = distanceType.statutoryBasis.toArabicDigits()
                 )
             )
         }
@@ -206,10 +220,9 @@ class LegalDeadlineCalculator {
                 CalculationMilestone(
                     type = MilestoneType.HOLIDAY_EXTENSION,
                     date = excluded.date,
-                    title = "امتداد بسبب عطلة [${index + 1}]",
-                    description = "${excluded.reason}، ويمتد الميعاد لليوم التالي وفقاً للمادة 18 مرافعات.",
-                    legalBasis = "المادة 18 من قانون المرافعات المدنية والتجارية",
-                    isExcludedDay = true
+                    title = "امتداد بسبب عطلة [${(index + 1).toString().toArabicDigits()}]",
+                    description = "${excluded.reason}، ويمتد الميعاد لليوم التالي وفقاً للمادة ١٨ مرافعات.",
+                    legalBasis = "المادة ١٨ من قانون المرافعات المدنية والتجارية"
                 )
             )
         }
@@ -219,9 +232,9 @@ class LegalDeadlineCalculator {
                 type = MilestoneType.FINAL_DEADLINE,
                 date = finalDeadline,
                 title = "الميعاد النهائي واجب الالتزام به",
-                description = "آخر يوم عمل لإيداع صحيفة الطعن أو اتخاذ الإجراء بقلم الكتاب (${finalDeadline.format(dateFormatter)}) (${getArabicDayName(finalDeadline.dayOfWeek)})" +
+                description = "آخر يوم عمل لإيداع صحيفة الطعن أو اتخاذ الإجراء بقلم الكتاب (${finalDeadline.format(dateFormatter).toArabicDigits()}) (${getArabicDayName(finalDeadline.dayOfWeek)})" +
                     if (finalDeadline.dayOfWeek == DayOfWeek.SATURDAY) " [يوم السبت يوم عمل رسمي بالمحاكم المصرية]." else " [يوم عمل رسمي].",
-                legalBasis = "المادتان 15 و 18 من قانون المرافعات"
+                legalBasis = "المادتان ١٥ و ١٨ من قانون المرافعات"
             )
         )
 
@@ -335,20 +348,20 @@ class LegalDeadlineCalculator {
 
         val triggerLabel = rule.triggerEventLabel.ifBlank { "تاريخ الإعلان / الإجراء" }
         sb.append("١. ").append(triggerLabel).append(": ")
-            .append(announcementDate.format(dateFormatter))
+            .append(announcementDate.format(dateFormatter).toArabicDigits())
             .append(" (").append(getArabicDayName(announcementDate.dayOfWeek)).append(")\n")
 
         sb.append("٢. تاريخ بدء احتساب الميعاد: ")
-            .append(startDate.format(dateFormatter))
+            .append(startDate.format(dateFormatter).toArabicDigits())
             .append(" (").append(getArabicDayName(startDate.dayOfWeek)).append(")")
         if (rule.startRule == StartRule.NEXT_DAY) {
-            sb.append(" — تطبيقاً لنص المادة 15 مرافعات: يبدأ احتساب الميعاد من اليوم التالي ولا يُحسب يوم الواقعة نفسه.\n")
+            sb.append(" — تطبيقاً لنص المادة ١٥ مرافعات: يبدأ احتساب الميعاد من اليوم التالي ولا يُحسب يوم الواقعة نفسه.\n")
         } else {
             sb.append(" — يبدأ احتساب الميعاد من نفس يوم الواقعة وفقاً لنص القاعدة الإجرائية.\n")
         }
 
         sb.append("٣. مدة الميعاد القانوني: ")
-            .append(rule.duration)
+            .append(rule.duration.toString().toArabicDigits())
             .append(" ")
             .append(rule.unit.arabicDisplayName)
             .append("\n")
@@ -361,26 +374,26 @@ class LegalDeadlineCalculator {
         if (distanceType == DistanceType.NONE && totalDistanceDays == 0) {
             sb.append("لا يوجد ميعاد مسافة (محل النزاع بنفس الدائرة القضائية).\n")
         } else if (distanceType == DistanceType.ABROAD_SERVED_IN_EGYPT) {
-            sb.append("لا يسري ميعاد المسافة لمن أعلن لشخصه أثناء وجوده في مصر (المادة 17 فقرة 3 مرافعات).\n")
+            sb.append("لا يسري ميعاد المسافة لمن أعلن لشخصه أثناء وجوده في مصر (المادة ١٧ فقرة ٣ مرافعات).\n")
         } else {
             sb.append(distanceType.arabicDisplayName)
-                .append(" — إجمالي: ").append(totalDistanceDays).append(" يوم")
-                .append(" (").append(distanceType.statutoryBasis).append(")")
+                .append(" — إجمالي: ").append(totalDistanceDays.toString().toArabicDigits()).append(" يوم")
+                .append(" (").append(distanceType.statutoryBasis.toArabicDigits()).append(")")
             if (!judicialOrderDetails.isNullOrBlank()) {
-                sb.append(" [سند الأمر القضائي: ").append(judicialOrderDetails).append("]")
+                sb.append(" [سند الأمر القضائي: ").append(judicialOrderDetails.toArabicDigits()).append("]")
             }
             sb.append("\n")
         }
 
         sb.append("٦. الميعاد المبدئي (قبل تطبيق امتداد العطلات): ")
-            .append(provisionalDate.format(dateFormatter))
+            .append(provisionalDate.format(dateFormatter).toArabicDigits())
             .append(" (").append(getArabicDayName(provisionalDate.dayOfWeek)).append(")\n")
 
         if (excludedDays.isNotEmpty()) {
-            sb.append("٧. الأيام المستبعدة والامتداد (المادة 18 مرافعات):\n")
+            sb.append("٧. الأيام المستبعدة والامتداد (المادة ١٨ مرافعات):\n")
             excludedDays.forEachIndexed { index, excluded ->
-                sb.append("   • [").append(index + 1).append("] ")
-                    .append(excluded.reason)
+                sb.append("   • [").append((index + 1).toString().toArabicDigits()).append("] ")
+                    .append(excluded.reason.toArabicDigits())
                     .append("\n")
             }
         } else {
@@ -388,7 +401,7 @@ class LegalDeadlineCalculator {
         }
 
         sb.append("٨. الميعاد النهائي واجب الالتزام به: ")
-            .append(finalDeadline.format(dateFormatter))
+            .append(finalDeadline.format(dateFormatter).toArabicDigits())
             .append(" (").append(getArabicDayName(finalDeadline.dayOfWeek)).append(")")
 
         if (finalDeadline.dayOfWeek == DayOfWeek.SATURDAY) {
