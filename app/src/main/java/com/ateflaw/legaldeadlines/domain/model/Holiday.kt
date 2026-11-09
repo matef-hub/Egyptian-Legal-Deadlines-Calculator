@@ -8,5 +8,7 @@ import java.time.LocalDate
 data class Holiday(
     val id: Long = 0,
     val holidayDate: LocalDate,
-    val name: String
+    val name: String,
+    val verificationStatus: String = "UNVERIFIED",
+    val sourceUrl: String = ""
 )

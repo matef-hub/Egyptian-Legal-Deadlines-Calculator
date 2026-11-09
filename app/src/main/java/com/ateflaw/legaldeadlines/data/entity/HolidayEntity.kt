@@ -20,19 +20,29 @@ data class HolidayEntity(
     val holidayDate: String, // Stored as ISO-8601: YYYY-MM-DD
 
     @ColumnInfo(name = "name")
-    val name: String
+    val name: String,
+
+    @ColumnInfo(name = "verification_status", defaultValue = "UNVERIFIED")
+    val verificationStatus: String = "UNVERIFIED",
+
+    @ColumnInfo(name = "source_url", defaultValue = "")
+    val sourceUrl: String = ""
 ) {
     fun toDomain(): Holiday = Holiday(
         id = id,
         holidayDate = LocalDate.parse(holidayDate),
-        name = name
+        name = name,
+        verificationStatus = verificationStatus,
+        sourceUrl = sourceUrl
     )
 
     companion object {
         fun fromDomain(domain: Holiday): HolidayEntity = HolidayEntity(
             id = domain.id,
             holidayDate = domain.holidayDate.toString(),
-            name = domain.name
+            name = domain.name,
+            verificationStatus = domain.verificationStatus,
+            sourceUrl = domain.sourceUrl
         )
     }
 }

@@ -29,7 +29,12 @@ class CalculateDeadlineUseCase(
         val holidaysList = withContext(Dispatchers.IO) {
             holidayRepository.getAllHolidaysList()
         }
-        val holidayMap: Map<LocalDate, String> = holidaysList.associate { it.holidayDate to it.name }
+        // Bundled dates and third-party dates are NOT official published decisions.
+        val officialHolidays = holidaysList.filter {
+            it.verificationStatus == "VERIFIED_OFFICIAL" &&
+                it.sourceUrl.startsWith("https://")
+        }
+        val holidayMap: Map<LocalDate, String> = officialHolidays.associate { it.holidayDate to it.name }
 
         val result = calculator.calculate(
             announcementDate = announcementDate,
@@ -46,7 +51,7 @@ class CalculateDeadlineUseCase(
         // The holiday cache is not a substitute for published government decisions.
         // Particularly for an empty year, the calculator must never suggest that
         // no holidays existed merely because none were stored locally.
-        val coveredYears = holidaysList.map { it.holidayDate.year }.toSet()
+        val coveredYears = officialHolidays.map { it.holidayDate.year }.toSet()
         val yearRange = minOf(announcementDate.year, result.finalDeadline.year)..
             maxOf(announcementDate.year, result.finalDeadline.year)
         val missingYears = yearRange.filterNot { it in coveredYears }
@@ -54,7 +59,7 @@ class CalculateDeadlineUseCase(
             if (missingYears.isNotEmpty()) {
                 add("تحذير: قاعدة العطلات المحلية لا تحتوي بيانات لسنوات ${missingYears.joinToString("، ")}؛ وقد يتغير الميعاد النهائي بعد التحقق من الإجازات الرسمية.")
             }
-            add("تنبيه: تواريخ العطلات المخزنة لا تتضمن مستند قرار رسمي؛ راجع قرارات الإجازات المتعلقة بالجهة المختصة قبل الاعتماد على الميعاد.")
+            add("تنبيه: اكتمال القرارات الرسمية للعطلات في جهة الإجراء غير مثبت حتى لو وجدت بعض التواريخ الموثقة. يجب مراجعة القرارات الفعلية قبل الاعتماد على النتيجة.")
         }
         result.copy(warnings = result.warnings + holidayWarnings)
     }

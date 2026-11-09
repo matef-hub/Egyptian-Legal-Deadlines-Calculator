@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
         HolidayEntity::class,
         SavedDeadlineEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -157,6 +157,20 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Preserve every saved deadline. Existing holiday rows have no official
+         * publication provenance, so migration never silently marks them verified.
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE holidays ADD COLUMN verification_status TEXT NOT NULL DEFAULT 'UNVERIFIED'")
+                db.execSQL("ALTER TABLE holidays ADD COLUMN source_url TEXT NOT NULL DEFAULT ''")
+                db.execSQL("UPDATE legal_rules SET effective_from = '' WHERE effective_from = '1968-11-01'")
+                db.execSQL("UPDATE legal_rules SET effective_to = '2025-08-31', review_status = 'NEEDS_REVIEW' WHERE id BETWEEN 147 AND 167 AND (effective_to IS NULL OR effective_to = '')")
+                db.execSQL("UPDATE legal_rules SET effective_to = '2027-09-30', review_status = 'NEEDS_REVIEW' WHERE id BETWEEN 92 AND 128 AND (effective_to IS NULL OR effective_to = '')")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -164,8 +178,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "egyptian_legal_deadlines.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_1_4, MIGRATION_2_4)
-                    .fallbackToDestructiveMigrationOnDowngrade(true)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_1_4, MIGRATION_2_4)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
