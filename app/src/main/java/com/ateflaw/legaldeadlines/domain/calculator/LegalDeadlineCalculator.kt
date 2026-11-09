@@ -214,7 +214,7 @@ class LegalDeadlineCalculator {
             val totalDistStr = totalDistanceDays.toString().toArabicDigits()
             val distDesc = when (distanceType) {
                 DistanceType.LOCAL -> "إضافة $totalDistStr أيام مسافة محلية (المادة ١٦ مرافعات)."
-                DistanceType.BORDER_AREA -> "إضافة ١٥ يوماً مسافة للمناطق الحدودية النائية (المادة ١٦ فقرة ٢ مرافعات)."
+                DistanceType.BORDER_AREA -> "إضافة ١٥ يوماً مسافة للمقيمين في المناطق الحدودية النائية (المادة ١٦ فقرة ٢ مرافعات)."
                 DistanceType.ABROAD -> "إضافة ٦٠ يوماً ميعاد مسافة لمن موطنه بالخارج (المادة ١٧ مرافعات)."
                 DistanceType.ABROAD_JUDICIAL_REDUCTION -> "إضافة $totalDistStr يوماً مسافة منقوصة بأمر قضائي: $judicialOrderDetails (المادة ١٧ فقرة ٢)."
                 else -> "إضافة $totalDistStr أيام مسافة طريق."
@@ -225,7 +225,7 @@ class LegalDeadlineCalculator {
                     date = provisionalDate,
                     title = "إضافة ميعاد مسافة الطريق",
                     description = "$distDesc ليمتد الميعاد المبدئي إلى (${provisionalDate.format(dateFormatter).toArabicDigits()}).",
-                    legalBasis = distanceType.statutoryBasis.toArabicDigits()
+                    legalBasis = distanceType.statutoryBasis
                 )
             )
         }
@@ -395,13 +395,13 @@ class LegalDeadlineCalculator {
         if (distanceType == DistanceType.NONE && totalDistanceDays == 0) {
             sb.append("لا يوجد ميعاد مسافة (محل النزاع بنفس الدائرة القضائية).\n")
         } else if (distanceType == DistanceType.ABROAD_SERVED_IN_EGYPT) {
-            sb.append("لا يسري ميعاد المسافة لمن أعلن لشخصه أثناء وجوده في مصر (المادة ١٧ فقرة ٣ مرافعات).\n")
+            sb.append("لا يسري ميعاد المسافة لمن أعلن لشخصه أثناء وجوده في مصر (المادة 17 فقرة 3 مرافعات).\n")
         } else {
             sb.append(distanceType.arabicDisplayName)
                 .append(" — إجمالي: ").append(totalDistanceDays.toString().toArabicDigits()).append(" يوم")
-                .append(" (").append(distanceType.statutoryBasis.toArabicDigits()).append(")")
+                .append(" (").append(distanceType.statutoryBasis).append(")")
             if (!judicialOrderDetails.isNullOrBlank()) {
-                sb.append(" [سند الأمر القضائي: ").append(judicialOrderDetails.toArabicDigits()).append("]")
+                sb.append(" [سند الأمر القضائي: ").append(judicialOrderDetails).append("]")
             }
             sb.append("\n")
         }
