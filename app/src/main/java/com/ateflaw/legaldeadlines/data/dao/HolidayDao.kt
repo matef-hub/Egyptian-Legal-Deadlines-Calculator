@@ -19,6 +19,9 @@ interface HolidayDao {
     @Query("SELECT COUNT(*) FROM holidays")
     suspend fun count(): Int
 
+    @Query("SELECT COUNT(*) FROM holidays WHERE holiday_date LIKE :yearPrefix || '%'")
+    suspend fun countHolidaysForYear(yearPrefix: String): Int
+
     @Query("SELECT * FROM holidays WHERE holiday_date = :date LIMIT 1")
     suspend fun getHoliday(date: String): HolidayEntity?
 

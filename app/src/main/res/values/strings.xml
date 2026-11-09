@@ -15,14 +15,14 @@
     <string name="holidays_title">جدول العطلات</string>
     <string name="no_holidays_found">لا توجد عطلات مسجلة حالياً</string>
     <string name="holidays_sync_btn">تحديث العطلات</string>
-    <string name="holidays_syncing">جاري التحديث...</string>
+    <string name="holidays_syncing">جاري التحديث…</string>
     <string name="holidays_count_summary">العطلات الرسمية المسجلة (%1$d)</string>
     <string name="holidays_governance_note">وفقاً لقرارات مجلس الوزراء المعمول بها، يتم غالباً ترحيل العطلات الرسمية الواقعة في منتصف الأسبوع (مثل يوم الثلاثاء) إلى يوم الخميس التالي المباشرة لضم العطلات.</string>
     <string name="holiday_day_shifted">عطلة رسمية (الخميس/مرحّلة)</string>
 
     <string name="form_title">بيانات احتساب الميعاد</string>
     <string name="legal_action_label">الإجراء القانوني</string>
-    <string name="select_legal_action_hint">اختر الإجراء القضائي...</string>
+    <string name="select_legal_action_hint">اختر الإجراء القضائي…</string>
     <string name="announcement_date_label">تاريخ الإعلان / صدور الحكم</string>
     <string name="additional_distance_days_label">ميعاد المسافة الإضافي (بالأيام - اختياري)</string>
     <string name="case_number_label">رقم القضية / الدعوى (اختياري)</string>

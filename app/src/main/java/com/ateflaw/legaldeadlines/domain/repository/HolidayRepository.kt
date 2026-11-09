@@ -15,5 +15,5 @@ interface HolidayRepository {
     suspend fun isHoliday(date: LocalDate): Boolean
     suspend fun getHolidayName(date: LocalDate): String?
     suspend fun insertHolidays(holidays: List<Holiday>)
-    suspend fun syncHolidays(year: Int): Result<Int>
+    suspend fun syncHolidays(year: Int, forceRefresh: Boolean = false): Result<Int>
 }

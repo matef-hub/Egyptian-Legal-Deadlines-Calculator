@@ -45,11 +45,11 @@ class HolidaysViewModel(
         }
     }
 
-    fun syncHolidays() {
+    fun syncHolidays(forceRefresh: Boolean = true) {
         viewModelScope.launch {
             _uiState.update { it.copy(isSyncing = true, syncMessage = null) }
             val currentYear = LocalDate.now().year
-            val result = syncHolidaysUseCase(currentYear)
+            val result = syncHolidaysUseCase(currentYear, forceRefresh)
             if (result.isSuccess) {
                 val count = result.getOrDefault(0)
                 _uiState.update {

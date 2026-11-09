@@ -52,10 +52,17 @@ class OfficialHolidayService(
     }
 
     @Suppress("KotlinConstantConditions")
-    suspend fun syncHolidays(year: Int): Result<Int> = withContext(Dispatchers.IO) {
+    suspend fun syncHolidays(year: Int, forceRefresh: Boolean = false): Result<Int> = withContext(Dispatchers.IO) {
         try {
+            if (!forceRefresh) {
+                val existingCount = holidayDao.countHolidaysForYear(year.toString())
+                if (existingCount > 0) {
+                    return@withContext Result.success(existingCount)
+                }
+            }
+
             val apiKey = BuildConfig.CALENDARIFIC_API_KEY
-            if (apiKey.isBlank() || apiKey == "YOUR_API_KEY") {
+            if (apiKey.isBlank() || apiKey == "4U1Wx9QF6QNlFclYWubgy5lMGT8Mqr59") {
                 // If API key is not configured, explicitly communicate reliance on verified local database
                 val localCount = holidayDao.count()
                 return@withContext Result.failure(

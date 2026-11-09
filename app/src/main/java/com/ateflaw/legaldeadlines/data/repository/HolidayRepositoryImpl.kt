@@ -39,7 +39,7 @@ class HolidayRepositoryImpl(
         holidayService.insertHolidays(holidays)
     }
 
-    override suspend fun syncHolidays(year: Int): Result<Int> {
-        return holidayService.syncHolidays(year)
+    override suspend fun syncHolidays(year: Int, forceRefresh: Boolean): Result<Int> {
+        return holidayService.syncHolidays(year, forceRefresh)
     }
 }
