@@ -1899,7 +1899,24 @@ object LegalRuleSeedData {
                 notes = "يصدر المحافظ المختص أو من ينيبه قراراً مسبباً بإزالة أو تصحيح الأعمال الموقوفة خلال 15 يوماً على الأكثر من تاريخ إعلان قرار الوقف.",
                 summary = "قرار إزالة أعمال بناء مخالفة"
             )
-        )
+        ).map { rule ->
+            // All 169 historical seed entries require independent article-by-article
+            // legal review. Never inject a made-up 1968 effective date into laws
+            // enacted decades later.
+            when (rule.id) {
+                in 147L..167L -> rule.copy(
+                    effectiveFrom = "",
+                    effectiveTo = "2025-08-31",
+                    reviewStatus = "NEEDS_REVIEW"
+                )
+                in 92L..128L -> rule.copy(
+                    effectiveFrom = "",
+                    effectiveTo = "2027-09-30",
+                    reviewStatus = "NEEDS_REVIEW"
+                )
+                else -> rule.copy(effectiveFrom = "", reviewStatus = "NEEDS_REVIEW")
+            }
+        }
     }
 
     fun getInitialOfficialHolidays(): List<Holiday> {

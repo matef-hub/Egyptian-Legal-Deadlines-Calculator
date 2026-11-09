@@ -327,4 +327,49 @@ class DatabaseMigrationTest {
             }
         }
     }
+
+    @Test
+    fun testMigration4To5_preservesClientDataAndQuarantinesUnsourcedHolidays() {
+        TestSupportSQLiteDatabase().use { db ->
+            createSchemaV1(db)
+            db.execSQL("INSERT INTO holidays (holiday_date, name) VALUES ('2026-10-06', 'عطلة غير موثقة')")
+            db.execSQL("""
+                INSERT INTO saved_deadlines (id, case_number, client_name, action_name, announcement_date,
+                    duration, unit, distance_days, final_deadline, law_article, calculation_explanation, notes, created_at)
+                VALUES (991, '321/2026', 'اختبار سري', 'استئناف', '2026-10-01',
+                    40, 'DAYS', 0, '2026-11-10', 'المادة 227', 'نتيجة محفوظة', 'سجل أصلي', 1729000000000)
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (159, 'إخطار إنهاء العمل القديم', 2, 'MONTHS', 0, 'NEXT_DAY', 'قانون 12 لسنة 2003', 'قديم', 'قديم')
+            """.trimIndent())
+
+            AppDatabase.MIGRATION_1_2.migrate(db)
+            AppDatabase.MIGRATION_2_3.migrate(db)
+            AppDatabase.MIGRATION_3_4.migrate(db)
+            AppDatabase.MIGRATION_4_5.migrate(db)
+
+            db.query("SELECT case_number, client_name, calculation_explanation FROM saved_deadlines WHERE id = 991")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals("321/2026", cursor.getString(0))
+                    assertEquals("اختبار سري", cursor.getString(1))
+                    assertEquals("نتيجة محفوظة", cursor.getString(2))
+                }
+            db.query("SELECT verification_status, source_url FROM holidays WHERE holiday_date = '2026-10-06'")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals("UNVERIFIED", cursor.getString(0))
+                    assertEquals("", cursor.getString(1))
+                }
+            db.query("SELECT review_status, effective_from, effective_to FROM legal_rules WHERE id = 159")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals("NEEDS_REVIEW", cursor.getString(0))
+                    assertEquals("", cursor.getString(1))
+                    assertEquals("2025-08-31", cursor.getString(2))
+                }
+        }
+    }
+
 }

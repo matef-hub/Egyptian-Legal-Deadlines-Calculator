@@ -105,7 +105,13 @@ class OfficialHolidayService(
 
                 if (parsedHolidays.isNotEmpty()) {
                     // Safe idempotent upsert: insert all
-                    holidayDao.insertAll(parsedHolidays.map { HolidayEntity.fromDomain(it) })
+                    // A third-party import may NOT replace a source-verified official
+                    // decision for the same date.
+                    val candidates = parsedHolidays.filter { candidate ->
+                        holidayDao.getHoliday(candidate.holidayDate.toString())
+                            ?.verificationStatus != "VERIFIED_OFFICIAL"
+                    }
+                    holidayDao.insertAll(candidates.map { HolidayEntity.fromDomain(it) })
                 }
                 Result.success(parsedHolidays.size)
             } else {
