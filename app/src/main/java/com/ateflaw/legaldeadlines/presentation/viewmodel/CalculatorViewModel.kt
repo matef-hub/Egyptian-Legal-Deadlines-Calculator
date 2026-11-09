@@ -147,8 +147,10 @@ class CalculatorViewModel(
     }
 
     fun onLocalDistanceKmChanged(kmStr: String) {
-        val km = kmStr.toDoubleOrNull() ?: 0.0
-        val calculatedDays = DistanceType.calculateLocalDistanceDays(km)
+        val km = kmStr.toDoubleOrNull()
+        val calculatedDays = if (km != null && km.isFinite() && km >= 0.0) {
+            DistanceType.calculateLocalDistanceDays(km)
+        } else 0
         _uiState.update {
             it.copy(
                 localDistanceKmInput = kmStr,
@@ -268,6 +270,7 @@ class CalculatorViewModel(
         val rule = currentState.selectedRule ?: return
 
         viewModelScope.launch {
+            if (_uiState.value.inputRevision != currentState.inputRevision) return@launch
             try {
                 val ruleSnapshotText = buildString {
                     append("معرف القاعدة: ").append(rule.id)

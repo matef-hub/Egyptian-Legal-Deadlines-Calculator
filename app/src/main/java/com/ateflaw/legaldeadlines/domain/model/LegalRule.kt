@@ -22,7 +22,7 @@ data class LegalRule(
     val lawName: String = "قانون المرافعات المدنية والتجارية", // اسم القانون
     val article: String = "", // رقم المادة
     val officialSourceUrl: String = "", // مصدر تشريعي موثوق
-    val effectiveFrom: String = "1968-11-01", // تاريخ بدء النفاذ
+    val effectiveFrom: String = "", // تاريخ بدء النفاذ
     val effectiveTo: String? = null, // تاريخ انتهاء النفاذ إن وجد
     val lastReviewedAt: String = "2026-10-13", // تاريخ آخر مراجعة قانونية
     val reviewStatus: String = "NEEDS_REVIEW" // حالة المراجعة القانونية (الأصل أنها تحتاج مراجعة ما لم تدقق صراحة)

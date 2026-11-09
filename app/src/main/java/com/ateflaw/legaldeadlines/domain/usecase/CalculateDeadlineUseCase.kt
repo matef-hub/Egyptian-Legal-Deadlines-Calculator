@@ -1,6 +1,7 @@
 package com.ateflaw.legaldeadlines.domain.usecase
 
 import com.ateflaw.legaldeadlines.domain.calculator.LegalDeadlineCalculator
+import com.ateflaw.legaldeadlines.domain.calculator.LegalRuleSafety
 import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
 import com.ateflaw.legaldeadlines.domain.model.DistanceType
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
@@ -24,6 +25,7 @@ class CalculateDeadlineUseCase(
         additionalDistanceDays: Int = 0,
         judicialOrderDetails: String? = null
     ): DeadlineResult = withContext(Dispatchers.Default) {
+        LegalRuleSafety.validate(rule, announcementDate)
         val holidaysList = withContext(Dispatchers.IO) {
             holidayRepository.getAllHolidaysList()
         }

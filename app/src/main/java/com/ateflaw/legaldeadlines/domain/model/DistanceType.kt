@@ -65,7 +65,8 @@ enum class DistanceType(
          * - Maximum 4 days.
          */
         fun calculateLocalDistanceDays(distanceKm: Double): Int {
-            if (distanceKm <= 0.0) return 0
+            require(distanceKm.isFinite() && distanceKm >= 0.0) { "المسافة يجب أن تكون رقماً موجباً منتهيًا." }
+            if (distanceKm == 0.0) return 0
             val full50s = (distanceKm / 50.0).toInt()
             val remainder = distanceKm % 50.0
             val extraDay = if (remainder > 30.0) 1 else 0
