@@ -4,6 +4,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,6 +44,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -150,7 +155,8 @@ fun DeadlineTimelineView(
                 val isLast = index == milestones.lastIndex
                 TimelineNodeItem(
                     milestone = milestone,
-                    isLast = isLast
+                    isLast = isLast,
+                    index = index
                 )
             }
         }
@@ -235,9 +241,27 @@ private data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, v
 private fun TimelineNodeItem(
     milestone: CalculationMilestone,
     isLast: Boolean,
+    index: Int,
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var itemVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay((index * 150).toLong())
+        itemVisible = true
+    }
+
+    val itemAlpha by animateFloatAsState(
+        targetValue = if (itemVisible) 1f else 0f,
+        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+        label = "TimelineAlpha"
+    )
+    val itemTranslateX by animateFloatAsState(
+        targetValue = if (itemVisible) 0f else 30f,
+        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+        label = "TimelineTranslateX"
+    )
 
     val dayName = DateFormatterUtils.getArabicDayName(milestone.date.dayOfWeek)
     val formattedDate = DateFormatterUtils.formatArabicFullDate(milestone.date)
@@ -255,6 +279,10 @@ private fun TimelineNodeItem(
         modifier = modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
+            .graphicsLayer {
+                alpha = itemAlpha
+                translationX = itemTranslateX
+            }
             .clickable { expanded = !expanded }
             .padding(vertical = 3.dp),
         horizontalArrangement = Arrangement.Start

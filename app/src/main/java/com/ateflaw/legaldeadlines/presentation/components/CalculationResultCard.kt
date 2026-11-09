@@ -284,37 +284,6 @@ fun CalculationResultCard(
                 }
             }
 
-            // Professional Legal Disclaimer & Note
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
-                    .padding(12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .padding(top = 2.dp)
-                    )
-
-                    Text(
-                        text = "تنبيه مهني: الحساب استرشادي وفقاً للمواد 15 و16 و17 و18 من قانون المرافعات وقرارات العطلات الرسمية، ويلزم التحقق من وقائع الخصومة وحضورها واستثناءاتها.",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        lineHeight = 18.sp
-                    )
-                }
-            }
-
             // Prominent Statutory Review Status Warning (if rule is under review)
             if (result.warnings.isNotEmpty()) {
                 result.warnings.forEach { warning ->

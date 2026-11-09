@@ -176,6 +176,23 @@ fun CalculatorScreenContent(
     var isDropdownExpanded by remember { mutableStateOf(false) }
     var showDatePickerDialog by remember { mutableStateOf(false) }
 
+    // Staggered Entrance Animation State
+    var isScreenVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        isScreenVisible = true
+    }
+
+    val formAlpha by animateFloatAsState(
+        targetValue = if (isScreenVisible) 1f else 0f,
+        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+        label = "FormAlpha"
+    )
+    val formTranslationY by animateFloatAsState(
+        targetValue = if (isScreenVisible) 0f else 80f,
+        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+        label = "FormTranslationY"
+    )
+
     // Collapsible sections state
     var isAdditionalDistanceExpanded by remember { mutableStateOf(false) }
     var isCaseDetailsExpanded by remember { mutableStateOf(false) }
@@ -204,18 +221,18 @@ fun CalculatorScreenContent(
         }
     }
 
-    // Filter rules based on typed query
+    // Filter rules based on typed query (Limit to 5 results to prevent lag)
     val filteredRules by remember(uiState.rules, searchQuery) {
         derivedStateOf {
             val query = searchQuery.trim()
             if (query.isBlank() || (uiState.selectedRule != null && query == uiState.selectedRule.actionName)) {
-                uiState.rules
+                uiState.rules.take(5)
             } else {
                 uiState.rules.filter { rule ->
                     rule.actionName.contains(query, ignoreCase = true) ||
                     rule.lawArticle.contains(query, ignoreCase = true) ||
                     rule.notes.contains(query, ignoreCase = true)
-                }
+                }.take(5)
             }
         }
     }
@@ -234,7 +251,11 @@ fun CalculatorScreenContent(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(16.dp),
+                .padding(16.dp)
+                .graphicsLayer {
+                    alpha = formAlpha
+                    translationY = formTranslationY
+                },
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // 1. Top Holiday & Calendar Status Bar

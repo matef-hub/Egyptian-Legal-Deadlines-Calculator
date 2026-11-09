@@ -239,10 +239,6 @@ class LegalDeadlineCalculator {
         )
 
         val warnings = mutableListOf<String>()
-        if (rule.reviewStatus.equals("NEEDS_REVIEW", ignoreCase = true)) {
-            warnings.add("تنبيه تدقيق: هذه القاعدة القانونية قيد المراجعة والتدقيق التشريعي، ولم تُعتمد بعد كميعاد قطعي موثق رسمياً.")
-        }
-
         return DeadlineResult(
             startDate = startDate,
             provisionalDate = provisionalDate,
