@@ -1,6 +1,7 @@
 package com.ateflaw.legaldeadlines.data.seed
 
 import com.ateflaw.legaldeadlines.domain.calculator.LegalRuleSafety
+import com.ateflaw.legaldeadlines.domain.review.LegalRuleReviewCatalog
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.Holiday
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
@@ -922,7 +923,10 @@ object LegalRuleSeedData {
                 distanceDays = 0,
                 startRule = StartRule.NEXT_DAY,
                 lawArticle = "المادة 940 من القانون المدني المصري",
-                notes = "يجب إعلان الرغبة في الشفعة رسمياً على يد محضر خلال 15 يوماً من تاريخ الإنذار الموجه من البائع أو المشتري.",
+                articleText = LegalRuleReviewCatalog.ARTICLE_940_TEXT,
+                officialSourceUrl = LegalRuleReviewCatalog.ARTICLE_940_SOURCE,
+                triggerEventLabel = "تاريخ الإنذار الرسمي بالبيع للشفيع",
+                notes = "مدة خمسة عشر يومًا تبدأ من الإنذار الرسمي الصحيح من البائع أو المشتري، وإعلان الرغبة يوجه إليهما معًا. تضاف أيام المسافة متى انطبقت شروطها. يُراجع أيضًا شكل الإنذار والمواد 941 و942 و943 و948 حسب الواقعة.",
                 summary = "إعلان رغبة الشفعة"
             ),
             LegalRule(

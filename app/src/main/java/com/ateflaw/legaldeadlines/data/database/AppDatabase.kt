@@ -14,6 +14,7 @@ import com.ateflaw.legaldeadlines.data.entity.LegalRuleEntity
 import com.ateflaw.legaldeadlines.data.entity.RuleEditHistoryEntity
 import com.ateflaw.legaldeadlines.data.entity.SavedDeadlineEntity
 import com.ateflaw.legaldeadlines.data.seed.LegalRuleSeedData
+import com.ateflaw.legaldeadlines.domain.review.LegalRuleReviewCatalog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -25,7 +26,7 @@ import kotlinx.coroutines.launch
         SavedDeadlineEntity::class,
         RuleEditHistoryEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -252,6 +253,31 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * 8 -> 9: fill the previously missing official article 940 text only in
+         * untouched legacy rule #82. Never replace a user-supplied text or
+         * modified version. No client or saved-deadline data is changed.
+         */
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    UPDATE legal_rules SET
+                        article_text = ?,
+                        official_source_url = ?,
+                        trigger_event_label = 'تاريخ الإنذار الرسمي بالبيع للشفيع'
+                    WHERE id = 82
+                      AND revision <= 1
+                      AND article_text = ''
+                      AND law_article LIKE '%940%'
+                      AND duration = 15
+                      AND unit = 'DAYS'
+                """.trimIndent(), arrayOf(
+                    LegalRuleReviewCatalog.ARTICLE_940_TEXT,
+                    LegalRuleReviewCatalog.ARTICLE_940_SOURCE
+                ))
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -259,7 +285,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "egyptian_legal_deadlines.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_1_4, MIGRATION_2_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_1_4, MIGRATION_2_4)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

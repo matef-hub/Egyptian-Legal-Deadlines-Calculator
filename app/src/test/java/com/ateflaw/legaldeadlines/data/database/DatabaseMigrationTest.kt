@@ -500,4 +500,49 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun testMigration8To9_fillsOnlyMissingArticle940PreservingUserEdits() {
+        TestSupportSQLiteDatabase().use { db ->
+            createSchemaV1(db)
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule,
+                    law_article, notes, summary)
+                VALUES (82, 'إعلان الرغبة في الأخذ بالشفعة', 15, 'DAYS', 0, 'NEXT_DAY',
+                    'المادة 940 من القانون المدني المصري', 'قيد المراجعة', '')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO saved_deadlines (id, case_number, client_name, action_name, announcement_date,
+                    duration, unit, distance_days, final_deadline, law_article, calculation_explanation, notes, created_at)
+                VALUES (901, '440/2026', 'موكل محفوظ', 'ميعاد شفعة', '2026-11-01',
+                    15, 'DAYS', 0, '2026-11-16', 'المادة 940', 'بيانات محفوظة', 'لا تعدل', 1729000000000)
+            """.trimIndent())
+            AppDatabase.MIGRATION_1_2.migrate(db)
+            AppDatabase.MIGRATION_2_3.migrate(db)
+            AppDatabase.MIGRATION_3_4.migrate(db)
+            AppDatabase.MIGRATION_4_5.migrate(db)
+            AppDatabase.MIGRATION_5_6.migrate(db)
+            AppDatabase.MIGRATION_6_7.migrate(db)
+            AppDatabase.MIGRATION_7_8.migrate(db)
+            // Case A: legacy untouched article receives sourced text.
+            AppDatabase.MIGRATION_8_9.migrate(db)
+            db.query("SELECT article_text, official_source_url FROM legal_rules WHERE id = 82").use {
+                assertTrue(it.moveToNext())
+                assertTrue(it.getString(0).contains("خمسة عشر"))
+                assertTrue(it.getString(1).contains("portal.eta.gov.eg"))
+            }
+            // Case B: a user-supplied text is never overwritten.
+            db.execSQL("UPDATE legal_rules SET article_text = 'نص أدخله المستخدم', revision = 2 WHERE id = 82")
+            AppDatabase.MIGRATION_8_9.migrate(db)
+            db.query("SELECT article_text FROM legal_rules WHERE id = 82").use {
+                assertTrue(it.moveToNext())
+                assertEquals("نص أدخله المستخدم", it.getString(0))
+            }
+            db.query("SELECT client_name, notes FROM saved_deadlines WHERE id = 901").use {
+                assertTrue(it.moveToNext())
+                assertEquals("موكل محفوظ", it.getString(0))
+                assertEquals("لا تعدل", it.getString(1))
+            }
+        }
+    }
+
 }
