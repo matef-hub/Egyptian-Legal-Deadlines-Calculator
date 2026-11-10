@@ -73,7 +73,8 @@ android {
         debug {
             buildConfigField("String", "CALENDARIFIC_API_KEY", "\"$calendarificApiKey\"")
             isMinifyEnabled = false
-            // A distinct package protects existing user records when CI runner debug keys rotate.\n            applicationIdSuffix = ".preview"
+            // A distinct package protects existing user records when CI runner debug keys rotate.
+            applicationIdSuffix = ".preview"
             versionNameSuffix = "-preview"
         }
     }
