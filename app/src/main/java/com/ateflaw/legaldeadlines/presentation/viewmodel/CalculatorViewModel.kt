@@ -248,7 +248,7 @@ class CalculatorViewModel(
                     if (it.inputRevision != currentState.inputRevision) it else it.copy(
                         isCalculating = false,
                         result = null,
-                        errorMessage = "حدث خطأ أثناء احتساب الميعاد: ${e.localizedMessage}"
+                        errorMessage = if (e is IllegalArgumentException) "تعذر حساب هذا الإجراء آليًا: ${e.localizedMessage}" else "حدث خطأ تقني أثناء الحساب: ${e.localizedMessage}"
                     )
                 }
             }

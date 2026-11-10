@@ -1050,7 +1050,7 @@ fun CalculatorScreenContent(
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "احسب الميعاد",
+                                text = if (uiState.selectedRule?.reviewStatus == "VERIFIED_ACCURATE") "احسب الميعاد" else "احسب تاريخًا استرشاديًا",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )

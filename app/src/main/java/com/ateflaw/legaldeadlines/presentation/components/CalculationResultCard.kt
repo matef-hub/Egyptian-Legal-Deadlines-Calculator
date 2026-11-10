@@ -170,7 +170,7 @@ fun CalculationResultCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "الميعاد النهائي",
+                    text = if (result.isProvisional) "تاريخ حسابي استرشادي" else "الميعاد النهائي",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onTertiaryContainer
@@ -409,7 +409,7 @@ fun CalculationResultCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "إضافة الميعاد للاجندة ($finalDateFormatted)",
+                        text = if (result.isProvisional) "إضافة تاريخ استرشادي للتقويم ($finalDateFormatted)" else "إضافة الميعاد للاجندة ($finalDateFormatted)",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -462,7 +462,7 @@ fun CalculationResultCard(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = if (isSaved) "تم الحفظ بالمحفوظات" else "حفظ الميعاد",
+                            text = if (isSaved) "تم الحفظ بالمحفوظات" else if (result.isProvisional) "حفظ تاريخ استرشادي" else "حفظ الميعاد",
                             fontWeight = FontWeight.Bold
                         )
                     }
