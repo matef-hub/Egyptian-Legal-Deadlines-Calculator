@@ -159,14 +159,7 @@ fun RulesCatalogScreen(
             }
         }
         Spacer(Modifier.height(8.dp))
-        // Feedback is a five-second dialog rather than a permanent banner.
-        if (false) {
-            Text(state.notice.orEmpty(), color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.bodySmall)
-        }
-        if (false) {
-            Text(state.error.orEmpty())
-        }
+        // Five-second SweetAlertNotice is displayed below.
         when {
             state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()

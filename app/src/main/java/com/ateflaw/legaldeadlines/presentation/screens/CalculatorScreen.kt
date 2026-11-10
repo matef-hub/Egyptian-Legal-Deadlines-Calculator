@@ -69,8 +69,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -105,6 +103,8 @@ import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.presentation.components.CalculationResultCard
+import com.ateflaw.legaldeadlines.presentation.components.SweetAlertNotice
+import com.ateflaw.legaldeadlines.presentation.components.NoticeKind
 import com.ateflaw.legaldeadlines.presentation.components.HolidayStatusBar
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
@@ -162,7 +162,7 @@ fun CalculatorScreenContent(
 ) {
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
+    var transientAlert by remember { mutableStateOf<String?>(null) }
 
     // Form focus requesters for automatic validation navigation
     val ruleFocusRequester = remember { FocusRequester() }
@@ -267,43 +267,6 @@ fun CalculatorScreenContent(
                 holidayName = uiState.todayHolidayName,
                 loadedHolidaysCount = uiState.totalHolidaysCount
             )
-
-            // General error banner if present from ViewModel
-            if (uiState.errorMessage != null) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Error,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = uiState.errorMessage,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(onClick = { onDismissMessages() }) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "إغلاق",
-                                tint = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        }
-                    }
-                }
-            }
 
             // 2. Calculation Input Form Card ("بيانات احتساب الميعاد")
             val cardElevation by animateDpAsState(
@@ -1010,7 +973,7 @@ fun CalculatorScreenContent(
                                     try {
                                         ruleFocusRequester.requestFocus()
                                     } catch (_: Exception) {}
-                                    snackbarHostState.showSnackbar("تنبيه: يجب اختيار الإجراء القانوني أولاً")
+                                    transientAlert = "يجب اختيار الإجراء القانوني أولًا."
                                 }
                             } else {
                                 val distanceDays = uiState.additionalDistanceDaysInput.toIntOrNull()
@@ -1022,7 +985,7 @@ fun CalculatorScreenContent(
                                         try {
                                             distanceFocusRequester.requestFocus()
                                         } catch (_: Exception) {}
-                                        snackbarHostState.showSnackbar("تنبيه: ميعاد المسافة غير صحيح")
+                                        transientAlert = "يرجى تصحيح أيام المسافة أولًا."
                                     }
                                 } else {
                                     isRuleError = false
@@ -1138,14 +1101,33 @@ fun CalculatorScreenContent(
             }
         }
 
-        // Snackbar Host for feedback
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp)
+        // Dialog-style feedback, no persistent error banner or Snackbar.
+        SweetAlertNotice(
+            message = uiState.errorMessage ?: transientAlert ?: uiState.successMessage,
+            kind = if (uiState.errorMessage != null || transientAlert != null) {
+                NoticeKind.ERROR
+            } else NoticeKind.SUCCESS,
+            onDismiss = {
+                transientAlert = null
+                onDismissMessages()
+            }
         )
     }
+
+    // Show advisory result notification for five seconds; full legal caveats
+    // remain accessible in the result card rather than disappearing.
+    val result = uiState.result
+    var resultAlert by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(result) {
+        if (result?.isProvisional == true) {
+            resultAlert = "ظهر تاريخ استرشادي غير معتمد قانونيًا. راجع الملاحظات القانونية في تفاصيل النتيجة قبل اتخاذ الإجراء."
+        }
+    }
+    SweetAlertNotice(
+        message = resultAlert,
+        kind = NoticeKind.INFO,
+        onDismiss = { resultAlert = null }
+    )
 
     // DatePickerDialog Component
     if (showDatePickerDialog) {

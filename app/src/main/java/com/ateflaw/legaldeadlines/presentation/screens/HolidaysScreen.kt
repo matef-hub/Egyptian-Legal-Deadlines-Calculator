@@ -35,8 +35,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,6 +55,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ateflaw.legaldeadlines.R
 import com.ateflaw.legaldeadlines.domain.model.Holiday
+import com.ateflaw.legaldeadlines.presentation.components.SweetAlertNotice
+import com.ateflaw.legaldeadlines.presentation.components.NoticeKind
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.presentation.viewmodel.HolidaysUiState
 import com.ateflaw.legaldeadlines.presentation.viewmodel.HolidaysViewModel
@@ -89,16 +89,6 @@ fun HolidaysScreenContent(
     onDismissSnackbar: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    LaunchedEffect(uiState.syncMessage) {
-        val msg = uiState.syncMessage
-        if (!msg.isNullOrBlank()) {
-            snackbarHostState.showSnackbar(msg)
-            onDismissSnackbar()
-        }
-    }
-
     Box(modifier = modifier.fillMaxSize()) {
         AnimatedContent(
             targetState = Pair(uiState.isLoading, uiState.holidays.isEmpty()),
@@ -333,11 +323,10 @@ fun HolidaysScreenContent(
             }
         }
 
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(16.dp)
+        SweetAlertNotice(
+            message = uiState.syncMessage,
+            kind = if (uiState.syncMessage?.startsWith("تم") == true) NoticeKind.SUCCESS else NoticeKind.INFO,
+            onDismiss = onDismissSnackbar
         )
     }
 }
