@@ -60,7 +60,7 @@ class RuleCatalogViewModel(
                 state.update { it.copy(
                     saving = false,
                     savedToken = it.savedToken + 1,
-                    notice = "تم الحفظ في الدليل، والقاعدة قيد المراجعة القانونية."
+                    notice = "تم حفظ النص والمدة. حالة اكتمال المادة تحدّثت في الدليل؛ اعتماد التطبيق القانوني منفصل."
                 ) }
             } catch (error: Exception) {
                 state.update { it.copy(

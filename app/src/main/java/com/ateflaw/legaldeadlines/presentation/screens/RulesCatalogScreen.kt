@@ -45,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -74,11 +75,8 @@ fun RulesCatalogScreen(
     val laws = remember(state.rules) {
         state.rules.map { it.lawName.ifBlank { "قانون غير مصنف" } }.distinct().sorted()
     }
-    val correctionCount = remember(state.rules) {
-        state.rules.count { LegalRuleReviewCatalog.finding(it).level == AuditLevel.CORRECTION }
-    }
-    val highCount = remember(state.rules) {
-        state.rules.count { LegalRuleReviewCatalog.finding(it).level == AuditLevel.HIGH }
+    val auditCounts = remember(state.rules) {
+        state.rules.groupingBy { LegalRuleReviewCatalog.finding(it).level }.eachCount()
     }
     val filtered = remember(state.rules, query, selectedLaw, selectedReview) {
         val search = query.trim()
@@ -149,9 +147,11 @@ fun RulesCatalogScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(
                 Triple("ALL", "جميع الحالات", state.rules.size),
-                Triple("CORRECTION", "تحتاج تصحيح", correctionCount),
-                Triple("HIGH", "تدقيق مهم", highCount),
-                Triple("REVIEW", "تحتاج توثيق", state.rules.size - correctionCount - highCount)
+                Triple("CORRECTION", "تحتاج تصحيح", auditCounts[AuditLevel.CORRECTION] ?: 0),
+                Triple("HIGH", "تدقيق قانوني", auditCounts[AuditLevel.HIGH] ?: 0),
+                Triple("REVIEW", "نص ناقص", auditCounts[AuditLevel.REVIEW] ?: 0),
+                Triple("TEXT_ADDED", "النص مضاف", auditCounts[AuditLevel.TEXT_ADDED] ?: 0),
+                Triple("ARTICLE_MATCHED", "النص مطابق", auditCounts[AuditLevel.ARTICLE_MATCHED] ?: 0)
             ).forEach { (key, label, count) ->
                 FilterChip(selected = selectedReview == key,
                     onClick = { selectedReview = key },
@@ -216,17 +216,22 @@ fun RulesCatalogScreen(
 @Composable
 private fun RuleCatalogCard(rule: LegalRule, onEdit: () -> Unit) {
     var expanded by remember(rule.id, rule.revision) { mutableStateOf(false) }
+    val uriHandler = LocalUriHandler.current
     val finding = LegalRuleReviewCatalog.finding(rule)
     val reviewColor = when (finding.level) {
         AuditLevel.CORRECTION -> MaterialTheme.colorScheme.errorContainer
         AuditLevel.HIGH -> MaterialTheme.colorScheme.tertiaryContainer
         AuditLevel.REVIEW -> MaterialTheme.colorScheme.surfaceVariant
+        AuditLevel.TEXT_ADDED -> MaterialTheme.colorScheme.secondaryContainer
+        AuditLevel.ARTICLE_MATCHED -> MaterialTheme.colorScheme.secondaryContainer
         AuditLevel.VERIFIED -> MaterialTheme.colorScheme.secondaryContainer
     }
     val reviewText = when (finding.level) {
         AuditLevel.CORRECTION -> "تصحيح قانوني مطلوب"
         AuditLevel.HIGH -> "مراجعة قانونية مهمة"
-        AuditLevel.REVIEW -> "غير موثق بالكامل"
+        AuditLevel.REVIEW -> "نص المادة ناقص"
+        AuditLevel.TEXT_ADDED -> "النص محفوظ — بانتظار المطابقة"
+        AuditLevel.ARTICLE_MATCHED -> "النص والمدة مطابقان للمصدر — التطبيق يحتاج مراجعة"
         AuditLevel.VERIFIED -> "موثق"
     }
     Card(
@@ -261,6 +266,14 @@ private fun RuleCatalogCard(rule: LegalRule, onEdit: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium)
                 if (rule.notes.isNotBlank()) {
                     Text("ملاحظات: ${rule.notes}", style = MaterialTheme.typography.bodySmall)
+                }
+                val source = if (LegalRuleReviewCatalog.matchesArticle940(rule)) {
+                    LegalRuleReviewCatalog.ARTICLE_940_SOURCE
+                } else rule.officialSourceUrl
+                if (source.isNotBlank()) {
+                    TextButton(onClick = { uriHandler.openUri(source) }) {
+                        Text("عرض مصدر النص القانوني")
+                    }
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
@@ -299,6 +312,7 @@ private fun RuleEditorDialog(
     var duration by remember(initial) { mutableStateOf(initial.durationText) }
     var unit by remember(initial) { mutableStateOf(initial.unit) }
     var notes by remember(initial) { mutableStateOf(initial.notes) }
+    var sourceUrl by remember(initial) { mutableStateOf(initial.officialSourceUrl) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -341,6 +355,9 @@ private fun RuleEditorDialog(
                             label = { Text(choice.arabicDisplayName) })
                     }
                 }
+                OutlinedTextField(value = sourceUrl, onValueChange = { sourceUrl = it },
+                    label = { Text("رابط المصدر الرسمي (https://)") },
+                    minLines = 1, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = notes, onValueChange = { notes = it },
                     label = { Text("ملاحظات قانونية (اختياري)") },
                     minLines = 2, modifier = Modifier.fillMaxWidth())
@@ -356,7 +373,8 @@ private fun RuleEditorDialog(
                     articleText = articleText,
                     durationText = duration,
                     unit = unit,
-                    notes = notes
+                    notes = notes,
+                    officialSourceUrl = sourceUrl
                 ))
             }, enabled = !isSaving) {
                 if (isSaving) CircularProgressIndicator(

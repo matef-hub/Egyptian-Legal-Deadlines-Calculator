@@ -206,9 +206,9 @@ object LegalRuleReviewCatalog {
         .replace("ى", "ي")
         .replace("ة", "ه")
         .replace("يوجهه", "يوجه")
-        .replace(Regex("[^\p{L}\p{Nd}]+"), " ")
+        .replace(Regex("[^\\p{L}\\p{Nd}]+"), " ")
         .trim()
-        .replace(Regex("\s+"), " ")
+        .replace(Regex("\\s+"), " ")
 
     fun matchesArticle940(rule: LegalRule): Boolean =
         rule.id == 82L &&
