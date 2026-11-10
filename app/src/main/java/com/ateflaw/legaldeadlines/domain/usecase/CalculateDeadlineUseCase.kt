@@ -5,6 +5,7 @@ import com.ateflaw.legaldeadlines.domain.calculator.LegalRuleSafety
 import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
 import com.ateflaw.legaldeadlines.domain.model.DistanceType
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
+import com.ateflaw.legaldeadlines.domain.model.MilestoneType
 import com.ateflaw.legaldeadlines.domain.repository.HolidayRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -25,7 +26,13 @@ class CalculateDeadlineUseCase(
         additionalDistanceDays: Int = 0,
         judicialOrderDetails: String? = null
     ): DeadlineResult = withContext(Dispatchers.Default) {
-        LegalRuleSafety.validate(rule, announcementDate)
+        val reviewWarnings = LegalRuleSafety.previewWarnings(rule, announcementDate)
+        // No unverified route-distance extension for the article 82 shatb preview.
+        if (rule.id == 10L) {
+            require(distanceType == DistanceType.NONE && additionalDistanceDays == 0) {
+                "لا تُضاف أيام مسافة آليًا لتجديد الدعوى من الشطب؛ راجع أحكام الإعلان."
+            }
+        }
         val holidaysList = withContext(Dispatchers.IO) {
             holidayRepository.getAllHolidaysList()
         }
@@ -61,7 +68,23 @@ class CalculateDeadlineUseCase(
             }
             add("تنبيه: اكتمال القرارات الرسمية للعطلات في جهة الإجراء غير مثبت حتى لو وجدت بعض التواريخ الموثقة. يجب مراجعة القرارات الفعلية قبل الاعتماد على النتيجة.")
         }
-        result.copy(warnings = result.warnings + holidayWarnings)
+        val advisoryMilestones = result.milestones.map { item ->
+            if (item.type == MilestoneType.FINAL_DEADLINE) item.copy(
+                title = "تاريخ نهاية المدة الحسابية (غير معتمد)",
+                description = "تاريخ ناتج من حساب الأيام فقط، ولا يعني إتمام الإجراء أو اعتماد صحته. " +
+                    "راجع المواعيد والإعلانات وظروف الدعوى."
+            ) else item
+        }
+        result.copy(
+            milestones = advisoryMilestones,
+            explanation = "تاريخ استرشادي غير معتمد قانونيًا.\\n" +
+                result.explanation.replace(
+                    "الميعاد النهائي واجب الالتزام به",
+                    "تاريخ نهاية المدة الحسابية الاسترشادية"
+                ),
+            warnings = (reviewWarnings + result.warnings + holidayWarnings).distinct(),
+            isProvisional = true
+        )
     }
 
     suspend operator fun invoke(
