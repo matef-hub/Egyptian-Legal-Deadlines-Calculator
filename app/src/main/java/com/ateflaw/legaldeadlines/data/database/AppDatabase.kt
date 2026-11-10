@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
         HolidayEntity::class,
         SavedDeadlineEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -171,6 +171,17 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Revision/policy metadata is non-destructive and only enables explicitly
+         * classified, independently reviewed rule variants.
+         */
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE legal_rules ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE legal_rules ADD COLUMN calculation_kind TEXT NOT NULL DEFAULT 'UNREVIEWED'")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -178,7 +189,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "egyptian_legal_deadlines.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_1_4, MIGRATION_2_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_1_4, MIGRATION_2_4)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
@@ -194,10 +205,22 @@ abstract class AppDatabase : RoomDatabase() {
                             CoroutineScope(Dispatchers.IO).launch {
                                 try {
                                     val database = getInstance(context)
-                                    if (database.legalRuleDao().count() == 0) {
-                                        database.legalRuleDao().insertAll(
-                                            LegalRuleSeedData.getSeedRules().map { LegalRuleEntity.fromDomain(it) }
-                                        )
+                                    val ruleDao = database.legalRuleDao()
+                                    val catalog = LegalRuleSeedData.getSeedRules()
+                                    if (ruleDao.count() == 0) {
+                                        ruleDao.insertAll(catalog.map { LegalRuleEntity.fromDomain(it) })
+                                    } else {
+                                        // Existing records are never overwritten. Only verified
+                                        // legacy IDs/names with revision=0 receive safety metadata.
+                                        for (rule in catalog) {
+                                            ruleDao.adoptSeedMetadata(
+                                                id = rule.id,
+                                                expectedName = rule.actionName,
+                                                expiresAt = rule.effectiveTo,
+                                                revision = rule.revision,
+                                                kind = rule.calculationKind
+                                            )
+                                        }
                                     }
                                     if (database.holidayDao().count() == 0) {
                                         database.holidayDao().insertAll(

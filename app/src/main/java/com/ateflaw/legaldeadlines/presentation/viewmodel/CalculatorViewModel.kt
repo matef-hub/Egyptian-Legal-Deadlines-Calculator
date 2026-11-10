@@ -276,6 +276,8 @@ class CalculatorViewModel(
                     append("معرف القاعدة: ").append(rule.id)
                     append(" | الاسم: ").append(rule.actionName)
                     append(" | حالة المراجعة: ").append(rule.reviewStatus)
+                    append(" | إصدار القاعدة: ").append(rule.revision)
+                    append(" | نوع الحساب: ").append(rule.calculationKind)
                     append(" | مصدر القانون: ").append(rule.officialSourceUrl)
                     append(" | بداية السريان: ").append(rule.effectiveFrom)
                     append(" | نهاية السريان: ").append(rule.effectiveTo ?: "مفتوح")

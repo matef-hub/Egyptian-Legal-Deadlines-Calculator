@@ -1,5 +1,6 @@
 package com.ateflaw.legaldeadlines.data.seed
 
+import com.ateflaw.legaldeadlines.domain.calculator.LegalRuleSafety
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.Holiday
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
@@ -1900,6 +1901,7 @@ object LegalRuleSeedData {
                 summary = "قرار إزالة أعمال بناء مخالفة"
             )
         ).map { rule ->
+            val kind = LegalRuleSafety.kind(rule).name
             // All 169 historical seed entries require independent article-by-article
             // legal review. Never inject a made-up 1968 effective date into laws
             // enacted decades later.
@@ -1907,14 +1909,23 @@ object LegalRuleSeedData {
                 in 147L..167L -> rule.copy(
                     effectiveFrom = "",
                     effectiveTo = "2025-08-31",
-                    reviewStatus = "NEEDS_REVIEW"
+                    reviewStatus = "NEEDS_REVIEW",
+                    revision = 1,
+                    calculationKind = kind
                 )
                 in 92L..128L -> rule.copy(
                     effectiveFrom = "",
                     effectiveTo = "2027-09-30",
-                    reviewStatus = "NEEDS_REVIEW"
+                    reviewStatus = "NEEDS_REVIEW",
+                    revision = 1,
+                    calculationKind = kind
                 )
-                else -> rule.copy(effectiveFrom = "", reviewStatus = "NEEDS_REVIEW")
+                else -> rule.copy(
+                    effectiveFrom = "",
+                    reviewStatus = "NEEDS_REVIEW",
+                    revision = 1,
+                    calculationKind = kind
+                )
             }
         }
     }
