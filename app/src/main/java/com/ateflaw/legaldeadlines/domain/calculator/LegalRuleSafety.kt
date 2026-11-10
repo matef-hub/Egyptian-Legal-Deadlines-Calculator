@@ -36,7 +36,7 @@ object LegalRuleSafety {
     )
     private val special = setOf(9L, 10L, 12L, 14L, 18L, 20L, 41L, 42L, 43L, 90L, 91L)
 
-    fun kind(rule: LegalRule): CalculationKind = when {
+    private fun inherentKind(rule: LegalRule): CalculationKind = when {
         rule.id in exactHours || rule.unit == DurationUnit.HOURS ->
             CalculationKind.EXACT_HOURS
         rule.id in ages -> CalculationKind.AGE_THRESHOLD
@@ -45,6 +45,14 @@ object LegalRuleSafety {
             CalculationKind.LIMITATION_OR_CONDITION
         rule.id in special -> CalculationKind.SPECIAL_UNSUPPORTED
         else -> CalculationKind.FORWARD
+    }
+
+    fun kind(rule: LegalRule): CalculationKind {
+        val inherited = inherentKind(rule)
+        val declared = CalculationKind.entries.firstOrNull { it.name == rule.calculationKind }
+        // An explicit database value cannot downgrade a known unsafe old seed
+        // into a generic forward-calculation rule.
+        return if (inherited != CalculationKind.FORWARD) inherited else declared ?: inherited
     }
 
     fun validate(rule: LegalRule, eventDate: LocalDate) {

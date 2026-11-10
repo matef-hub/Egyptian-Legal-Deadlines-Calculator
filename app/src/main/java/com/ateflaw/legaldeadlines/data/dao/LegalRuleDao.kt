@@ -22,6 +22,28 @@ interface LegalRuleDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(rules: List<LegalRuleEntity>)
 
+    /**
+     * Metadata-only adoption of historical built-in rows. NEVER overwrite user
+     * annotations, duration or other original record contents during upgrade.
+     * Match action_name and unversioned revision to avoid touching custom IDs.
+     */
+    @Query("""
+        UPDATE legal_rules
+        SET review_status = 'NEEDS_REVIEW',
+            effective_from = '',
+            effective_to = :expiresAt,
+            revision = :revision,
+            calculation_kind = :kind
+        WHERE id = :id AND action_name = :expectedName AND revision = 0
+    """)
+    suspend fun adoptSeedMetadata(
+        id: Long,
+        expectedName: String,
+        expiresAt: String?,
+        revision: Int,
+        kind: String
+    ): Int
+
     @Query("DELETE FROM legal_rules")
     suspend fun clear()
 }

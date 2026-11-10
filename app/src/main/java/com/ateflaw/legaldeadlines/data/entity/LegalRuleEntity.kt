@@ -74,7 +74,13 @@ data class LegalRuleEntity(
     val lastReviewedAt: String = "2026-10-13",
 
     @ColumnInfo(name = "review_status", defaultValue = "NEEDS_REVIEW")
-    val reviewStatus: String = "NEEDS_REVIEW"
+    val reviewStatus: String = "NEEDS_REVIEW",
+
+    @ColumnInfo(name = "revision", defaultValue = "0")
+    val revision: Int = 0,
+
+    @ColumnInfo(name = "calculation_kind", defaultValue = "UNREVIEWED")
+    val calculationKind: String = "UNREVIEWED"
 ) {
     fun toDomain(): LegalRule = LegalRule(
         id = id,
@@ -98,7 +104,9 @@ data class LegalRuleEntity(
         effectiveFrom = effectiveFrom,
         effectiveTo = effectiveTo,
         lastReviewedAt = lastReviewedAt,
-        reviewStatus = reviewStatus
+        reviewStatus = reviewStatus,
+        revision = revision,
+        calculationKind = calculationKind
     )
 
     companion object {
@@ -124,7 +132,9 @@ data class LegalRuleEntity(
             effectiveFrom = domain.effectiveFrom,
             effectiveTo = domain.effectiveTo,
             lastReviewedAt = domain.lastReviewedAt,
-            reviewStatus = domain.reviewStatus
+            reviewStatus = domain.reviewStatus,
+            revision = domain.revision,
+            calculationKind = domain.calculationKind
         )
     }
 }
