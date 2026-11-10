@@ -372,4 +372,42 @@ class DatabaseMigrationTest {
         }
     }
 
+
+    @Test
+    fun testMigration5To6_addsPolicyAndVersionWithoutChangingSavedDeadlines() {
+        TestSupportSQLiteDatabase().use { db ->
+            createSchemaV1(db)
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (33, 'استئناف مدني', 40, 'DAYS', 0, 'NEXT_DAY', 'المادة 227', 'قيد المراجعة', 'اختبار')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO saved_deadlines (id, case_number, client_name, action_name, announcement_date,
+                    duration, unit, distance_days, final_deadline, law_article, calculation_explanation, notes, created_at)
+                VALUES (992, '991/2026', 'موكل محفوظ', 'استئناف', '2026-10-01',
+                    40, 'DAYS', 0, '2026-11-10', 'المادة 227', 'الحساب الأصلي', 'لا يحذف', 1729000000000)
+            """.trimIndent())
+            AppDatabase.MIGRATION_1_2.migrate(db)
+            AppDatabase.MIGRATION_2_3.migrate(db)
+            AppDatabase.MIGRATION_3_4.migrate(db)
+            AppDatabase.MIGRATION_4_5.migrate(db)
+            AppDatabase.MIGRATION_5_6.migrate(db)
+
+            db.query("SELECT revision, calculation_kind, duration, review_status FROM legal_rules WHERE id = 33")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals(0, cursor.getInt(0))
+                    assertEquals("UNREVIEWED", cursor.getString(1))
+                    assertEquals(40, cursor.getInt(2))
+                    assertEquals("NEEDS_REVIEW", cursor.getString(3))
+                }
+            db.query("SELECT client_name, notes FROM saved_deadlines WHERE id = 992")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals("موكل محفوظ", cursor.getString(0))
+                    assertEquals("لا يحذف", cursor.getString(1))
+                }
+        }
+    }
+
 }

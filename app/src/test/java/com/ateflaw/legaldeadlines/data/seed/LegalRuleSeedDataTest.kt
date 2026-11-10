@@ -14,6 +14,8 @@ class LegalRuleSeedDataTest {
         assertTrue(rules.all { it.reviewStatus == "NEEDS_REVIEW" })
         assertTrue(rules.all { it.effectiveFrom.isBlank() })
         assertTrue(rules.all { it.officialSourceUrl.isBlank() })
+        assertTrue(rules.all { it.revision == 1 })
+        assertTrue(rules.all { it.calculationKind != "UNREVIEWED" })
     }
 
     @Test fun legacyWorkAndCriminalRulesHaveExplicitExpiryBoundaries() {
