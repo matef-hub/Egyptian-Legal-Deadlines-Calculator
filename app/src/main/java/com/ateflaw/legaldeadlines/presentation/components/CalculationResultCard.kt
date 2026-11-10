@@ -81,8 +81,8 @@ fun CalculationResultCard(
 
     // 1. Add FINAL DEADLINE to Calendar (Target Date = finalDeadline)
     val onAddFinalDeadlineToCalendar = {
-        val title = "⚖️ ميعاد قانوني ملزم: ${result.actionSummary.ifBlank { result.lawArticle }}".toArabicDigits()
-        val description = "الميعاد النهائي واجب الالتزام: $dayNameArabic، $finalDateFormatted\n" +
+        val title = "⚠️ تاريخ قانوني للمراجعة: ${result.actionSummary.ifBlank { result.lawArticle }}".toArabicDigits()
+        val description = "تاريخ محسوب استرشادياً ويجب مراجعة العطلات والسند القانوني: $dayNameArabic، $finalDateFormatted\n" +
             "السند التشريعي: ${result.lawArticle.toArabicDigits()}\n\n" +
             result.explanation
 
@@ -94,7 +94,7 @@ fun CalculationResultCard(
                 putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
                 val epochMillis = result.finalDeadline.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, epochMillis)
-                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, epochMillis + 86400000L)
+                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, result.finalDeadline.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
             }
             context.startActivity(intent)
         } catch (_: Exception) {
@@ -118,7 +118,7 @@ fun CalculationResultCard(
         val title = "🔔 تنبيه استباقي: ميعاد ${result.actionSummary.ifBlank { result.lawArticle }} (متبقي ${proactiveDays.toString().toArabicDigits()} أيام)".toArabicDigits()
         val description = "تنبيه إجرائي استباقي قبل فوات الميعاد بـ ${proactiveDays.toString().toArabicDigits()} أيام.\n" +
             "تاريخ التنبيه: $proactiveDayName، $proactiveFormatted.\n" +
-            "الميعاد النهائي الملزم: $dayNameArabic، $finalDateFormatted.\n" +
+            "التاريخ المحسوب للمراجعة: $dayNameArabic، $finalDateFormatted.\n" +
             "السند: ${result.lawArticle.toArabicDigits()}\n\n" +
             "الإجراء المطلوب: تجهيز صحيفة الطعن أو الدعوى ومستنداتها وإيداعها بقلم الكتاب مبكراً.\n\n" +
             result.explanation
@@ -132,7 +132,7 @@ fun CalculationResultCard(
                 // Use ACTUAL PROACTIVE DATE epoch!
                 val epochMillis = proactiveDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, epochMillis)
-                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, epochMillis + 86400000L)
+                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, proactiveDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
             }
             context.startActivity(intent)
         } catch (_: Exception) {
