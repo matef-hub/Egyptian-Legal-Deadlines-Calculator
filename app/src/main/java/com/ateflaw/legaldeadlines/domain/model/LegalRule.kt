@@ -21,6 +21,7 @@ data class LegalRule(
     val extensionPolicy: String = "ARTICLE_18_COURTS", // سياسة امتداد العطلات (السبت يوم عمل للمحاكم)
     val lawName: String = "قانون المرافعات المدنية والتجارية", // اسم القانون
     val article: String = "", // رقم المادة
+    val articleText: String = "", // النص الكامل للمادة كما أدخله المستخدم
     val officialSourceUrl: String = "", // مصدر تشريعي موثوق
     val effectiveFrom: String = "", // تاريخ بدء النفاذ
     val effectiveTo: String? = null, // تاريخ انتهاء النفاذ إن وجد

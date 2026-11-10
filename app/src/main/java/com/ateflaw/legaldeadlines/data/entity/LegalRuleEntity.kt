@@ -61,6 +61,9 @@ data class LegalRuleEntity(
     @ColumnInfo(name = "article", defaultValue = "")
     val article: String = "",
 
+    @ColumnInfo(name = "article_text", defaultValue = "")
+    val articleText: String = "",
+
     @ColumnInfo(name = "official_source_url", defaultValue = "")
     val officialSourceUrl: String = "",
 
@@ -100,6 +103,7 @@ data class LegalRuleEntity(
         extensionPolicy = extensionPolicy,
         lawName = lawName,
         article = article,
+        articleText = articleText,
         officialSourceUrl = officialSourceUrl,
         effectiveFrom = effectiveFrom,
         effectiveTo = effectiveTo,
@@ -128,6 +132,7 @@ data class LegalRuleEntity(
             extensionPolicy = domain.extensionPolicy,
             lawName = domain.lawName,
             article = domain.article,
+            articleText = domain.articleText,
             officialSourceUrl = domain.officialSourceUrl,
             effectiveFrom = domain.effectiveFrom,
             effectiveTo = domain.effectiveTo,

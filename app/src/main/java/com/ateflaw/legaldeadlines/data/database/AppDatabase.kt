@@ -11,6 +11,7 @@ import com.ateflaw.legaldeadlines.data.dao.LegalRuleDao
 import com.ateflaw.legaldeadlines.data.dao.SavedDeadlineDao
 import com.ateflaw.legaldeadlines.data.entity.HolidayEntity
 import com.ateflaw.legaldeadlines.data.entity.LegalRuleEntity
+import com.ateflaw.legaldeadlines.data.entity.RuleEditHistoryEntity
 import com.ateflaw.legaldeadlines.data.entity.SavedDeadlineEntity
 import com.ateflaw.legaldeadlines.data.seed.LegalRuleSeedData
 import kotlinx.coroutines.CoroutineScope
@@ -21,9 +22,10 @@ import kotlinx.coroutines.launch
     entities = [
         LegalRuleEntity::class,
         HolidayEntity::class,
-        SavedDeadlineEntity::class
+        SavedDeadlineEntity::class,
+        RuleEditHistoryEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -182,6 +184,51 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * 6 -> 7: full article text and revision history. Existing saved deadlines
+         * are not modified, and unreviewed legal rules stay unreviewed.
+         */
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE legal_rules ADD COLUMN article_text TEXT NOT NULL DEFAULT ''")
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS rule_edit_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        rule_id INTEGER NOT NULL,
+                        previous_revision INTEGER NOT NULL,
+                        action_name TEXT NOT NULL,
+                        law_name TEXT NOT NULL,
+                        law_article TEXT NOT NULL,
+                        article_text TEXT NOT NULL,
+                        duration INTEGER NOT NULL,
+                        unit TEXT NOT NULL,
+                        notes TEXT NOT NULL,
+                        review_status TEXT NOT NULL,
+                        official_source_url TEXT NOT NULL,
+                        edited_at INTEGER NOT NULL
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_rule_edit_history_rule_id ON rule_edit_history(rule_id)")
+                // Historical seed rows were accidentally all classified as Civil Procedures.
+                // Only correct known groups that still bear that legacy default category.
+                db.execSQL("""
+                    UPDATE legal_rules SET law_name = CASE
+                        WHEN id = 3 THEN 'قانون الإثبات'
+                        WHEN id BETWEEN 59 AND 91 THEN 'القانون المدني'
+                        WHEN id BETWEEN 92 AND 128 THEN 'قانون الإجراءات الجنائية'
+                        WHEN id BETWEEN 129 AND 135 THEN 'قانون الأحوال الشخصية رقم 25 لسنة 1929'
+                        WHEN id BETWEEN 136 AND 142 THEN 'قانون تنظيم إجراءات التقاضي في الأحوال الشخصية رقم 1 لسنة 2000'
+                        WHEN id BETWEEN 143 AND 146 THEN 'قانون مجلس الدولة'
+                        WHEN id BETWEEN 147 AND 167 THEN 'قانون العمل'
+                        WHEN id BETWEEN 168 AND 169 THEN 'قانون البناء'
+                        ELSE law_name
+                    END
+                    WHERE revision <= 1 AND law_name = 'قانون المرافعات المدنية والتجارية'
+                      AND (id = 3 OR id BETWEEN 59 AND 169)
+                """.trimIndent())
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -189,7 +236,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "egyptian_legal_deadlines.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_1_4, MIGRATION_2_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_1_4, MIGRATION_2_4)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

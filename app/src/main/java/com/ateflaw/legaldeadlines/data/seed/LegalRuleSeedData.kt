@@ -1902,6 +1902,17 @@ object LegalRuleSeedData {
             )
         ).map { rule ->
             val kind = LegalRuleSafety.kind(rule).name
+            val correctedLawName = when (rule.id) {
+                3L -> "قانون الإثبات"
+                in 59L..91L -> "القانون المدني"
+                in 92L..128L -> "قانون الإجراءات الجنائية"
+                in 129L..135L -> "قانون الأحوال الشخصية رقم 25 لسنة 1929"
+                in 136L..142L -> "قانون تنظيم إجراءات التقاضي في الأحوال الشخصية رقم 1 لسنة 2000"
+                in 143L..146L -> "قانون مجلس الدولة"
+                in 147L..167L -> "قانون العمل"
+                in 168L..169L -> "قانون البناء"
+                else -> rule.lawName
+            }
             // All 169 historical seed entries require independent article-by-article
             // legal review. Never inject a made-up 1968 effective date into laws
             // enacted decades later.
@@ -1911,20 +1922,23 @@ object LegalRuleSeedData {
                     effectiveTo = "2025-08-31",
                     reviewStatus = "NEEDS_REVIEW",
                     revision = 1,
-                    calculationKind = kind
+                    calculationKind = kind,
+                    lawName = correctedLawName
                 )
                 in 92L..128L -> rule.copy(
                     effectiveFrom = "",
                     effectiveTo = "2027-09-30",
                     reviewStatus = "NEEDS_REVIEW",
                     revision = 1,
-                    calculationKind = kind
+                    calculationKind = kind,
+                    lawName = correctedLawName
                 )
                 else -> rule.copy(
                     effectiveFrom = "",
                     reviewStatus = "NEEDS_REVIEW",
                     revision = 1,
-                    calculationKind = kind
+                    calculationKind = kind,
+                    lawName = correctedLawName
                 )
             }
         }
