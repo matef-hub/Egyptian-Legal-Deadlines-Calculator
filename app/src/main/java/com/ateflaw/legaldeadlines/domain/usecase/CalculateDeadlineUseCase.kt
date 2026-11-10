@@ -77,7 +77,7 @@ class CalculateDeadlineUseCase(
         }
         result.copy(
             milestones = advisoryMilestones,
-            explanation = "تاريخ استرشادي غير معتمد قانونيًا.\\n" +
+            explanation = "تاريخ استرشادي غير معتمد قانونيًا.\n" +
                 result.explanation.replace(
                     "الميعاد النهائي واجب الالتزام به",
                     "تاريخ نهاية المدة الحسابية الاسترشادية"
