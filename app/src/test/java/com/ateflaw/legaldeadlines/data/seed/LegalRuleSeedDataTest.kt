@@ -32,9 +32,11 @@ class LegalRuleSeedDataTest {
         assertEquals(LegalRuleSafety.CalculationKind.AGE_THRESHOLD, LegalRuleSafety.kind(rules.getValue(136)))
     }
 
-    @Test fun bundledHolidayDatesAreNotPresentedAsOfficiallyVerified() {
+    @Test fun published2026PresidencyDatesAreSourcedAndUnique() {
         val dates = LegalRuleSeedData.getInitialOfficialHolidays()
-        assertFalse(dates.isEmpty())
-        assertTrue(dates.all { it.verificationStatus == "UNVERIFIED" })
+        assertEquals(21, dates.size)
+        assertEquals(21, dates.map { it.holidayDate }.toSet().size)
+        assertTrue(dates.all { it.verificationStatus == "VERIFIED_OFFICIAL" })
+        assertTrue(dates.all { it.sourceUrl.startsWith("https://www.presidency.eg/") })
     }
 }

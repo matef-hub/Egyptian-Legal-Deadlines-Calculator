@@ -222,10 +222,16 @@ abstract class AppDatabase : RoomDatabase() {
                                             )
                                         }
                                     }
-                                    if (database.holidayDao().count() == 0) {
-                                        database.holidayDao().insertAll(
-                                            LegalRuleSeedData.getInitialOfficialHolidays().map { HolidayEntity.fromDomain(it) }
-                                        )
+                                    // Merge sourced national dates into existing databases
+                                    // without replacing another officially verified decision.
+                                    val officialSeeds = LegalRuleSeedData.getInitialOfficialHolidays()
+                                    val holidayDao = database.holidayDao()
+                                    val missingOrUnverified = officialSeeds.filter { holiday ->
+                                        val current = holidayDao.getHoliday(holiday.holidayDate.toString())
+                                        current == null || current.verificationStatus != "VERIFIED_OFFICIAL"
+                                    }
+                                    if (missingOrUnverified.isNotEmpty()) {
+                                        holidayDao.insertAll(missingOrUnverified.map { HolidayEntity.fromDomain(it) })
                                     }
                                 } catch (e: Exception) {
                                     android.util.Log.e("AppDatabase", "Database seeding failed", e)
