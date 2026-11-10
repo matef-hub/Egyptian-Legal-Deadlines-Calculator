@@ -82,7 +82,7 @@ class CalculateDeadlineAdvisoryTest {
     @Test fun backwardHourAndLimitationStillFailClosed() {
         for (rule in listOf(
             LegalRule(id = 4, actionName = "قبل الجلسة", duration = 3, unit = DurationUnit.DAYS),
-            LegalRule(id = 7, actionName = "24 ساعة", duration = 1, unit = DurationUnit.DAYS),
+            LegalRule(id = 7, actionName = "ساعة قديمة غير مدعومة", duration = 24, unit = DurationUnit.HOURS),
             LegalRule(id = 93, actionName = "تقادم", duration = 10, unit = DurationUnit.YEARS),
             LegalRule(id = 0, actionName = "مسودة جديدة", duration = 4, unit = DurationUnit.DAYS,
                 calculationKind = "SPECIAL_UNSUPPORTED")
@@ -91,6 +91,20 @@ class CalculateDeadlineAdvisoryTest {
                 runBlocking { useCase(LocalDate.of(2026, 11, 10), rule) }
             }
         }
+    }
+
+    @Test fun a24HourSeedIsDisplayedAsOneDayWithTimePrecisionWarning() = runBlocking {
+        val rule = LegalRule(
+            id = 7,
+            actionName = "ميعاد حضور مستعجل",
+            duration = 1,
+            unit = DurationUnit.DAYS,
+            calculationKind = "EXACT_HOURS"
+        )
+        val result = useCase(LocalDate.of(2026, 11, 10), rule)
+        assertTrue(result.isProvisional)
+        assertEquals(DurationUnit.DAYS, result.unit)
+        assertTrue(result.warnings.any { it.contains("24 ساعة") })
     }
 
     @Test fun obsoleteLaborRuleIsNotPreviewedAsCurrentLaw() {
