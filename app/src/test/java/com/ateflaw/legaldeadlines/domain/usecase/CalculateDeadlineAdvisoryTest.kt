@@ -48,6 +48,9 @@ class CalculateDeadlineAdvisoryTest {
     @Test fun shatbSixtyDaysIsShownAsUnverifiedPreviewNotAnError() = runBlocking {
         val result = useCase(LocalDate.of(2026, 11, 10), shatb())
         assertEquals(LocalDate.of(2027, 1, 9), result.finalDeadline)
+        assertTrue(result.milestones.any {
+            it.type == MilestoneType.TRIGGER_EVENT && it.title == "تاريخ قرار شطب الدعوى"
+        })
         assertTrue(result.isProvisional)
         assertTrue(result.warnings.any { it.contains("المادة 82") && it.contains("إعلان") })
         assertTrue(result.warnings.any { it.contains("استرشادي") })
