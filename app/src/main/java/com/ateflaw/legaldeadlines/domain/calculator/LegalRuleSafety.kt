@@ -55,7 +55,49 @@ object LegalRuleSafety {
         return if (inherited != CalculationKind.FORWARD) inherited else declared ?: inherited
     }
 
-    fun validate(rule: LegalRule, eventDate: LocalDate) {
+    /**
+     * PREVIEW ONLY: for supported forward-counted rules, or the narrowly defined
+     * 60-day article 82 shatb scenario. Never confers legal approval.
+     * Backwards, hours, age, limitation, unsupported custom rules remain blocked.
+     */
+    fun previewWarnings(rule: LegalRule, eventDate: LocalDate): List<String> {
+        require(rule.duration > 0) { "هذا الإجراء ليس ميعادًا عدديًا قابلًا للحساب." }
+        checkHistoricalApplicability(rule, eventDate)
+        val isShatb60 = rule.id == 10L &&
+            rule.unit == DurationUnit.DAYS &&
+            rule.duration == 60L &&
+            rule.startRule == com.ateflaw.legaldeadlines.domain.model.StartRule.NEXT_DAY &&
+            rule.lawArticle.contains("82") &&
+            rule.lawName.contains("المرافعات")
+        val type = kind(rule)
+        require(type == CalculationKind.FORWARD || isShatb60) {
+            when (type) {
+                CalculationKind.BACKWARD_FROM_EVENT -> "هذا الميعاد يُحسب قبل الجلسة أو الواقعة، وليس بعدها."
+                CalculationKind.EXACT_HOURS -> "هذا الإجراء يتطلب توقيت الواقعة بالساعات والدقائق."
+                CalculationKind.AGE_THRESHOLD -> "هذا حد سن قانوني وليس ميعادًا إجرائيًا."
+                CalculationKind.LIMITATION_OR_CONDITION -> "يستلزم التقادم فحص الوقف والانقطاع وشروط بدء المدة."
+                CalculationKind.SPECIAL_UNSUPPORTED -> "هذا الإجراء له شروط قانونية لم تُنفذ طريقة احتسابها."
+                CalculationKind.FORWARD -> "هذه القاعدة غير مدعومة للحساب."
+            }
+        }
+        require(rule.extensionPolicy == "ARTICLE_18_COURTS") {
+            "سياسة امتداد العطلات لهذه القاعدة غير مدعومة بالمحرك."
+        }
+        return buildList {
+            add("تاريخ محسوب استرشاديًا فقط، وليس ميعادًا قانونيًا معتمدًا. راجع النص النافذ وظروف الدعوى قبل اتخاذ الإجراء.")
+            if (isShatb60) add(
+                "المادة 82 مرافعات: الستون يومًا لا تغني عن اتخاذ إجراءات تجديد السير وتحديد جلسة وإعلان الخصم؛ وقد تؤثر ظروف الإعلان والاستثناءات القضائية."
+            )
+            if (rule.reviewStatus != "VERIFIED_ACCURATE") add(
+                "لم تُعتمد هذه القاعدة بعد من مراجعة تشريعية مكتملة."
+            )
+            if (rule.officialSourceUrl.isBlank()) add(
+                "لا يوجد رابط رسمي موثّق للنص المُخزن؛ راجع المصدر التشريعي."
+            )
+        }
+    }
+
+    private fun checkHistoricalApplicability(rule: LegalRule, eventDate: LocalDate) {
         // Current law 14/2025 superseded law 12/2003 on 2025-09-01.
         // Do not quietly produce a 2026 deadline from the legacy labor seed.
         require(rule.id !in 147L..167L || eventDate.isBefore(LocalDate.of(2025, 9, 1))) {
@@ -65,6 +107,17 @@ object LegalRuleSafety {
         require(rule.id !in 92L..128L || eventDate.isBefore(LocalDate.of(2027, 10, 1))) {
             "قواعد الإجراءات الجنائية القديمة لا تطبق آلياً من 1 أكتوبر 2027. يلزم اعتماد القواعد الجديدة والأحكام الانتقالية."
         }
+        val event = eventDate.toString()
+        require(rule.effectiveFrom.isBlank() || event >= rule.effectiveFrom) {
+            "لم يبدأ سريان هذه النسخة من القاعدة في تاريخ الواقعة."
+        }
+        require(rule.effectiveTo.isNullOrBlank() || event <= rule.effectiveTo) {
+            "انتهى سريان هذه النسخة من القاعدة قبل تاريخ الواقعة."
+        }
+    }
+
+    fun validate(rule: LegalRule, eventDate: LocalDate) {
+        checkHistoricalApplicability(rule, eventDate)
         val type = kind(rule)
         require(type == CalculationKind.FORWARD) {
             when (type) {
