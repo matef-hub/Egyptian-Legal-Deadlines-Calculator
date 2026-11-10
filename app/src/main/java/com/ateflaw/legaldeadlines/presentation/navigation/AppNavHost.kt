@@ -15,6 +15,8 @@ import com.ateflaw.legaldeadlines.presentation.screens.CalculatorScreen
 import com.ateflaw.legaldeadlines.presentation.screens.HolidaysScreen
 import com.ateflaw.legaldeadlines.presentation.screens.LandingScreen
 import com.ateflaw.legaldeadlines.presentation.screens.SavedDeadlinesScreen
+import com.ateflaw.legaldeadlines.presentation.screens.RulesCatalogScreen
+import com.ateflaw.legaldeadlines.presentation.viewmodel.RuleCatalogViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.HolidaysViewModel
@@ -25,6 +27,7 @@ fun AppNavHost(
     mainViewModel: CalculatorViewModel,
     deadlineListViewModel: DeadlineListViewModel,
     holidaysViewModel: HolidaysViewModel,
+    ruleCatalogViewModel: RuleCatalogViewModel,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -66,6 +69,9 @@ fun AppNavHost(
         }
         composable(Screen.SavedDeadlines.route) {
             SavedDeadlinesScreen(viewModel = deadlineListViewModel)
+        }
+        composable(Screen.RulesCatalog.route) {
+            RulesCatalogScreen(viewModel = ruleCatalogViewModel)
         }
     }
 }

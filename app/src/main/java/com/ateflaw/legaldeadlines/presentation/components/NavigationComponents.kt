@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
@@ -25,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Gavel
@@ -48,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ateflaw.legaldeadlines.R
 import com.ateflaw.legaldeadlines.presentation.navigation.Screen
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
@@ -101,6 +104,7 @@ fun ModernTopAppBar(
                             text = when (currentRoute) {
                                 Screen.SavedDeadlines.route -> stringResource(R.string.nav_saved)
                                 Screen.Holidays.route -> stringResource(R.string.nav_holidays)
+                                Screen.RulesCatalog.route -> "دليل المواعيد"
                                 else -> stringResource(R.string.nav_calculator)
                             },
                             style = MaterialTheme.typography.bodySmall,
@@ -197,6 +201,14 @@ fun FloatingBottomNavigationBar(
                     label = stringResource(R.string.nav_saved),
                     modifier = Modifier.weight(1f)
                 )
+                Spacer(modifier = Modifier.width(4.dp))
+                FloatingNavItem(
+                    selected = currentRoute == Screen.RulesCatalog.route,
+                    onClick = { onNavigateTo(Screen.RulesCatalog.route) },
+                    icon = Icons.Default.MenuBook,
+                    label = "الدليل",
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
@@ -236,27 +248,24 @@ private fun RowScope.FloatingNavItem(
         contentColor = contentColor,
         modifier = modifier
     ) {
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+        Column(
+            modifier = Modifier.padding(horizontal = 2.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                modifier = Modifier
-                    .size(20.dp)
-                    .graphicsLayer {
-                        scaleX = iconScale
-                        scaleY = iconScale
-                    }
+                modifier = Modifier.size(20.dp).graphicsLayer {
+                    scaleX = iconScale
+                    scaleY = iconScale
+                }
             )
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = label,
                 color = contentColor,
-                style = MaterialTheme.typography.labelMedium,
+                fontSize = 10.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
