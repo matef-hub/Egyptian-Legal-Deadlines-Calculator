@@ -53,7 +53,7 @@ class LegalRuleRepositoryImpl(
             extensionPolicy = "UNREVIEWED",
             calculationKind = "SPECIAL_UNSUPPORTED",
             reviewStatus = "NEEDS_REVIEW",
-            officialSourceUrl = "",
+            officialSourceUrl = input.officialSourceUrl,
             effectiveFrom = "",
             lastReviewedAt = "",
             revision = 1
@@ -78,7 +78,8 @@ class LegalRuleRepositoryImpl(
                 articleText = input.articleText,
                 duration = input.duration,
                 unit = input.unit.name,
-                notes = input.notes
+                notes = input.notes,
+                officialSourceUrl = input.officialSourceUrl
             )
             check(affected == 1) { "تغيّرت القاعدة أثناء الحفظ. أعد تحميلها." }
             legalRuleDao.insertEditHistory(

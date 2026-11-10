@@ -63,7 +63,7 @@ interface LegalRuleDao {
             notes = :notes,
             revision = revision + 1,
             review_status = 'NEEDS_REVIEW',
-            official_source_url = '',
+            official_source_url = :officialSourceUrl,
             last_reviewed_at = '',
             effective_from = ''
         WHERE id = :id AND revision = :expectedRevision
@@ -77,7 +77,8 @@ interface LegalRuleDao {
         articleText: String,
         duration: Long,
         unit: String,
-        notes: String
+        notes: String,
+        officialSourceUrl: String
     ): Int
 
     @Query("DELETE FROM legal_rules")

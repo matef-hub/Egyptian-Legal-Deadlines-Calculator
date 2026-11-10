@@ -8,7 +8,7 @@ import com.ateflaw.legaldeadlines.domain.model.LegalRule
  * remains mandatory. Findings are deliberately non-destructive and shown even
  * on already-installed devices (no dangerous replacement of client data).
  */
-enum class AuditLevel { CORRECTION, HIGH, REVIEW, VERIFIED }
+enum class AuditLevel { CORRECTION, HIGH, REVIEW, TEXT_ADDED, ARTICLE_MATCHED, VERIFIED }
 
 data class AuditFinding(val level: AuditLevel, val note: String)
 
@@ -185,20 +185,92 @@ object LegalRuleReviewCatalog {
         169L to AuditFinding(AuditLevel.HIGH, "المطلوب لتدقيق «إصدار قرار إزالة أو تصحيح الأعمال المخالفة للبناء بعد وقفها» (15 DAYS): القانون يتطلب شروطًا إضافية أو أكثر من واقعة قبل اعتماد الناتج؛ راجع الوقائع والاستثناءات. راجع المادة 60 من قانون البناء رقم 119 لسنة 2008 في مصدر رسمي وأضف نص المادة وتاريخ سريانها."),
     )
 
+
+    /**
+     * Reference from Egyptian Civil Code 131/1948 published on the
+     * Egyptian Tax Authority's official portal. Textual agreement alone
+     * never constitutes a legal ruling on an individual case.
+     */
+    const val ARTICLE_940_SOURCE =
+        "https://portal.eta.gov.eg/sites/default/files/2024-10/law-131-1948.pdf"
+
+    const val ARTICLE_940_TEXT =
+        "على من يريد الأخذ بالشفعة أن يعلن رغبته فيها إلى كل من البائع والمشتري " +
+        "خلال خمسة عشر يوماً من تاريخ الإنذار الرسمي الذي يوجه إليه البائع أو المشتري " +
+        "وإلا سقط حقه. ويزاد على تلك المدة ميعاد المسافة إذا اقتضى الأمر ذلك."
+
+    private fun normalizeArabic(text: String): String = text
+        .replace("ـ", "")
+        .replace(Regex("[\u064B-\u065F\u0670]"), "")
+        .replace(Regex("[أإآٱ]"), "ا")
+        .replace("ى", "ي")
+        .replace("ة", "ه")
+        .replace("يوجهه", "يوجه")
+        .replace(Regex("[^\p{L}\p{Nd}]+"), " ")
+        .trim()
+        .replace(Regex("\s+"), " ")
+
+    fun matchesArticle940(rule: LegalRule): Boolean =
+        rule.id == 82L &&
+            rule.duration == 15L &&
+            rule.unit == com.ateflaw.legaldeadlines.domain.model.DurationUnit.DAYS &&
+            rule.lawArticle.contains("940") &&
+            rule.lawName.contains("المدني") &&
+            normalizeArabic(rule.articleText) == normalizeArabic(ARTICLE_940_TEXT)
+
+    /**
+     * Dynamic completeness: saving full article text changes the documentation
+     * status. Approval is deliberately independent from article-text presence.
+     */
     fun finding(rule: LegalRule): AuditFinding {
+        val entry = reviewById[rule.id]
+        if (entry?.level == AuditLevel.CORRECTION) {
+            return if (rule.articleText.isBlank()) entry else entry.copy(
+                note = entry.note + " نص المادة مضاف، لكن التصحيح الجوهري المذكور لم يُحسم."
+            )
+        }
+        if (entry?.level == AuditLevel.HIGH) {
+            return if (rule.articleText.isBlank()) entry else entry.copy(
+                note = entry.note
+                    .replace("وأضف نص المادة", "وطابق النص المُضاف")
+                    .replace("وأضف نص", "وطابق النص المُضاف") +
+                    " نص المادة محفوظ، وما زال شرط الحساب أو السريان يستلزم مراجعة."
+            )
+        }
+        if (matchesArticle940(rule)) {
+            return AuditFinding(
+                AuditLevel.ARTICLE_MATCHED,
+                "طابقت صياغة المادة 940 ومدة 15 يومًا مع نسخة القانون المدني المنشورة على " +
+                "موقع مصلحة الضرائب المصرية. يبدأ الميعاد من الإنذار الرسمي الصحيح، ويُعلن " +
+                "البائع والمشتري، وتضاف المسافة عند انطباق شروطها. راجع كذلك المواد 941-943 و948؛ " +
+                "المطابقة النصية لا تعني اعتماد الحساب لحالة واقعية."
+            )
+        }
+        if (rule.articleText.isNotBlank()) {
+            val sourceHint = if (rule.officialSourceUrl.isBlank()) {
+                "أدخل رابط النص المنشور رسميًا حتى يمكن مطابقته."
+            } else {
+                "أُضيف رابط مصدر؛ ما زالت مطابقته ومراجعة السريان مطلوبة."
+            }
+            return AuditFinding(
+                AuditLevel.TEXT_ADDED,
+                "تم حفظ نص المادة، ولم تعد البيانات ناقصة من ناحية النص. " +
+                    sourceHint + " تحقق من رقم المادة والمدة والواقعة المنشئة وشروط الإجراءات."
+            )
+        }
         if (rule.reviewStatus == "VERIFIED_ACCURATE" &&
             rule.officialSourceUrl.isNotBlank() &&
             rule.effectiveFrom.isNotBlank()) {
-            return AuditFinding(AuditLevel.VERIFIED, "تمت الإشارة إلى اعتماد هذه النسخة؛ راجع رابط المصدر وتاريخ آخر مراجعة قبل العمل.")
+            return AuditFinding(
+                AuditLevel.VERIFIED,
+                "يوجد اعتماد مسجل؛ يلزم الاطلاع على النص الرسمي وتاريخ آخر مراجعة."
+            )
         }
-        val entry = reviewById[rule.id]
-        return if (entry != null) {
-            // A manual edit does NOT silently erase previously flagged legal concerns.
-            entry
-        } else {
-            AuditFinding(AuditLevel.HIGH,
-                "قاعدة مُضافة أو معدلة ولم تُراجع تشريعيًا؛ يلزم إدخال النص الرسمي وتاريخ السريان وواقعة بدء المدة وسياسة احتسابها واعتمادها.")
-        }
+        return AuditFinding(
+            AuditLevel.REVIEW,
+            "نص المادة غير مضاف بعد. " +
+                (entry?.note ?: "أضف النص الرسمي والمصدر وتاريخ السريان وراجع الشروط.")
+        )
     }
 
     fun reviewedCount(): Int = reviewById.size

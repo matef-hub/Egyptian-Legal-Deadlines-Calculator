@@ -8,7 +8,8 @@ data class LegalRuleDraft(
     val articleText: String,
     val durationText: String,
     val unit: DurationUnit = DurationUnit.DAYS,
-    val notes: String = ""
+    val notes: String = "",
+    val officialSourceUrl: String = ""
 ) {
     data class Validated(
         val actionName: String,
@@ -17,7 +18,8 @@ data class LegalRuleDraft(
         val articleText: String,
         val duration: Long,
         val unit: DurationUnit,
-        val notes: String
+        val notes: String,
+        val officialSourceUrl: String
     )
 
     fun validate(isNew: Boolean): Validated {
@@ -32,6 +34,13 @@ data class LegalRuleDraft(
         require(!isNew || text.isNotBlank()) { "اكتب نص المادة القانوني عند إضافة قاعدة جديدة." }
         require(text.length <= 20000) { "نص المادة طويل جدًا." }
         require(note.length <= 2000) { "الملاحظات طويلة جدًا." }
+        val link = officialSourceUrl.trim()
+        if (link.isNotBlank()) {
+            val uri = try { java.net.URI(link) } catch (_: Exception) { null }
+            require(uri?.scheme == "https" && !uri.host.isNullOrBlank() && uri.rawUserInfo == null) {
+                "اكتب رابط HTTPS صحيحًا للمصدر المنشور."
+            }
+        }
 
         // Accept both Western and Arabic-Indic digits without allowing decimals,
         // negatives or empty values to be coerced into legal deadlines.
@@ -54,7 +63,7 @@ data class LegalRuleDraft(
             DurationUnit.HOURS -> 876000L
         }
         require(duration in 1L..max) { "المدة يجب أن تكون بين 1 و$max حسب الوحدة المختارة." }
-        return Validated(action, law, reference, text, duration, unit, note)
+        return Validated(action, law, reference, text, duration, unit, note, link)
     }
 
     companion object {
@@ -65,7 +74,8 @@ data class LegalRuleDraft(
             articleText = rule.articleText,
             durationText = rule.duration.toString(),
             unit = rule.unit,
-            notes = rule.notes
+            notes = rule.notes,
+            officialSourceUrl = rule.officialSourceUrl
         )
     }
 }
