@@ -457,4 +457,47 @@ class DatabaseMigrationTest {
         }
     }
 
+
+    @Test
+    fun testMigration7To8_correctsLegacyLawGroupingWithoutChangingUserData() {
+        TestSupportSQLiteDatabase().use { db ->
+            createSchemaV1(db)
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (21, 'رد الخبير', 5, 'DAYS', 0, 'NEXT_DAY', 'المادة 140 إثبات', 'الأصل', '')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (57, 'معارضة رسوم', 8, 'DAYS', 0, 'NEXT_DAY', 'المادة 17 رسوم', 'الأصل', '')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO saved_deadlines (id, case_number, client_name, action_name, announcement_date,
+                    duration, unit, distance_days, final_deadline, law_article, calculation_explanation, notes, created_at)
+                VALUES (1008, '221/2026', 'موكل محمي', 'استئناف', '2026-10-01',
+                    40, 'DAYS', 0, '2026-11-10', 'المادة 227', 'نص محفوظ', 'لا يمس', 1729000000000)
+            """.trimIndent())
+            AppDatabase.MIGRATION_1_2.migrate(db)
+            AppDatabase.MIGRATION_2_3.migrate(db)
+            AppDatabase.MIGRATION_3_4.migrate(db)
+            AppDatabase.MIGRATION_4_5.migrate(db)
+            AppDatabase.MIGRATION_5_6.migrate(db)
+            AppDatabase.MIGRATION_6_7.migrate(db)
+            AppDatabase.MIGRATION_7_8.migrate(db)
+            db.query("SELECT law_name, duration FROM legal_rules WHERE id = 21").use {
+                assertTrue(it.moveToNext())
+                assertEquals("قانون الإثبات", it.getString(0))
+                assertEquals(5, it.getInt(1))
+            }
+            db.query("SELECT law_name FROM legal_rules WHERE id = 57").use {
+                assertTrue(it.moveToNext())
+                assertEquals("قانون الرسوم القضائية رقم 90 لسنة 1944", it.getString(0))
+            }
+            db.query("SELECT client_name, notes FROM saved_deadlines WHERE id = 1008").use {
+                assertTrue(it.moveToNext())
+                assertEquals("موكل محمي", it.getString(0))
+                assertEquals("لا يمس", it.getString(1))
+            }
+        }
+    }
+
 }

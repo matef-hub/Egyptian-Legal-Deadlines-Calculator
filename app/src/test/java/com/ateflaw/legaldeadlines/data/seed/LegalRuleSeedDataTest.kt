@@ -18,6 +18,9 @@ class LegalRuleSeedDataTest {
         assertTrue(rules.all { it.calculationKind != "UNREVIEWED" })
         val byId = rules.associateBy { it.id }
         assertEquals("القانون المدني", byId.getValue(61).lawName)
+        assertEquals("قانون الإثبات", byId.getValue(21).lawName)
+        assertEquals("قانون الإثبات", byId.getValue(24).lawName)
+        assertEquals("قانون الرسوم القضائية رقم 90 لسنة 1944", byId.getValue(57).lawName)
         assertEquals("قانون الإجراءات الجنائية", byId.getValue(122).lawName)
         assertEquals("قانون العمل", byId.getValue(159).lawName)
         assertEquals("قانون حالات وإجراءات الطعن أمام محكمة النقض رقم 57 لسنة 1959", byId.getValue(128).lawName)

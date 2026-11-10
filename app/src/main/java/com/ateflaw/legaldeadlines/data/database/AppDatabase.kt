@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
         SavedDeadlineEntity::class,
         RuleEditHistoryEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -231,6 +231,27 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v7 -> v8: correct two law-family labels without overwriting any
+         * user-edited rule or changing its duration, evidence or approval.
+         */
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    UPDATE legal_rules SET law_name = 'قانون الإثبات'
+                    WHERE id BETWEEN 21 AND 24
+                      AND revision <= 1
+                      AND law_name = 'قانون المرافعات المدنية والتجارية'
+                """.trimIndent())
+                db.execSQL("""
+                    UPDATE legal_rules SET law_name = 'قانون الرسوم القضائية رقم 90 لسنة 1944'
+                    WHERE id BETWEEN 57 AND 58
+                      AND revision <= 1
+                      AND law_name = 'قانون المرافعات المدنية والتجارية'
+                """.trimIndent())
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -238,7 +259,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "egyptian_legal_deadlines.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_1_4, MIGRATION_2_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_1_4, MIGRATION_2_4)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

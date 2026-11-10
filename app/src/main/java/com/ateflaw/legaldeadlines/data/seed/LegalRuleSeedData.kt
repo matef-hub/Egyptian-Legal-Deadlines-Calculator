@@ -1906,6 +1906,8 @@ object LegalRuleSeedData {
             val kind = LegalRuleSafety.kind(rule).name
             val correctedLawName = when (rule.id) {
                 3L -> "قانون الإثبات"
+                in 21L..24L -> "قانون الإثبات"
+                in 57L..58L -> "قانون الرسوم القضائية رقم 90 لسنة 1944"
                 in 59L..91L -> "القانون المدني"
                 in 92L..127L -> "قانون الإجراءات الجنائية"
                 128L -> "قانون حالات وإجراءات الطعن أمام محكمة النقض رقم 57 لسنة 1959"
