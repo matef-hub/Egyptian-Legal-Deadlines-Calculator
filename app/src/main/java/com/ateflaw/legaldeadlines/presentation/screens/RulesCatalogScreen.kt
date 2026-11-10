@@ -333,7 +333,7 @@ private fun RuleEditorDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Text("وحدة المدة", style = MaterialTheme.typography.labelLarge)
+                Text("وحدة المدة (أقل وحدة: يوم واحد)", style = MaterialTheme.typography.labelLarge)
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     DurationUnit.entries.filter { it != DurationUnit.HOURS }.forEach { choice ->

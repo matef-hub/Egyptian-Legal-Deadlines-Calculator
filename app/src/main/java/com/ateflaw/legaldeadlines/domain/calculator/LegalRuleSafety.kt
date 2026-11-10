@@ -21,11 +21,16 @@ object LegalRuleSafety {
     }
 
     private val backwards = setOf(
-        4L, 5L, 6L, 39L, 40L, 51L, 53L, 54L,
-        115L, 116L, 117L, 118L, 119L, 126L, 137L, 139L,
-        150L, 154L, 155L, 159L, 160L, 162L, 164L, 166L
+        4L, 5L, 6L, 28L, 40L, 53L,
+        115L, 116L, 117L, 118L, 119L, 126L,
+        150L, 159L, 160L, 162L, 166L
     )
-    private val exactHours = setOf(7L, 96L, 103L, 104L)
+    // "24 hours" must remain a time-sensitive LEGAL WARNING. The UI shows one
+    // day as requested, and never claims to identify its exact ending hour.
+    private val oneDayTimingCaution = setOf(7L, 24L, 96L, 108L)
+    // These historic IDs were incorrectly tagged as BEFORE/EXACT_HOURS; old
+    // installed databases still contain those stale enum strings.
+    private val safeForwardCorrections = setOf(39L, 51L, 54L, 137L, 20L)
     private val ages = setOf(134L, 136L)
     private val limitations = setOf(
         13L, 15L, 16L, 17L, 48L, 59L, 60L, 61L, 62L, 63L,
@@ -34,11 +39,10 @@ object LegalRuleSafety {
         92L, 93L, 94L, 95L, 100L, 102L, 131L, 132L,
         133L, 135L, 138L
     )
-    private val special = setOf(9L, 10L, 12L, 14L, 18L, 20L, 41L, 42L, 43L, 90L, 91L)
+    private val special = setOf(9L, 10L, 12L, 14L, 18L, 41L, 42L, 43L, 90L, 91L, 103L, 104L, 139L, 154L, 155L, 164L)
 
     private fun inherentKind(rule: LegalRule): CalculationKind = when {
-        rule.id in exactHours || rule.unit == DurationUnit.HOURS ->
-            CalculationKind.EXACT_HOURS
+        rule.unit == DurationUnit.HOURS -> CalculationKind.EXACT_HOURS
         rule.id in ages -> CalculationKind.AGE_THRESHOLD
         rule.id in backwards -> CalculationKind.BACKWARD_FROM_EVENT
         rule.id in limitations || rule.duration == 0L ->
@@ -48,6 +52,15 @@ object LegalRuleSafety {
     }
 
     fun kind(rule: LegalRule): CalculationKind {
+        // A 24-hour period is displayed as "one day" for the interface but
+        // needs an explicit warning about its exact statutory clock trigger.
+        if (rule.id in oneDayTimingCaution && rule.duration == 1L &&
+            rule.unit == DurationUnit.DAYS) return CalculationKind.FORWARD
+        // Correct older persisted classifications, without modifying any
+        // actual rule duration or text stored on the user's device.
+        if (rule.id in safeForwardCorrections && rule.unit != DurationUnit.HOURS) {
+            return CalculationKind.FORWARD
+        }
         val inherited = inherentKind(rule)
         val declared = CalculationKind.entries.firstOrNull { it.name == rule.calculationKind }
         // An explicit database value cannot downgrade a known unsafe old seed
@@ -85,6 +98,9 @@ object LegalRuleSafety {
         }
         return buildList {
             add("تاريخ محسوب استرشاديًا فقط، وليس ميعادًا قانونيًا معتمدًا. راجع النص النافذ وظروف الدعوى قبل اتخاذ الإجراء.")
+            if (rule.id in oneDayTimingCaution && rule.unit == DurationUnit.DAYS) add(
+                "يوم واحد قد يساوي 24 ساعة تبدأ من ساعة الواقعة نفسها؛ عرض تاريخ اليوم لا يحدد لحظة انقضاء المدة، وفي الدعاوى المستعجلة قد يجيز النص اختصار ميعاد الحضور بإذن قضائي."
+            )
             if (isShatb60) add(
                 "المادة 82 مرافعات: الستون يومًا لا تغني عن اتخاذ إجراءات تجديد السير وتحديد جلسة وإعلان الخصم؛ وقد تؤثر ظروف الإعلان والاستثناءات القضائية."
             )

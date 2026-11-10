@@ -36,6 +36,12 @@ class LegalRuleDraftTest {
         assertEquals(DurationUnit.MONTHS, input.validate(false).unit)
     }
 
+    @Test fun hoursAreNotAnEditableDurationUnit() {
+        assertThrows(IllegalArgumentException::class.java) {
+            draft().copy(unit = DurationUnit.HOURS).validate(true)
+        }
+    }
+
     @Test fun trimsAllVisibleText() {
         val input = draft().copy(actionName = "  عنوان  ", lawName = " القانون ")
         assertEquals("عنوان", input.validate(true).actionName)

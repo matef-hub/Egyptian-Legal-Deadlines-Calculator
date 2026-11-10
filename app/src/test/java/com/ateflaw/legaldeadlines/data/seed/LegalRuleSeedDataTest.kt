@@ -34,7 +34,7 @@ class LegalRuleSeedDataTest {
     @Test fun dangerousRuleFamiliesAreNotDeclaredAsForward() {
         val rules = LegalRuleSeedData.getSeedRules().associateBy { it.id }
         assertEquals(LegalRuleSafety.CalculationKind.BACKWARD_FROM_EVENT, LegalRuleSafety.kind(rules.getValue(4)))
-        assertEquals(LegalRuleSafety.CalculationKind.EXACT_HOURS, LegalRuleSafety.kind(rules.getValue(7)))
+        assertEquals(LegalRuleSafety.CalculationKind.FORWARD, LegalRuleSafety.kind(rules.getValue(7)))
         assertEquals(LegalRuleSafety.CalculationKind.LIMITATION_OR_CONDITION, LegalRuleSafety.kind(rules.getValue(93)))
         assertEquals(LegalRuleSafety.CalculationKind.AGE_THRESHOLD, LegalRuleSafety.kind(rules.getValue(136)))
     }

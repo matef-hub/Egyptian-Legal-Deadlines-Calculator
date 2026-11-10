@@ -69,7 +69,7 @@ fun SavedDeadlinesScreen(
     SweetAlertNotice(
         message = uiState.errorMessage,
         kind = NoticeKind.ERROR,
-        onDismiss = viewModel::dismissError
+        onDismiss = viewModel::dismissErrorMessage
     )
 }
 

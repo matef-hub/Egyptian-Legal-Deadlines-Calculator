@@ -46,6 +46,7 @@ data class LegalRuleDraft(
         }.joinToString("")
         val duration = western.toLongOrNull()
             ?: throw IllegalArgumentException("قيمة المدة غير صالحة.")
+        require(unit != DurationUnit.HOURS) { "البرنامج يستخدم الأيام كأقل وحدة إدخال؛ اكتب يومًا واحدًا للـ24 ساعة مع مراجعة توقيت بدء المهلة." }
         val max = when (unit) {
             DurationUnit.DAYS -> 36500L
             DurationUnit.MONTHS -> 1200L

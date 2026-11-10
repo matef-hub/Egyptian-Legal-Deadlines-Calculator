@@ -13,7 +13,10 @@ class LegalRuleSafetyTest {
 
     @Test fun backwardsAndHoursAreNeverTreatedAsForwardDeadlines() {
         assertEquals(LegalRuleSafety.CalculationKind.BACKWARD_FROM_EVENT, LegalRuleSafety.kind(seeded(4)))
-        assertEquals(LegalRuleSafety.CalculationKind.EXACT_HOURS, LegalRuleSafety.kind(seeded(7)))
+        assertEquals(LegalRuleSafety.CalculationKind.FORWARD, LegalRuleSafety.kind(seeded(7, 1)))
+        assertEquals(LegalRuleSafety.CalculationKind.FORWARD, LegalRuleSafety.kind(seeded(96, 1)))
+        assertEquals(LegalRuleSafety.CalculationKind.SPECIAL_UNSUPPORTED, LegalRuleSafety.kind(seeded(103, 8)))
+        assertEquals(LegalRuleSafety.CalculationKind.SPECIAL_UNSUPPORTED, LegalRuleSafety.kind(seeded(104, 4)))
         assertEquals(LegalRuleSafety.CalculationKind.AGE_THRESHOLD, LegalRuleSafety.kind(seeded(134, 15, DurationUnit.YEARS)))
         assertEquals(LegalRuleSafety.CalculationKind.LIMITATION_OR_CONDITION, LegalRuleSafety.kind(seeded(93, 10, DurationUnit.YEARS)))
     }
@@ -29,6 +32,15 @@ class LegalRuleSafetyTest {
         assertThrows(IllegalArgumentException::class.java) {
             LegalRuleSafety.validate(seeded(122), LocalDate.of(2027, 10, 1))
         }
+    }
+
+    @Test fun oneDayLegacyRuleExplainsMissingClockPrecision() {
+        val source = seeded(7, 1).copy(
+            reviewStatus = "NEEDS_REVIEW",
+            calculationKind = "EXACT_HOURS"
+        )
+        val warnings = LegalRuleSafety.previewWarnings(source, LocalDate.of(2026, 11, 10))
+        assert(warnings.any { it.contains("24 ساعة") })
     }
 
     @Test fun unreviewedForwardRuleIsBlocked() {
