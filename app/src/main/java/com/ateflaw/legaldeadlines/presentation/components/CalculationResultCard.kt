@@ -177,7 +177,7 @@ fun CalculationResultCard(
                 )
 
                 Icon(
-                    imageVector = Icons.Default.CheckCircle,
+                    imageVector = if (result.isProvisional) Icons.Default.Info else Icons.Default.CheckCircle,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onTertiaryContainer,
                     modifier = Modifier.size(28.dp)
