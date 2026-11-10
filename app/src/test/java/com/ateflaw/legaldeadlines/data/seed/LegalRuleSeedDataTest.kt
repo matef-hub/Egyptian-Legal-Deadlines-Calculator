@@ -16,6 +16,11 @@ class LegalRuleSeedDataTest {
         assertTrue(rules.all { it.officialSourceUrl.isBlank() })
         assertTrue(rules.all { it.revision == 1 })
         assertTrue(rules.all { it.calculationKind != "UNREVIEWED" })
+        val byId = rules.associateBy { it.id }
+        assertEquals("القانون المدني", byId.getValue(61).lawName)
+        assertEquals("قانون الإجراءات الجنائية", byId.getValue(122).lawName)
+        assertEquals("قانون العمل", byId.getValue(159).lawName)
+        assertEquals("قانون البناء", byId.getValue(168).lawName)
     }
 
     @Test fun legacyWorkAndCriminalRulesHaveExplicitExpiryBoundaries() {

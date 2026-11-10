@@ -238,7 +238,7 @@ private fun RuleEditorDialog(
     onSave: (LegalRuleDraft) -> Unit
 ) {
     val initial = remember(rule?.id, rule?.revision, selectedLaw) {
-        rule?.let(LegalRuleDraft::fromRule) ?: LegalRuleDraft(
+        rule?.let { LegalRuleDraft.fromRule(it) } ?: LegalRuleDraft(
             actionName = "", lawName = selectedLaw, lawArticle = "",
             articleText = "", durationText = "", unit = DurationUnit.DAYS
         )

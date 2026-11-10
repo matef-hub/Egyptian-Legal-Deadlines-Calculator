@@ -410,4 +410,51 @@ class DatabaseMigrationTest {
         }
     }
 
+
+    @Test
+    fun testMigration6To7_preservesSavedDeadlinesAndCreatesLawGroupedCatalog() {
+        TestSupportSQLiteDatabase().use { db ->
+            createSchemaV1(db)
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (159, 'مهلة إخطار إنهاء عقد العمل', 2, 'MONTHS', 0, 'NEXT_DAY',
+                    'المادة 111 من قانون العمل القديم', 'قاعدة مخزنة', 'اختبار')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO saved_deadlines (id, case_number, client_name, action_name, announcement_date,
+                    duration, unit, distance_days, final_deadline, law_article, calculation_explanation, notes, created_at)
+                VALUES (1007, '123/2026', 'موكل تاريخي', 'ميعاد قديم', '2026-10-01',
+                    40, 'DAYS', 0, '2026-11-10', 'المادة 227', 'النص المحفوظ', 'لا تحذف', 1729000000000)
+            """.trimIndent())
+
+            AppDatabase.MIGRATION_1_2.migrate(db)
+            AppDatabase.MIGRATION_2_3.migrate(db)
+            AppDatabase.MIGRATION_3_4.migrate(db)
+            AppDatabase.MIGRATION_4_5.migrate(db)
+            AppDatabase.MIGRATION_5_6.migrate(db)
+            AppDatabase.MIGRATION_6_7.migrate(db)
+
+            db.query("SELECT law_name, article_text, duration, review_status FROM legal_rules WHERE id = 159")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals("قانون العمل", cursor.getString(0))
+                    assertEquals("", cursor.getString(1))
+                    assertEquals(2, cursor.getInt(2))
+                    assertEquals("NEEDS_REVIEW", cursor.getString(3))
+                }
+            db.query("SELECT case_number, client_name, calculation_explanation FROM saved_deadlines WHERE id = 1007")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals("123/2026", cursor.getString(0))
+                    assertEquals("موكل تاريخي", cursor.getString(1))
+                    assertEquals("النص المحفوظ", cursor.getString(2))
+                }
+            db.query("SELECT COUNT(*) FROM rule_edit_history").use { cursor ->
+                assertTrue(cursor.moveToNext())
+                assertEquals(0, cursor.getInt(0))
+            }
+            assertTrue(AppDatabase.columnExists(db, "legal_rules", "article_text"))
+        }
+    }
+
 }
