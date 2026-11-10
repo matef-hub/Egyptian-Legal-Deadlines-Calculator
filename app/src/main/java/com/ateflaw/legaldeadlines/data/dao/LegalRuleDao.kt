@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.ateflaw.legaldeadlines.data.entity.LegalRuleEntity
+import com.ateflaw.legaldeadlines.data.entity.RuleEditHistoryEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -42,6 +43,41 @@ interface LegalRuleDao {
         expiresAt: String?,
         revision: Int,
         kind: String
+    ): Int
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertDraft(rule: LegalRuleEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertEditHistory(revision: RuleEditHistoryEntity): Long
+
+    /** Compare-and-swap: simultaneous edits cannot silently overwrite each other. */
+    @Query("""
+        UPDATE legal_rules SET
+            action_name = :actionName,
+            law_name = :lawName,
+            law_article = :lawArticle,
+            article_text = :articleText,
+            duration = :duration,
+            unit = :unit,
+            notes = :notes,
+            revision = revision + 1,
+            review_status = 'NEEDS_REVIEW',
+            official_source_url = '',
+            last_reviewed_at = '',
+            effective_from = ''
+        WHERE id = :id AND revision = :expectedRevision
+    """)
+    suspend fun updateDraftIfCurrent(
+        id: Long,
+        expectedRevision: Int,
+        actionName: String,
+        lawName: String,
+        lawArticle: String,
+        articleText: String,
+        duration: Long,
+        unit: String,
+        notes: String
     ): Int
 
     @Query("DELETE FROM legal_rules")
