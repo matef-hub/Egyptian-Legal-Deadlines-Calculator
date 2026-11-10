@@ -55,11 +55,11 @@ class HolidaysViewModel(
                 _uiState.update {
                     it.copy(
                         isSyncing = false,
-                        syncMessage = "تم تحديث جدول العطلات الرسمية بنجاح ($count عطلة)"
+                        syncMessage = "تم استقبال $count عطلة مرشحة من المصدر الخارجي. لا تعتبر قرارات رسمية دون التحقق من سندها."
                     )
                 }
             } else {
-                val msg = result.exceptionOrNull()?.message ?: "تم الاعتماد على قاعدة البيانات المحلية المعتمدة"
+                val msg = result.exceptionOrNull()?.message ?: "تعذر تحديث البيانات المرشحة. راجع تواريخ العطلات المنشورة رسميًا."
                 _uiState.update {
                     it.copy(
                         isSyncing = false,

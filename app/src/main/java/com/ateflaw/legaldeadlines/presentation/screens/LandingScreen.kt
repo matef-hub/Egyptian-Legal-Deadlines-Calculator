@@ -96,9 +96,10 @@ fun LandingScreenContent(
 ) {
     // Readiness must reflect actual persisted rules, not simulated progress.
     val isDataReady = rules.isNotEmpty()
+    val reviewedRuleCount = rules.count { it.reviewStatus == "VERIFIED_ACCURATE" && it.officialSourceUrl.isNotBlank() }
     val animatedProgress = if (isDataReady) 1.0f else 0.0f
     val currentStageText = if (isDataReady) {
-        "تم تحميل ${rules.size} قاعدة قانونية، و${totalHolidaysCount} عطلة مسجلة (تستلزم التحقق من مصدرها)."
+        "تم تحميل ${rules.size} قاعدة، منها ${reviewedRuleCount} معتمدة؛ والعطلات المسجلة ${totalHolidaysCount}. لا تعتمد على الحساب قبل مراجعة القواعد والسند الرسمي."
     } else {
         "جارٍ تحميل القواعد القانونية من قاعدة البيانات..."
     }
@@ -182,7 +183,7 @@ fun LandingScreenContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .semantics(mergeDescendants = true) {
-                        contentDescription = "حالة تهيئة البيانات: ${if (isDataReady) "جاهز للاستخدام" else "جاري تهيئة البيانات"}"
+                        contentDescription = "حالة تهيئة البيانات: ${if (isDataReady) "البيانات محملة وقيد التدقيق القانوني" else "جاري تهيئة البيانات"}"
                     },
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
@@ -204,13 +205,13 @@ fun LandingScreenContent(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = if (isDataReady) Icons.Default.CheckCircle else Icons.Default.Security,
-                                contentDescription = if (isDataReady) "حالة مكتملة" else "حالة جاري التهيئة",
+                                contentDescription = if (isDataReady) "التحميل اكتمل والاعتماد القانوني قيد المراجعة" else "حالة جاري التهيئة",
                                 tint = if (isDataReady) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (isDataReady) "جاهز للاستخدام" else "جاري تهيئة البيانات",
+                                text = if (isDataReady) "قيد التدقيق القانوني" else "جاري تهيئة البيانات",
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isDataReady) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
@@ -276,7 +277,7 @@ fun LandingScreenContent(
                         )
                     ) {
                         Text(
-                            text = "دخول الحاسبة القانونية",
+                            text = "استعراض الحاسبة القانونية",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary

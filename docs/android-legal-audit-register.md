@@ -9,11 +9,11 @@
 1. Capture an official publication URL, article/sub-article, reviewed text, amendment history, effective-from/to, transition provisions and reviewer/date for each record.
 2. Separately validate trigger events, counting conventions (forward/backward/clear days/hour-precise), distance eligibility and authority-specific court calendars.
 3. Historical Law 12/2003 labor rules 147–167 expire for new events on 2025-08-31 (current Labor Law 14/2025). Criminal procedure rules 92–128 need a planned switch from 2027-10-01 pursuant to Laws 174/2025 and 160/2026.
-4. Do **not** auto-approve all-day holidays from Calendarific or the 2026 sample seeds. Require a published decision, covered jurisdiction and complete calendar evidence.
+4. Do **not** auto-approve dates from Calendarific or historical unsourced samples. The 2026 national dates are now copied from the Egyptian Presidency official calendar, but each court\u0027s closure schedule and completeness still require review.
 5. Keep previous saved deadlines and their legal audit snapshots when data revisions are installed.
 
 ### Primary legislation reference starting points (not individual rule approvals)
-- Egyptian Official Gazette / Amiria (Labor Law 14/2025): https://www.alamiria.com/Sec/TashTxt?id=vPdoWGGYwoE%3D
+- Egyptian Presidency (national official holidays 2026): https://www.presidency.eg/ar/%D9%85%D8%B5%D8%B1/%D8%A7%D9%84%D8%B9%D8%B7%D9%84%D8%A7%D8%AA-%D8%A7%D9%84%D8%B1%D8%B3%D9%85%D9%8A%D8%A9/\n- Egyptian Official Gazette / Amiria (Labor Law 14/2025): https://www.alamiria.com/Sec/TashTxt?id=vPdoWGGYwoE%3D
 - Amiria (Law 160/2026, amending Criminal Procedure commencement): https://www.alamiria.com/Sec/TashTxt?id=Aalg37zxdcU%3D
 - Ministry of Justice (Criminal Procedure Law 174/2025): https://moj.gov.eg/backend/api/documents/download/20F3150C-29F1-487E-A0F0-FCCE10CB207B
 - Law 13/1968 original publication needs amendment-by-amendment verification from the Egyptian Official Gazette.
@@ -199,7 +199,7 @@
 - [ ] Cover all effective-date transitions with authoritative legal citations and regression scenarios
 - [ ] Verify authority-specific holidays and source decisions, including moved holidays and court closure practice
 - [x] Room v5/v6 migration paths preserve the user's saved deadlines at source-code level (CI/device validation required)
-- [x] Unverified holiday records cannot automatically extend a computed final deadline
+- [x] Unverified holiday records cannot automatically extend a computed final deadline\n- [x] 2026 national holiday seed comes from the Egyptian Presidency published 2026 calendar
 - [x] Unverified or obsolete rules are rejected by the Android use case
 - [x] Release no longer packages the third-party Calendarific API key
 - [x] Android local backup of personal client/case information disabled pending a reviewed secure-backup strategy
