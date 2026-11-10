@@ -37,7 +37,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "CALENDARIFIC_API_KEY", "\"$calendarificApiKey\"")
+        // No third-party API credential is packaged into a production APK/AAB.
+        buildConfigField("String", "CALENDARIFIC_API_KEY", "\"YOUR_API_KEY\"")
 
         javaCompileOptions {
             annotationProcessorOptions {
@@ -70,6 +71,7 @@ android {
             signingConfig = signingConfigs.getByName("release")
         }
         debug {
+            buildConfigField("String", "CALENDARIFIC_API_KEY", "\"$calendarificApiKey\"")
             isMinifyEnabled = false
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"

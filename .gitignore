@@ -12,3 +12,10 @@ coverage/
 local.properties
 *.iml
 
+
+# Never commit Android signing credentials or packaged user data
+*.jks
+*.keystore
+*.p12
+*.apk
+*.aab

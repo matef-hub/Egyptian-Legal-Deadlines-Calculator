@@ -1,3 +1,5 @@
+> **Android legal validation notice — 10 November 2026:** The 169 bundled rules are **unreviewed** and must not be represented as production-certified legal calculations. The Android use case now rejects unverified, historically superseded and unsupported timing modes. Bundled and Calendarific holidays are candidates, not evidence of a published official decision. The App's historical claims below describe the legacy prototype and are **not** a guarantee of accuracy. The source-driven legal audit, verified court calendar, rule versioning, signed release, and user acceptance tests remain mandatory before production publication. Web implementation is out of scope for this Android branch.
+
 # Egyptian Legal Deadlines Calculator & Management System
 # حاسبة المواعيد القانونية المصرية ونظام إدارة الأجندة القضائية
 

@@ -3,6 +3,8 @@ package com.ateflaw.legaldeadlines.domain.calculator
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import java.time.LocalDate
+import java.net.URI
+import java.util.Locale
 
 /**
  * Fail-closed application gate. A legal source and a human review are prerequisites
@@ -69,8 +71,13 @@ object LegalRuleSafety {
         require(rule.reviewStatus == "VERIFIED_ACCURATE") {
             "لا يمكن حساب ميعاد ملزم من قاعدة لم تعتمد قانونياً. راجع السند الرسمي وحالة اعتماد القاعدة."
         }
-        require(rule.officialSourceUrl.startsWith("https://")) {
-            "لا يمكن اعتماد قاعدة دون رابط رسمي آمن للنص التشريعي المُراجع."
+        val parsedSource = try { URI(rule.officialSourceUrl) } catch (_: Exception) { null }
+        val sourceHost = parsedSource?.host?.lowercase(Locale.ROOT).orEmpty()
+        val officialHost = sourceHost.endsWith(".gov.eg") ||
+            sourceHost == "alamiria.com" ||
+            sourceHost == "www.alamiria.com"
+        require(parsedSource?.scheme == "https" && officialHost) {
+            "لا يمكن اعتماد قاعدة دون مصدر تشريعي رسمي موثق، مثل المطابع الأميرية أو موقع حكومي مصري."
         }
         require(rule.effectiveFrom.isNotBlank()) {
             "لم يُحدد تاريخ بدء سريان هذه النسخة من القاعدة القانونية."
