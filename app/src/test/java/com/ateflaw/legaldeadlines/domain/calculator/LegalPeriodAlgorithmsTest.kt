@@ -36,7 +36,7 @@ class LegalPeriodAlgorithmsTest {
     @Test fun explicitCourtClosingCalendarCanIncludeSaturday() {
         val saturday = LocalDate.of(2026, 10, 3)
         assertEquals(DayOfWeek.SATURDAY, saturday.dayOfWeek)
-        assertEquals(LocalDate.of(2026, 10, 5), LegalPeriodAlgorithms.nextAvailableDate(saturday) {
+        assertEquals(LocalDate.of(2026, 10, 4), LegalPeriodAlgorithms.nextAvailableDate(saturday) {
             it.dayOfWeek == DayOfWeek.FRIDAY || it.dayOfWeek == DayOfWeek.SATURDAY
         })
     }
