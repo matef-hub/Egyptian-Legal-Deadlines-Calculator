@@ -215,9 +215,11 @@ abstract class AppDatabase : RoomDatabase() {
                     UPDATE legal_rules SET law_name = CASE
                         WHEN id = 3 THEN 'قانون الإثبات'
                         WHEN id BETWEEN 59 AND 91 THEN 'القانون المدني'
-                        WHEN id BETWEEN 92 AND 128 THEN 'قانون الإجراءات الجنائية'
+                        WHEN id BETWEEN 92 AND 127 THEN 'قانون الإجراءات الجنائية'
+                        WHEN id = 128 THEN 'قانون حالات وإجراءات الطعن أمام محكمة النقض رقم 57 لسنة 1959'
                         WHEN id BETWEEN 129 AND 135 THEN 'قانون الأحوال الشخصية رقم 25 لسنة 1929'
-                        WHEN id BETWEEN 136 AND 142 THEN 'قانون تنظيم إجراءات التقاضي في الأحوال الشخصية رقم 1 لسنة 2000'
+                        WHEN id BETWEEN 136 AND 141 THEN 'قانون تنظيم إجراءات التقاضي في الأحوال الشخصية رقم 1 لسنة 2000'
+                        WHEN id = 142 THEN 'قانون إنشاء محاكم الأسرة رقم 10 لسنة 2004'
                         WHEN id BETWEEN 143 AND 146 THEN 'قانون مجلس الدولة'
                         WHEN id BETWEEN 147 AND 167 THEN 'قانون العمل'
                         WHEN id BETWEEN 168 AND 169 THEN 'قانون البناء'

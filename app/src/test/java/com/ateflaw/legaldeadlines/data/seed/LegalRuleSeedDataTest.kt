@@ -20,6 +20,8 @@ class LegalRuleSeedDataTest {
         assertEquals("القانون المدني", byId.getValue(61).lawName)
         assertEquals("قانون الإجراءات الجنائية", byId.getValue(122).lawName)
         assertEquals("قانون العمل", byId.getValue(159).lawName)
+        assertEquals("قانون حالات وإجراءات الطعن أمام محكمة النقض رقم 57 لسنة 1959", byId.getValue(128).lawName)
+        assertEquals("قانون إنشاء محاكم الأسرة رقم 10 لسنة 2004", byId.getValue(142).lawName)
         assertEquals("قانون البناء", byId.getValue(168).lawName)
     }
 

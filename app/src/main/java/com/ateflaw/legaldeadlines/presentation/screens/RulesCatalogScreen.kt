@@ -202,8 +202,8 @@ private fun RuleCatalogCard(rule: LegalRule, onEdit: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = if (expanded) Int.MAX_VALUE else 2,
                 overflow = TextOverflow.Ellipsis)
-            Text("قيد المراجعة • إصدار ${rule.revision}",
-                color = MaterialTheme.colorScheme.error,
+            Text("${if (rule.reviewStatus == "VERIFIED_ACCURATE") "معتمد سابقًا" else "قيد المراجعة"} • إصدار ${rule.revision}",
+                color = if (rule.reviewStatus == "VERIFIED_ACCURATE") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.labelSmall)
             if (expanded) {
                 Text("نص المادة", fontWeight = FontWeight.Bold,
