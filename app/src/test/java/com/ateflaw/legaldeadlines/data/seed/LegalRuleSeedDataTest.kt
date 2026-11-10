@@ -13,7 +13,10 @@ class LegalRuleSeedDataTest {
         assertEquals(169, rules.map { it.id }.toSet().size)
         assertTrue(rules.all { it.reviewStatus == "NEEDS_REVIEW" })
         assertTrue(rules.all { it.effectiveFrom.isBlank() })
-        assertTrue(rules.all { it.officialSourceUrl.isBlank() })
+        assertTrue(rules.filter { it.id != 82L }.all { it.officialSourceUrl.isBlank() })
+        val article940 = rules.single { it.id == 82L }
+        assertTrue(article940.officialSourceUrl.startsWith("https://portal.eta.gov.eg/"))
+        assertTrue(article940.articleText.contains("خمسة عشر"))
         assertTrue(rules.all { it.revision == 1 })
         assertTrue(rules.all { it.calculationKind != "UNREVIEWED" })
         val byId = rules.associateBy { it.id }
