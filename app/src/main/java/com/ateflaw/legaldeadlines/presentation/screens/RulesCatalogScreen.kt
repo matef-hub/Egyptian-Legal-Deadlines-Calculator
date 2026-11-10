@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -50,6 +51,10 @@ import androidx.compose.ui.unit.dp
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.model.LegalRuleDraft
+import com.ateflaw.legaldeadlines.domain.review.AuditLevel
+import com.ateflaw.legaldeadlines.domain.review.LegalRuleReviewCatalog
+import com.ateflaw.legaldeadlines.presentation.components.SweetAlertNotice
+import com.ateflaw.legaldeadlines.presentation.components.NoticeKind
 import com.ateflaw.legaldeadlines.presentation.viewmodel.RuleCatalogViewModel
 
 private const val ALL_LAWS = "كل القوانين"
@@ -62,19 +67,29 @@ fun RulesCatalogScreen(
     val state by viewModel.uiState.collectAsState()
     var query by remember { mutableStateOf("") }
     var selectedLaw by remember { mutableStateOf(ALL_LAWS) }
+    var selectedReview by remember { mutableStateOf("ALL") }
     var editingRule by remember { mutableStateOf<LegalRule?>(null) }
     var showEditor by remember { mutableStateOf(false) }
     var openedAtToken by remember { mutableStateOf(0L) }
     val laws = remember(state.rules) {
         state.rules.map { it.lawName.ifBlank { "قانون غير مصنف" } }.distinct().sorted()
     }
-    val filtered = remember(state.rules, query, selectedLaw) {
+    val correctionCount = remember(state.rules) {
+        state.rules.count { LegalRuleReviewCatalog.finding(it).level == AuditLevel.CORRECTION }
+    }
+    val highCount = remember(state.rules) {
+        state.rules.count { LegalRuleReviewCatalog.finding(it).level == AuditLevel.HIGH }
+    }
+    val filtered = remember(state.rules, query, selectedLaw, selectedReview) {
         val search = query.trim()
         state.rules.filter { rule ->
             val law = rule.lawName.ifBlank { "قانون غير مصنف" }
             (selectedLaw == ALL_LAWS || law == selectedLaw) &&
+                (selectedReview == "ALL" ||
+                    LegalRuleReviewCatalog.finding(rule).level.name == selectedReview) &&
                 (search.isBlank() || listOf(
-                    rule.actionName, law, rule.lawArticle, rule.articleText, rule.notes
+                    rule.actionName, law, rule.lawArticle, rule.articleText, rule.notes,
+                    LegalRuleReviewCatalog.finding(rule).note
                 ).any { it.contains(search, ignoreCase = true) })
         }
     }
@@ -130,13 +145,27 @@ fun RulesCatalogScreen(
             }
         }
         Spacer(Modifier.height(8.dp))
-        if (state.notice != null) {
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                Triple("ALL", "جميع الحالات", state.rules.size),
+                Triple("CORRECTION", "تحتاج تصحيح", correctionCount),
+                Triple("HIGH", "تدقيق مهم", highCount),
+                Triple("REVIEW", "تحتاج توثيق", state.rules.size - correctionCount - highCount)
+            ).forEach { (key, label, count) ->
+                FilterChip(selected = selectedReview == key,
+                    onClick = { selectedReview = key },
+                    label = { Text("$label ($count)") })
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        // Feedback is a five-second dialog rather than a permanent banner.
+        if (false) {
             Text(state.notice.orEmpty(), color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.bodySmall)
         }
-        if (state.error != null && !showEditor) {
-            Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall)
+        if (false) {
+            Text(state.error.orEmpty())
         }
         when {
             state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -173,6 +202,12 @@ fun RulesCatalogScreen(
         }
     }
 
+    SweetAlertNotice(
+        message = state.error ?: state.notice,
+        kind = if (state.error != null) NoticeKind.ERROR else NoticeKind.SUCCESS,
+        onDismiss = viewModel::dismissMessage
+    )
+
     if (showEditor) {
         RuleEditorDialog(
             rule = editingRule,
@@ -188,7 +223,24 @@ fun RulesCatalogScreen(
 @Composable
 private fun RuleCatalogCard(rule: LegalRule, onEdit: () -> Unit) {
     var expanded by remember(rule.id, rule.revision) { mutableStateOf(false) }
-    Card(modifier = Modifier.fillMaxWidth(), onClick = { expanded = !expanded }) {
+    val finding = LegalRuleReviewCatalog.finding(rule)
+    val reviewColor = when (finding.level) {
+        AuditLevel.CORRECTION -> MaterialTheme.colorScheme.errorContainer
+        AuditLevel.HIGH -> MaterialTheme.colorScheme.tertiaryContainer
+        AuditLevel.REVIEW -> MaterialTheme.colorScheme.surfaceVariant
+        AuditLevel.VERIFIED -> MaterialTheme.colorScheme.secondaryContainer
+    }
+    val reviewText = when (finding.level) {
+        AuditLevel.CORRECTION -> "تصحيح قانوني مطلوب"
+        AuditLevel.HIGH -> "مراجعة قانونية مهمة"
+        AuditLevel.REVIEW -> "غير موثق بالكامل"
+        AuditLevel.VERIFIED -> "موثق"
+    }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = reviewColor),
+        onClick = { expanded = !expanded }
+    ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Text(rule.actionName, modifier = Modifier.weight(1f),
@@ -202,9 +254,13 @@ private fun RuleCatalogCard(rule: LegalRule, onEdit: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = if (expanded) Int.MAX_VALUE else 2,
                 overflow = TextOverflow.Ellipsis)
-            Text("${if (rule.reviewStatus == "VERIFIED_ACCURATE") "معتمد سابقًا" else "قيد المراجعة"} • إصدار ${rule.revision}",
-                color = if (rule.reviewStatus == "VERIFIED_ACCURATE") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.labelSmall)
+            Text("$reviewText • إصدار ${rule.revision}",
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelMedium)
+            Text("ملاحظة بالتعديل / التدقيق: ${finding.note}",
+                maxLines = if (expanded) Int.MAX_VALUE else 3,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodySmall)
             if (expanded) {
                 Text("نص المادة", fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.labelLarge)
@@ -287,7 +343,7 @@ private fun RuleEditorDialog(
                 Text("وحدة المدة", style = MaterialTheme.typography.labelLarge)
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    DurationUnit.entries.forEach { choice ->
+                    DurationUnit.entries.filter { it != DurationUnit.HOURS }.forEach { choice ->
                         FilterChip(selected = choice == unit, onClick = { unit = choice },
                             label = { Text(choice.arabicDisplayName) })
                     }
@@ -295,10 +351,7 @@ private fun RuleEditorDialog(
                 OutlinedTextField(value = notes, onValueChange = { notes = it },
                     label = { Text("ملاحظات قانونية (اختياري)") },
                     minLines = 2, modifier = Modifier.fillMaxWidth())
-                if (error != null) {
-                    Text(error, color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall)
-                }
+                // Validation feedback appears in the shared five-second notice.
             }
         },
         confirmButton = {
