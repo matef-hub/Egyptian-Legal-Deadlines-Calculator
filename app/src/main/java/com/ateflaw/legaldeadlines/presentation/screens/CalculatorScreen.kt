@@ -515,8 +515,12 @@ fun CalculatorScreenContent(
                     // -------------------------------------------------------------
                     // FIELD 2: Trigger Event Date (تاريخ الواقعة المنشئة للميعاد)
                     // -------------------------------------------------------------
-                    val triggerLabel = uiState.selectedRule?.triggerEventLabel?.ifBlank { null }
-                        ?: "تاريخ الواقعة المنشئة للميعاد"
+                    val triggerLabel = if (uiState.selectedRule?.id == 10L) {
+                        "تاريخ قرار شطب الدعوى"
+                    } else {
+                        uiState.selectedRule?.triggerEventLabel?.ifBlank { null }
+                            ?: "تاريخ الواقعة المنشئة للميعاد"
+                    }
 
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
@@ -595,7 +599,9 @@ fun CalculatorScreenContent(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { isAdditionalDistanceExpanded = !isAdditionalDistanceExpanded }
+                                    .clickable(enabled = uiState.selectedRule?.id != 10L) {
+                                        isAdditionalDistanceExpanded = !isAdditionalDistanceExpanded
+                                    }
                                     .padding(14.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
@@ -618,7 +624,11 @@ fun CalculatorScreenContent(
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                         Text(
-                                            text = if (isAdditionalDistanceExpanded) "المسافة القانونية المقررة بالقاعدة: $statutoryDistance يوم" else "إضافة أيام مسافة (محلية أو بالخارج)",
+                                            text = if (uiState.selectedRule?.id == 10L) {
+                                                "لا تُضاف أيام مسافة تلقائيًا لتجديد الدعوى من الشطب"
+                                            } else if (isAdditionalDistanceExpanded) {
+                                                "المسافة القانونية المقررة بالقاعدة: $statutoryDistance يوم"
+                                            } else "إضافة أيام مسافة (محلية أو بالخارج)",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -635,7 +645,7 @@ fun CalculatorScreenContent(
 
                             // Expanded Content
                             AnimatedVisibility(
-                                visible = isAdditionalDistanceExpanded,
+                                visible = isAdditionalDistanceExpanded && uiState.selectedRule?.id != 10L,
                                 enter = expandVertically(animationSpec = tween(200, easing = FastOutSlowInEasing)) + fadeIn(animationSpec = tween(200)),
                                 exit = shrinkVertically(animationSpec = tween(180, easing = FastOutSlowInEasing)) + fadeOut(animationSpec = tween(180))
                             ) {

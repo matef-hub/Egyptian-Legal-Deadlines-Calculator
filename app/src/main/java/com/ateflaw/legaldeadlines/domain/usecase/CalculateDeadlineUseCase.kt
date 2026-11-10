@@ -45,7 +45,7 @@ class CalculateDeadlineUseCase(
 
         val result = calculator.calculate(
             announcementDate = announcementDate,
-            rule = rule,
+            rule = if (rule.id == 10L) rule.copy(triggerEventLabel = "تاريخ قرار شطب الدعوى") else rule,
             distanceType = distanceType,
             additionalDistanceDays = additionalDistanceDays,
             judicialOrderDetails = judicialOrderDetails,

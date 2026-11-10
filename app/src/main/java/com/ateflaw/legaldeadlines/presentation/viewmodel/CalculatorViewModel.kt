@@ -108,7 +108,7 @@ class CalculatorViewModel(
 
     fun onRuleSelected(rule: LegalRule?) {
         _uiState.update {
-            val forbidDistance = rule?.distancePolicy?.equals("NOT_APPLICABLE", ignoreCase = true) == true
+            val forbidDistance = rule?.id == 10L || rule?.distancePolicy?.equals("NOT_APPLICABLE", ignoreCase = true) == true
             it.copy(
                 selectedRule = rule,
                 distanceType = if (forbidDistance) DistanceType.NONE else it.distanceType,
@@ -122,6 +122,7 @@ class CalculatorViewModel(
     }
 
     fun onDistanceTypeChanged(type: DistanceType) {
+        if (_uiState.value.selectedRule?.id == 10L) return
         _uiState.update {
             val defaultDays = when (type) {
                 DistanceType.NONE -> "0"
