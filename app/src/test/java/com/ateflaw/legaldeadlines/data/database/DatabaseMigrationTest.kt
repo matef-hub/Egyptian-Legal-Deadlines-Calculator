@@ -545,4 +545,54 @@ class DatabaseMigrationTest {
         }
     }
 
+
+    @Test
+    fun testMigration9To10_preservesSavedCasesAndInitializesWorkbookFields() {
+        TestSupportSQLiteDatabase().use { db ->
+            createSchemaV1(db)
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (159, 'مهلة الإخطار لإنهاء عقد العمل', 2, 'MONTHS', 0, 'NEXT_DAY',
+                    'المادة 111 من القانون 12 لسنة 2003', 'سجل تاريخي', '')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO saved_deadlines (id, case_number, client_name, action_name, announcement_date,
+                    duration, unit, distance_days, final_deadline, law_article, calculation_explanation, notes, created_at)
+                VALUES (1010, '845/2026', 'موكل قديم', 'ميعاد محفوظ', '2026-01-01',
+                    30, 'DAYS', 0, '2026-01-31', 'المادة 30', 'حساب قديم', 'تحت الحفظ', 1729000000000)
+            """.trimIndent())
+
+            AppDatabase.MIGRATION_1_2.migrate(db)
+            AppDatabase.MIGRATION_2_3.migrate(db)
+            AppDatabase.MIGRATION_3_4.migrate(db)
+            AppDatabase.MIGRATION_4_5.migrate(db)
+            AppDatabase.MIGRATION_5_6.migrate(db)
+            AppDatabase.MIGRATION_6_7.migrate(db)
+            AppDatabase.MIGRATION_7_8.migrate(db)
+            AppDatabase.MIGRATION_8_9.migrate(db)
+            AppDatabase.MIGRATION_9_10.migrate(db)
+
+            db.query("""
+                SELECT workbook_decision, review_method, reviewer_note, review_version,
+                       duration, notes FROM legal_rules WHERE id = 159
+            """.trimIndent()).use { cursor ->
+                assertTrue(cursor.moveToNext())
+                assertEquals("", cursor.getString(0))
+                assertEquals("", cursor.getString(1))
+                assertEquals("", cursor.getString(2))
+                assertEquals(0, cursor.getInt(3))
+                assertEquals(2, cursor.getInt(4))
+                assertEquals("سجل تاريخي", cursor.getString(5))
+            }
+            db.query("SELECT case_number, client_name, calculation_explanation, notes FROM saved_deadlines WHERE id = 1010")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals("845/2026", cursor.getString(0))
+                    assertEquals("موكل قديم", cursor.getString(1))
+                    assertEquals("حساب قديم", cursor.getString(2))
+                    assertEquals("تحت الحفظ", cursor.getString(3))
+                }
+        }
+    }
+
 }
