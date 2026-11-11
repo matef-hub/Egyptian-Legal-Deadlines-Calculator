@@ -82,7 +82,7 @@ class CalculateDeadlineUseCase(
         result.copy(
             milestones = outputMilestones,
             explanation = if (isProvisional) {
-                "تاريخ حسابي مع وجود بيانات تستلزم الاستكمال.\\n" +
+                "تاريخ حسابي مع وجود بيانات تستلزم الاستكمال.\n" +
                     result.explanation.replace(
                         "الميعاد النهائي واجب الالتزام به",
                         "تاريخ نهاية المدة الحسابية"
