@@ -50,4 +50,20 @@ class LegalRuleReviewCatalogTest {
         assertEquals(AuditLevel.TEXT_ADDED, LegalRuleReviewCatalog.finding(seed.copy(duration = 16L)).level)
     }
 
+    @Test fun userApprovedEditedRuleIsFinalAndRetainsWorkbookObservation() {
+        val prior = LegalRuleSeedData.getSeedRules().first { it.id == 82L }
+        val saved = prior.copy(
+            articleText = "نص المادة الكامل الذي حُفظ",
+            reviewStatus = "VERIFIED_ACCURATE",
+            workbookDecision = "USER_APPROVED",
+            reviewVersion = 1,
+            reviewerNote = "ملاحظة قانونية من ملف المراجعة",
+            revision = 3
+        )
+        val finding = LegalRuleReviewCatalog.finding(saved)
+        assertEquals(AuditLevel.VERIFIED, finding.level)
+        assertTrue(finding.note.contains("حفظه نهائيًا"))
+        assertTrue(finding.note.contains("ملاحظة قانونية من ملف المراجعة"))
+    }
+
 }

@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
         SavedDeadlineEntity::class,
         RuleEditHistoryEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -288,6 +288,28 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+
+        /**
+         * Upgrade rules that the user saved using the former unfinished draft
+         * workflow. Their entered legal texts, durations and audit history are
+         * never altered. A blocked legal calculation remains blocked by policy.
+         */
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    UPDATE legal_rules SET
+                        review_status = 'VERIFIED_ACCURATE',
+                        workbook_decision = 'USER_APPROVED',
+                        review_version = CASE WHEN review_version < 1 THEN 1 ELSE review_version END,
+                        last_reviewed_at = CASE
+                            WHEN last_reviewed_at = '' THEN '2026-11-12'
+                            ELSE last_reviewed_at
+                        END
+                    WHERE workbook_decision = 'EDITED_PENDING'
+                """.trimIndent())
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -295,7 +317,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "egyptian_legal_deadlines.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_1_4, MIGRATION_2_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_1_4, MIGRATION_2_4)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

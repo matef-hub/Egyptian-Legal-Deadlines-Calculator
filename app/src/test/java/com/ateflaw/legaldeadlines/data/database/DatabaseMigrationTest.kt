@@ -595,4 +595,76 @@ class DatabaseMigrationTest {
         }
     }
 
+
+    @Test
+    fun testMigration10To11_finalizesPreviouslySavedDraftsWithoutTouchingCases() {
+        TestSupportSQLiteDatabase().use { db ->
+            createSchemaV1(db)
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (82, 'إعلان الرغبة في الشفعة', 15, 'DAYS', 0, 'NEXT_DAY',
+                    'المادة 940 مدني', 'ملاحظة المستخدم', 'سجل الشفعة')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (17, 'رد القاضي', 0, 'DAYS', 0, 'NEXT_DAY',
+                    'المادة 152 مرافعات', 'ممنوع الحساب', '')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO saved_deadlines (id, case_number, client_name, action_name, announcement_date,
+                    duration, unit, distance_days, final_deadline, law_article, calculation_explanation, notes, created_at)
+                VALUES (1111, '66/2026', 'موكل محفوظ', 'شفعة', '2026-11-01',
+                    15, 'DAYS', 0, '2026-11-16', 'المادة 940', 'ناتج محفوظ', 'بيانات أصلية', 1729000000000)
+            """.trimIndent())
+
+            AppDatabase.MIGRATION_1_2.migrate(db)
+            AppDatabase.MIGRATION_2_3.migrate(db)
+            AppDatabase.MIGRATION_3_4.migrate(db)
+            AppDatabase.MIGRATION_4_5.migrate(db)
+            AppDatabase.MIGRATION_5_6.migrate(db)
+            AppDatabase.MIGRATION_6_7.migrate(db)
+            AppDatabase.MIGRATION_7_8.migrate(db)
+            AppDatabase.MIGRATION_8_9.migrate(db)
+            AppDatabase.MIGRATION_9_10.migrate(db)
+            db.execSQL("""
+                UPDATE legal_rules SET workbook_decision = 'EDITED_PENDING',
+                    review_status = 'NEEDS_REVIEW', article_text = 'نص المادة المدخل من المستخدم',
+                    reviewer_note = 'ملاحظة ملف المراجعة', review_version = 1, revision = 3
+                WHERE id = 82
+            """.trimIndent())
+            db.execSQL("""
+                UPDATE legal_rules SET workbook_decision = 'KEEP_BLOCKED',
+                    review_status = 'KEEP_BLOCKED', review_version = 1
+                WHERE id = 17
+            """.trimIndent())
+            AppDatabase.MIGRATION_10_11.migrate(db)
+
+            db.query("""
+                SELECT workbook_decision, review_status, article_text, reviewer_note,
+                    duration, revision FROM legal_rules WHERE id = 82
+            """.trimIndent()).use { cursor ->
+                assertTrue(cursor.moveToNext())
+                assertEquals("USER_APPROVED", cursor.getString(0))
+                assertEquals("VERIFIED_ACCURATE", cursor.getString(1))
+                assertEquals("نص المادة المدخل من المستخدم", cursor.getString(2))
+                assertEquals("ملاحظة ملف المراجعة", cursor.getString(3))
+                assertEquals(15, cursor.getInt(4))
+                assertEquals(3, cursor.getInt(5))
+            }
+            db.query("SELECT workbook_decision, review_status FROM legal_rules WHERE id = 17")
+                .use {
+                    assertTrue(it.moveToNext())
+                    assertEquals("KEEP_BLOCKED", it.getString(0))
+                    assertEquals("KEEP_BLOCKED", it.getString(1))
+                }
+            db.query("SELECT case_number, client_name, calculation_explanation FROM saved_deadlines WHERE id = 1111")
+                .use {
+                    assertTrue(it.moveToNext())
+                    assertEquals("66/2026", it.getString(0))
+                    assertEquals("موكل محفوظ", it.getString(1))
+                    assertEquals("ناتج محفوظ", it.getString(2))
+                }
+        }
+    }
+
 }
