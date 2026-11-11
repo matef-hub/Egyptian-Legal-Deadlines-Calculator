@@ -1114,20 +1114,9 @@ fun CalculatorScreenContent(
         )
     }
 
-    // Show advisory result notification for five seconds; full legal caveats
-    // remain accessible in the result card rather than disappearing.
-    val result = uiState.result
-    var resultAlert by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(result) {
-        if (result?.isProvisional == true) {
-            resultAlert = "ظهر تاريخ استرشادي غير معتمد قانونيًا. راجع الملاحظات القانونية في تفاصيل النتيجة قبل اتخاذ الإجراء."
-        }
-    }
-    SweetAlertNotice(
-        message = resultAlert,
-        kind = NoticeKind.INFO,
-        onDismiss = { resultAlert = null }
-    )
+    // Do not show a warning dialog when registering/calculating a deadline.
+    // Important legal review comments remain visible with the relevant article
+    // in the catalog; explicit errors and save success retain 5-second notices.
 
     // DatePickerDialog Component
     if (showDatePickerDialog) {

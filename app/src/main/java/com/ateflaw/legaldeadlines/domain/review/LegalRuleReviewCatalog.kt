@@ -8,7 +8,7 @@ import com.ateflaw.legaldeadlines.domain.model.LegalRule
  * remains mandatory. Findings are deliberately non-destructive and shown even
  * on already-installed devices (no dangerous replacement of client data).
  */
-enum class AuditLevel { CORRECTION, HIGH, REVIEW, TEXT_ADDED, ARTICLE_MATCHED, VERIFIED }
+enum class AuditLevel { CORRECTION, BLOCKED, HIGH, REVIEW, TEXT_ADDED, ARTICLE_MATCHED, VERIFIED }
 
 data class AuditFinding(val level: AuditLevel, val note: String)
 
@@ -223,6 +223,25 @@ object LegalRuleReviewCatalog {
      * status. Approval is deliberately independent from article-text presence.
      */
     fun finding(rule: LegalRule): AuditFinding {
+        // The workbook uploaded and approved on 2026-11-11 takes precedence
+        // over the older November 10 preliminary heuristic inventory.
+        if (rule.reviewVersion > 0) {
+            val reviewNote = rule.reviewerNote.ifBlank {
+                "لا توجد ملاحظة من المراجع القانوني لهذه النسخة."
+            }
+            return when {
+                rule.workbookDecision == "KEEP_BLOCKED" ->
+                    AuditFinding(AuditLevel.BLOCKED, reviewNote)
+                rule.workbookDecision == "NEEDS_CORRECTION" ->
+                    AuditFinding(AuditLevel.CORRECTION, reviewNote)
+                rule.workbookDecision == "VERIFIED_ACCURATE" &&
+                    rule.reviewStatus == "VERIFIED_ACCURATE" ->
+                    AuditFinding(AuditLevel.VERIFIED, reviewNote)
+                rule.workbookDecision == "EDITED_PENDING" ->
+                    AuditFinding(AuditLevel.REVIEW, "تم تعديل هذه القاعدة بعد اعتماد الملف؛ يلزم مراجعة التعديل الجديد. ملاحظة المراجعة السابقة: " + reviewNote)
+                else -> AuditFinding(AuditLevel.REVIEW, reviewNote)
+            }
+        }
         val entry = reviewById[rule.id]
         if (entry?.level == AuditLevel.CORRECTION) {
             return if (rule.articleText.isBlank()) entry else entry.copy(

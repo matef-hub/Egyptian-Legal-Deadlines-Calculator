@@ -27,7 +27,7 @@ object LegalRuleSafety {
     )
     // "24 hours" must remain a time-sensitive LEGAL WARNING. The UI shows one
     // day as requested, and never claims to identify its exact ending hour.
-    private val oneDayTimingCaution = setOf(7L, 24L, 96L, 108L)
+    private val oneDayTimingCaution = setOf(7L, 24L, 96L, 97L, 108L)
     // These historic IDs were incorrectly tagged as BEFORE/EXACT_HOURS; old
     // installed databases still contain those stale enum strings.
     private val safeForwardCorrections = setOf(39L, 51L, 54L, 137L, 20L)
@@ -116,11 +116,14 @@ object LegalRuleSafety {
     private fun checkHistoricalApplicability(rule: LegalRule, eventDate: LocalDate) {
         // Current law 14/2025 superseded law 12/2003 on 2025-09-01.
         // Do not quietly produce a 2026 deadline from the legacy labor seed.
-        require(rule.id !in 147L..167L || eventDate.isBefore(LocalDate.of(2025, 9, 1))) {
-            "قواعد قانون العمل القديمة لا تصلح للوقائع من 1 سبتمبر 2025. يلزم نص القانون 14 لسنة 2025 ومراجعته قبل الحساب."
+        // Only unreconciled legacy Labor records are restricted by their IDs.
+        // Workbook revision 1 explicitly cross-checks current Law 14/2025.
+        require(rule.id !in 147L..167L || rule.reviewVersion > 0 ||
+            eventDate.isBefore(LocalDate.of(2025, 9, 1))) {
+            "قواعد قانون العمل غير المراجعة لا تصلح للوقائع من 1 سبتمبر 2025."
         }
         // Law 174/2025, as amended by law 160/2026, starts 2027-10-01.
-        require(rule.id !in 92L..128L || eventDate.isBefore(LocalDate.of(2027, 10, 1))) {
+        require(rule.id !in 92L..127L || eventDate.isBefore(LocalDate.of(2027, 10, 1))) {
             "قواعد الإجراءات الجنائية القديمة لا تطبق آلياً من 1 أكتوبر 2027. يلزم اعتماد القواعد الجديدة والأحكام الانتقالية."
         }
         val event = eventDate.toString()

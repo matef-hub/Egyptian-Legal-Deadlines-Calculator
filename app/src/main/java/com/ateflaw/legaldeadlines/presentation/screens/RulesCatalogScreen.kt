@@ -87,7 +87,7 @@ fun RulesCatalogScreen(
                     LegalRuleReviewCatalog.finding(rule).level.name == selectedReview) &&
                 (search.isBlank() || listOf(
                     rule.actionName, law, rule.lawArticle, rule.articleText, rule.notes,
-                    LegalRuleReviewCatalog.finding(rule).note
+                    LegalRuleReviewCatalog.finding(rule).note, rule.reviewerNote, rule.reviewMethod
                 ).any { it.contains(search, ignoreCase = true) })
         }
     }
@@ -148,6 +148,8 @@ fun RulesCatalogScreen(
             listOf(
                 Triple("ALL", "جميع الحالات", state.rules.size),
                 Triple("CORRECTION", "تحتاج تصحيح", auditCounts[AuditLevel.CORRECTION] ?: 0),
+                Triple("BLOCKED", "محجوبة", auditCounts[AuditLevel.BLOCKED] ?: 0),
+                Triple("VERIFIED", "تمت مراجعتها", auditCounts[AuditLevel.VERIFIED] ?: 0),
                 Triple("HIGH", "تدقيق قانوني", auditCounts[AuditLevel.HIGH] ?: 0),
                 Triple("REVIEW", "نص ناقص", auditCounts[AuditLevel.REVIEW] ?: 0),
                 Triple("TEXT_ADDED", "النص مضاف", auditCounts[AuditLevel.TEXT_ADDED] ?: 0),
@@ -219,7 +221,8 @@ private fun RuleCatalogCard(rule: LegalRule, onEdit: () -> Unit) {
     val uriHandler = LocalUriHandler.current
     val finding = LegalRuleReviewCatalog.finding(rule)
     val reviewColor = when (finding.level) {
-        AuditLevel.CORRECTION -> MaterialTheme.colorScheme.errorContainer
+        AuditLevel.CORRECTION -> MaterialTheme.colorScheme.tertiaryContainer
+        AuditLevel.BLOCKED -> MaterialTheme.colorScheme.errorContainer
         AuditLevel.HIGH -> MaterialTheme.colorScheme.tertiaryContainer
         AuditLevel.REVIEW -> MaterialTheme.colorScheme.surfaceVariant
         AuditLevel.TEXT_ADDED -> MaterialTheme.colorScheme.secondaryContainer
@@ -227,12 +230,13 @@ private fun RuleCatalogCard(rule: LegalRule, onEdit: () -> Unit) {
         AuditLevel.VERIFIED -> MaterialTheme.colorScheme.secondaryContainer
     }
     val reviewText = when (finding.level) {
-        AuditLevel.CORRECTION -> "تصحيح قانوني مطلوب"
+        AuditLevel.CORRECTION -> "تحتاج تصحيحًا — راجع الملاحظة"
+        AuditLevel.BLOCKED -> "محجوبة من الحساب"
         AuditLevel.HIGH -> "مراجعة قانونية مهمة"
         AuditLevel.REVIEW -> "نص المادة ناقص"
         AuditLevel.TEXT_ADDED -> "النص محفوظ — بانتظار المطابقة"
         AuditLevel.ARTICLE_MATCHED -> "النص والمدة مطابقان للمصدر — التطبيق يحتاج مراجعة"
-        AuditLevel.VERIFIED -> "موثق"
+        AuditLevel.VERIFIED -> "معتمدة بملف المراجعة"
     }
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -260,10 +264,14 @@ private fun RuleCatalogCard(rule: LegalRule, onEdit: () -> Unit) {
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodySmall)
             if (expanded) {
+                if (rule.reviewMethod.isNotBlank()) Text("نوع الميعاد: ${rule.reviewMethod}", style = MaterialTheme.typography.bodySmall)
                 Text("نص المادة", fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.labelLarge)
                 Text(rule.articleText.ifBlank { "لم يُسجل النص الكامل للمادة بعد." },
                     style = MaterialTheme.typography.bodyMedium)
+                if (rule.reviewVersion > 0 && rule.reviewerNote.isNotBlank()) {
+                    Text("ملاحظات المراجع بالملف: ${rule.reviewerNote}", style = MaterialTheme.typography.bodySmall)
+                }
                 if (rule.notes.isNotBlank()) {
                     Text("ملاحظات: ${rule.notes}", style = MaterialTheme.typography.bodySmall)
                 }
@@ -272,7 +280,7 @@ private fun RuleCatalogCard(rule: LegalRule, onEdit: () -> Unit) {
                 } else rule.officialSourceUrl
                 if (source.isNotBlank()) {
                     TextButton(onClick = { uriHandler.openUri(source) }) {
-                        Text("عرض مصدر النص القانوني")
+                        Text("فتح رابط المصدر الوارد بملف المراجعة")
                     }
                 }
             }
