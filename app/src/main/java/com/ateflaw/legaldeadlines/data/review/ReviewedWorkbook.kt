@@ -40,6 +40,21 @@ data class ReviewedWorkbookRecord(
             159L -> "MONTHS"
             else -> null
         }
+    val correctedActionName: String?
+        get() = when (id) {
+            132L -> "ضوابط عدم سماع دعوى إثبات النسب (المادة 15)"
+            159L, 160L -> "مهلة الإخطار لإنهاء عقد العمل غير محدد المدة"
+            else -> null
+        }
+
+    val correctedLawArticle: String?
+        get() = when (id) {
+            132L -> "المادة 15 من المرسوم بقانون رقم 25 لسنة 1929"
+            159L, 160L -> "المادة 156 من قانون العمل رقم 14 لسنة 2025"
+            161L -> "المادة 167 من قانون العمل رقم 14 لسنة 2025"
+            else -> null
+        }
+
     val normalizedKind: String
         get() = when (method) {
             "عكسي قبل الجلسة" -> "BACKWARD_FROM_EVENT"

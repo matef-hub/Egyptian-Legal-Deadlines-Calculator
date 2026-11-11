@@ -30,7 +30,9 @@ object ReviewedWorkbookImporter {
                     effectiveTo = expiry,
                     kind = item.normalizedKind,
                     duration = item.correctedDuration,
-                    unit = if (item.method == "ساعات") "DAYS" else item.correctedUnit
+                    unit = if (item.method == "ساعات") "DAYS" else item.correctedUnit,
+                    correctedActionName = item.correctedActionName,
+                    correctedLawArticle = item.correctedLawArticle
                 )
                 if (applied == 0) {
                     // Existing user edits or missing rows: never clobber custom

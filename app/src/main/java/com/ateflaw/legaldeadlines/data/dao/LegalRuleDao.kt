@@ -96,6 +96,9 @@ interface LegalRuleDao {
             calculation_kind = :kind,
             duration = COALESCE(:duration, duration),
             unit = COALESCE(:unit, unit),
+            action_name = COALESCE(:correctedActionName, action_name),
+            law_article = COALESCE(:correctedLawArticle, law_article),
+            last_reviewed_at = '2026-11-11',
             revision = 2
         WHERE id = :id AND revision <= 1 AND review_version = 0 AND action_name = :actionName
     """)
@@ -110,7 +113,9 @@ interface LegalRuleDao {
         effectiveTo: String?,
         kind: String,
         duration: Long?,
-        unit: String?
+        unit: String?,
+        correctedActionName: String?,
+        correctedLawArticle: String?
     ): Int
 
     /** Preserve overrides while retaining reviewer observations separately. */
