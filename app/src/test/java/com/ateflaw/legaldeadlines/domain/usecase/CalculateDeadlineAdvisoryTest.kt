@@ -55,7 +55,7 @@ class CalculateDeadlineAdvisoryTest {
         assertTrue(result.warnings.any { it.contains("المادة 82") && it.contains("إعلان") })
         assertTrue(result.warnings.any { it.contains("استرشادي") })
         assertTrue(result.milestones.any {
-            it.type == MilestoneType.FINAL_DEADLINE && it.title.contains("غير معتمد")
+            it.type == MilestoneType.FINAL_DEADLINE && it.title.contains("يحتاج استكمال بيانات")
         })
         assertFalse(result.explanation.contains("الميعاد النهائي واجب الالتزام به"))
     }
