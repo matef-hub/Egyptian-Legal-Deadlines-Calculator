@@ -237,8 +237,15 @@ object LegalRuleReviewCatalog {
                 rule.workbookDecision == "VERIFIED_ACCURATE" &&
                     rule.reviewStatus == "VERIFIED_ACCURATE" ->
                     AuditFinding(AuditLevel.VERIFIED, reviewNote)
+                rule.workbookDecision == "USER_APPROVED" &&
+                    rule.reviewStatus == "VERIFIED_ACCURATE" ->
+                    AuditFinding(
+                        AuditLevel.VERIFIED,
+                        "تم اعتماد التعديل وحفظه نهائيًا بواسطة المستخدم." +
+                            if (rule.reviewerNote.isBlank()) "" else " ملاحظة ملف المراجعة: " + reviewNote
+                    )
                 rule.workbookDecision == "EDITED_PENDING" ->
-                    AuditFinding(AuditLevel.REVIEW, "تم تعديل هذه القاعدة بعد اعتماد الملف؛ يلزم مراجعة التعديل الجديد. ملاحظة المراجعة السابقة: " + reviewNote)
+                    AuditFinding(AuditLevel.REVIEW, "تم تعديل هذه القاعدة قبل تحديث التطبيق؛ راجع اعتماد النسخة. ملاحظة سابقة: " + reviewNote)
                 else -> AuditFinding(AuditLevel.REVIEW, reviewNote)
             }
         }

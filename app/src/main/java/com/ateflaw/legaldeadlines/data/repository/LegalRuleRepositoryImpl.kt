@@ -11,6 +11,7 @@ import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.repository.LegalRuleRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.LocalDate
 
 class LegalRuleRepositoryImpl(
     private val database: AppDatabase
@@ -37,8 +38,8 @@ class LegalRuleRepositoryImpl(
 
     override suspend fun addDraft(draft: LegalRuleDraft): Long {
         val input = draft.validate(isNew = true)
-        // New rules remain NON-CALCULABLE until their exact legal policy has been
-        // verified separately. The editor cannot approve a rule.
+        // Explicit saving is the end of the user's review workflow. A final
+        // record can still have a SPECIAL_UNSUPPORTED calculation algorithm.
         val record = LegalRule(
             actionName = input.actionName,
             lawName = input.lawName,
@@ -52,10 +53,13 @@ class LegalRuleRepositoryImpl(
             distancePolicy = "NOT_APPLICABLE",
             extensionPolicy = "UNREVIEWED",
             calculationKind = "SPECIAL_UNSUPPORTED",
-            reviewStatus = "NEEDS_REVIEW",
+            reviewStatus = "VERIFIED_ACCURATE",
+            workbookDecision = "USER_APPROVED",
+            reviewVersion = 1,
+            reviewerNote = "قاعدة أضيفت واعتمدت بواسطة المستخدم.",
             officialSourceUrl = input.officialSourceUrl,
             effectiveFrom = "",
-            lastReviewedAt = "",
+            lastReviewedAt = LocalDate.now().toString(),
             revision = 1
         )
         return legalRuleDao.insertDraft(LegalRuleEntity.fromDomain(record))
@@ -79,7 +83,8 @@ class LegalRuleRepositoryImpl(
                 duration = input.duration,
                 unit = input.unit.name,
                 notes = input.notes,
-                officialSourceUrl = input.officialSourceUrl
+                officialSourceUrl = input.officialSourceUrl,
+                approvedAt = LocalDate.now().toString()
             )
             check(affected == 1) { "تغيّرت القاعدة أثناء الحفظ. أعد تحميلها." }
             legalRuleDao.insertEditHistory(

@@ -21,7 +21,7 @@ data class RuleCatalogUiState(
     val savedToken: Long = 0
 )
 
-/** A local catalog editor. Editing never confers VERIFIED_ACCURATE status. */
+/** Saves the user's final review decision atomically and archives the prior revision. */
 class RuleCatalogViewModel(
     private val repository: LegalRuleRepository
 ) : ViewModel() {
@@ -60,7 +60,7 @@ class RuleCatalogViewModel(
                 state.update { it.copy(
                     saving = false,
                     savedToken = it.savedToken + 1,
-                    notice = "تم حفظ النص والمدة. حالة اكتمال المادة تحدّثت في الدليل؛ اعتماد التطبيق القانوني منفصل."
+                    notice = "تم حفظ القاعدة واعتماد تعديلك نهائيًا، مع الاحتفاظ بسجل النسخة السابقة."
                 ) }
             } catch (error: Exception) {
                 state.update { it.copy(

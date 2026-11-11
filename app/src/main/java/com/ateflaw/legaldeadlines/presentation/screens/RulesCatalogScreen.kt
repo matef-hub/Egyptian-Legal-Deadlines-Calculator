@@ -106,7 +106,7 @@ fun RulesCatalogScreen(
         Text("دليل المواعيد القانونية", style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold)
         Text(
-            "جميع القواعد المسجلة مصنفة حسب القانون. التعديل لا يعني اعتماد النص قانونيًا.",
+            "القواعد مصنفة حسب القانون. عند الحفظ يصبح تعديلك نهائيًا، وتظل ملاحظات ملف المراجعة متاحة.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -333,7 +333,7 @@ private fun RuleEditorDialog(
             ) {
                 Surface(color = MaterialTheme.colorScheme.errorContainer) {
                     Text(
-                        "كل إضافة أو تعديل تحفظ كمسودة تحتاج مراجعة قانونية قبل اعتماد الحساب.",
+                        "سيُحفظ التعديل ويُعتمد نهائيًا في دليلك. ملاحظات ملف المراجعة وسجل النسخ السابقة محفوظان.",
                         modifier = Modifier.padding(10.dp),
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -388,7 +388,7 @@ private fun RuleEditorDialog(
                 if (isSaving) CircularProgressIndicator(
                     modifier = Modifier.height(18.dp).width(18.dp),
                     strokeWidth = 2.dp
-                ) else Text("حفظ كمسودة")
+                ) else Text("حفظ واعتماد")
             }
         },
         dismissButton = {

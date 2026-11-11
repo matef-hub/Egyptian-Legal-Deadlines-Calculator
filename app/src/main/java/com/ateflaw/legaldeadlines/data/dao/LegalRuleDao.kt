@@ -62,11 +62,11 @@ interface LegalRuleDao {
             unit = :unit,
             notes = :notes,
             revision = revision + 1,
-            review_status = 'NEEDS_REVIEW',
-            workbook_decision = 'EDITED_PENDING',
+            review_status = 'VERIFIED_ACCURATE',
+            workbook_decision = 'USER_APPROVED',
+            review_version = CASE WHEN review_version < 1 THEN 1 ELSE review_version END,
             official_source_url = :officialSourceUrl,
-            last_reviewed_at = '',
-            effective_from = ''
+            last_reviewed_at = :approvedAt
         WHERE id = :id AND revision = :expectedRevision
     """)
     suspend fun updateDraftIfCurrent(
@@ -79,7 +79,8 @@ interface LegalRuleDao {
         duration: Long,
         unit: String,
         notes: String,
-        officialSourceUrl: String
+        officialSourceUrl: String,
+        approvedAt: String
     ): Int
 
     /** Import only untouched built-in rows; never overwrite user edits. */
