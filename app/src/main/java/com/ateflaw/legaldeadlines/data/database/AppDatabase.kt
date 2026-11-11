@@ -14,6 +14,7 @@ import com.ateflaw.legaldeadlines.data.entity.LegalRuleEntity
 import com.ateflaw.legaldeadlines.data.entity.RuleEditHistoryEntity
 import com.ateflaw.legaldeadlines.data.entity.SavedDeadlineEntity
 import com.ateflaw.legaldeadlines.data.seed.LegalRuleSeedData
+import com.ateflaw.legaldeadlines.data.review.ReviewedWorkbookImporter
 import com.ateflaw.legaldeadlines.domain.review.LegalRuleReviewCatalog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +27,7 @@ import kotlinx.coroutines.launch
         SavedDeadlineEntity::class,
         RuleEditHistoryEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -278,6 +279,15 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE legal_rules ADD COLUMN workbook_decision TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE legal_rules ADD COLUMN review_method TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE legal_rules ADD COLUMN reviewer_note TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE legal_rules ADD COLUMN review_version INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -285,7 +295,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "egyptian_legal_deadlines.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_1_4, MIGRATION_2_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_1_4, MIGRATION_2_4)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
@@ -318,6 +328,8 @@ abstract class AppDatabase : RoomDatabase() {
                                             )
                                         }
                                     }
+                                    // Safe 169-rule review import (independent of Cassation cases).
+                                    ReviewedWorkbookImporter.apply(context.applicationContext, database)
                                     // Merge sourced national dates into existing databases
                                     // without replacing another officially verified decision.
                                     val officialSeeds = LegalRuleSeedData.getInitialOfficialHolidays()

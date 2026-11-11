@@ -28,5 +28,9 @@ data class LegalRule(
     val lastReviewedAt: String = "2026-10-13", // تاريخ آخر مراجعة قانونية
     val reviewStatus: String = "NEEDS_REVIEW", // legal approval, never inferred from tests
     val revision: Int = 0, // persisted built-in catalog revision
-    val calculationKind: String = "UNREVIEWED" // explicit policy; see LegalRuleSafety
+    val calculationKind: String = "UNREVIEWED", // explicit policy
+    val workbookDecision: String = "",
+    val reviewMethod: String = "",
+    val reviewerNote: String = "",
+    val reviewVersion: Int = 0
 )

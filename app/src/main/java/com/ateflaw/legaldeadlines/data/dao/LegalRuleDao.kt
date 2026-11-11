@@ -63,6 +63,7 @@ interface LegalRuleDao {
             notes = :notes,
             revision = revision + 1,
             review_status = 'NEEDS_REVIEW',
+            workbook_decision = 'EDITED_PENDING',
             official_source_url = :officialSourceUrl,
             last_reviewed_at = '',
             effective_from = ''
@@ -80,6 +81,48 @@ interface LegalRuleDao {
         notes: String,
         officialSourceUrl: String
     ): Int
+
+    /** Import only untouched built-in rows; never overwrite user edits. */
+    @Query("""
+        UPDATE legal_rules SET
+            workbook_decision = :decision,
+            review_method = :method,
+            reviewer_note = :reviewerNote,
+            review_version = 1,
+            review_status = :decision,
+            official_source_url = :source,
+            effective_from = :effectiveFrom,
+            effective_to = :effectiveTo,
+            calculation_kind = :kind,
+            duration = COALESCE(:duration, duration),
+            unit = COALESCE(:unit, unit),
+            revision = 2
+        WHERE id = :id AND revision <= 1 AND review_version = 0 AND action_name = :actionName
+    """)
+    suspend fun adoptReviewedWorkbookRule(
+        id: Long,
+        actionName: String,
+        decision: String,
+        method: String,
+        reviewerNote: String,
+        source: String,
+        effectiveFrom: String,
+        effectiveTo: String?,
+        kind: String,
+        duration: Long?,
+        unit: String?
+    ): Int
+
+    /** Preserve overrides while retaining reviewer observations separately. */
+    @Query("""
+        UPDATE legal_rules SET
+            workbook_decision = :decision,
+            review_method = :method,
+            reviewer_note = :reviewerNote,
+            review_version = 1
+        WHERE id = :id AND review_version = 0
+    """)
+    suspend fun attachWorkbookMemo(id: Long, decision: String, method: String, reviewerNote: String): Int
 
     @Query("DELETE FROM legal_rules")
     suspend fun clear()
