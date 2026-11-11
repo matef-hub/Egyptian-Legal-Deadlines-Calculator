@@ -286,44 +286,6 @@ fun CalculationResultCard(
                 }
             }
 
-            // Initial notification is five seconds; the complete legal review
-            // stays accessible by expanding this compact row.
-            var legalNotesExpanded by remember(result.warnings) { mutableStateOf(false) }
-            if (result.warnings.isNotEmpty()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.tertiaryContainer)
-                        .clickable { legalNotesExpanded = !legalNotesExpanded }
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
-                    Text(
-                        "ملاحظات قانونية (${result.warnings.size}) — " +
-                            if (legalNotesExpanded) "إخفاء التفاصيل" else "اضغط لعرض التفاصيل",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
-                }
-                if (legalNotesExpanded) {
-                    result.warnings.forEach { warning ->
-                        Text(
-                            text = "• $warning",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
             // Proactive Alert Configuration Selector
             Column(
                 modifier = Modifier

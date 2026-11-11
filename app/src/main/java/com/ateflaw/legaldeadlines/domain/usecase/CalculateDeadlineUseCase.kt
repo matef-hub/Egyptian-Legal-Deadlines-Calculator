@@ -68,22 +68,28 @@ class CalculateDeadlineUseCase(
             }
             add("تنبيه: اكتمال القرارات الرسمية للعطلات في جهة الإجراء غير مثبت حتى لو وجدت بعض التواريخ الموثقة. يجب مراجعة القرارات الفعلية قبل الاعتماد على النتيجة.")
         }
-        val advisoryMilestones = result.milestones.map { item ->
+        // A user-reviewed rule is finalized by the editor. An incomplete
+        // official-holiday year still makes the computed date provisional.
+        val isProvisional = rule.reviewStatus != "VERIFIED_ACCURATE" ||
+            missingYears.isNotEmpty()
+        val outputMilestones = if (isProvisional) result.milestones.map { item ->
             if (item.type == MilestoneType.FINAL_DEADLINE) item.copy(
-                title = "تاريخ نهاية المدة الحسابية (غير معتمد)",
-                description = "تاريخ ناتج من حساب الأيام فقط، ولا يعني إتمام الإجراء أو اعتماد صحته. " +
-                    "راجع المواعيد والإعلانات وظروف الدعوى."
+                title = "تاريخ الحساب (يحتاج استكمال بيانات)",
+                description = "تاريخ ناتج من المدة المسجلة؛ تحقق من العطلات والإجراءات حسب المادة."
             ) else item
-        }
+        } else result.milestones
+
         result.copy(
-            milestones = advisoryMilestones,
-            explanation = "تاريخ استرشادي غير معتمد قانونيًا.\n" +
-                result.explanation.replace(
-                    "الميعاد النهائي واجب الالتزام به",
-                    "تاريخ نهاية المدة الحسابية الاسترشادية"
-                ),
+            milestones = outputMilestones,
+            explanation = if (isProvisional) {
+                "تاريخ حسابي مع وجود بيانات تستلزم الاستكمال.\\n" +
+                    result.explanation.replace(
+                        "الميعاد النهائي واجب الالتزام به",
+                        "تاريخ نهاية المدة الحسابية"
+                    )
+            } else result.explanation,
             warnings = (reviewWarnings + result.warnings + holidayWarnings).distinct(),
-            isProvisional = true
+            isProvisional = isProvisional
         )
     }
 

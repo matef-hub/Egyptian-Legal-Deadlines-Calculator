@@ -236,7 +236,7 @@ private fun RuleCatalogCard(rule: LegalRule, onEdit: () -> Unit) {
         AuditLevel.REVIEW -> "نص المادة ناقص"
         AuditLevel.TEXT_ADDED -> "النص محفوظ — بانتظار المطابقة"
         AuditLevel.ARTICLE_MATCHED -> "النص والمدة مطابقان للمصدر — التطبيق يحتاج مراجعة"
-        AuditLevel.VERIFIED -> "معتمدة بملف المراجعة"
+        AuditLevel.VERIFIED -> if (rule.workbookDecision == "USER_APPROVED") "تم حفظ واعتماد التعديل" else "معتمدة بملف المراجعة"
     }
     Card(
         modifier = Modifier.fillMaxWidth(),
