@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
@@ -64,6 +65,7 @@ private const val ALL_LAWS = "كل القوانين"
 @Composable
 fun RulesCatalogScreen(
     viewModel: RuleCatalogViewModel,
+    onOpenBackup: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -116,6 +118,11 @@ fun RulesCatalogScreen(
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Text("${state.rules.size} قاعدة • ${laws.size} قانون",
                 modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+            OutlinedButton(onClick = onOpenBackup) {
+                Icon(Icons.Default.Lock, contentDescription = null)
+                Spacer(Modifier.width(4.dp))
+                Text("نسخ احتياطي")
+            }
             Button(onClick = {
                 viewModel.dismissMessage()
                 editingRule = null
