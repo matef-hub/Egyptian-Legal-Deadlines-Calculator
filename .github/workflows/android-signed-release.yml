@@ -1,0 +1,75 @@
+name: Android signed release (manual, owner-key only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type SIGN to build a privately signed release APK from main."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  signed-release:
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'SIGN'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: android-release
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+      - name: Restore owner-held signing key from Actions secrets
+        env:
+          MEEAD_KEYSTORE_BASE64: ${{ secrets.MEEAD_KEYSTORE_BASE64 }}
+          MEEAD_STORE_PASSWORD: ${{ secrets.MEEAD_STORE_PASSWORD }}
+          MEEAD_KEY_ALIAS: ${{ secrets.MEEAD_KEY_ALIAS }}
+          MEEAD_KEY_PASSWORD: ${{ secrets.MEEAD_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          : "${MEEAD_KEYSTORE_BASE64:?Missing MEEAD_KEYSTORE_BASE64 secret}"
+          : "${MEEAD_STORE_PASSWORD:?Missing MEEAD_STORE_PASSWORD secret}"
+          : "${MEEAD_KEY_ALIAS:?Missing MEEAD_KEY_ALIAS secret}"
+          : "${MEEAD_KEY_PASSWORD:?Missing MEEAD_KEY_PASSWORD secret}"
+          KEYSTORE="$RUNNER_TEMP/meead-release.jks"
+          printf '%s' "$MEEAD_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+          chmod 600 "$KEYSTORE"
+          echo "MEEAD_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
+      - name: Test, lint and assemble signed release
+        env:
+          MEEAD_STORE_PASSWORD: ${{ secrets.MEEAD_STORE_PASSWORD }}
+          MEEAD_KEY_ALIAS: ${{ secrets.MEEAD_KEY_ALIAS }}
+          MEEAD_KEY_PASSWORD: ${{ secrets.MEEAD_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew testDebugUnitTest lint assembleRelease --stacktrace
+      - name: Verify release certificate and package signature
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          SIGNER="$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$SIGNER"
+          "$SIGNER" verify --verbose --print-certs "$APK"
+          sha256sum "$APK" > app/build/outputs/apk/release/sha256.txt
+      - name: Upload owner-signed APK (not an automatic public release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: meead-owner-signed-release-${{ github.sha }}
+          path: |
+            app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/apk/release/sha256.txt
+          if-no-files-found: error
+          retention-days: 30
+      - name: Remove signing key from runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/meead-release.jks"
