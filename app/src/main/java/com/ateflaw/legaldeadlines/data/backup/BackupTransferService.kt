@@ -120,12 +120,23 @@ class BackupTransferService(
                 }
             }
 
+            val historicallyEditedIds = records.getValue("rule_edit_history")
+                .mapNotNull { it.getAsLong("rule_id") }
+                .toSet()
             var importedRules = 0
             for (row in records.getValue("legal_rules")) {
                 val id = row.getAsLong("id") ?: error("قاعدة قانونية دون معرف.")
-                val ownerDecision = row.getAsString("workbook_decision") == "USER_APPROVED"
+                val decision = row.getAsString("workbook_decision").orEmpty()
+                val ownerDecision = decision == "USER_APPROVED" || decision == "EDITED_PENDING"
                 val revision = row.getAsInteger("revision") ?: 0
-                if (id > 169 || ownerDecision || revision >= 3) {
+                if (id > 169 || ownerDecision || id in historicallyEditedIds || revision >= 3) {
+                    // Equivalent to the v10->v11 on-device migration for owner-saved
+                    // drafts in old preview packages. Never approve untouched seeds.
+                    if (decision == "EDITED_PENDING") {
+                        row.put("workbook_decision", "USER_APPROVED")
+                        row.put("review_status", "VERIFIED_ACCURATE")
+                        row.put("review_version", maxOf(1, row.getAsInteger("review_version") ?: 0))
+                    }
                     db.insert("legal_rules", android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE, row)
                     importedRules++
                 }
