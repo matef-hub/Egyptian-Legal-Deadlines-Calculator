@@ -16,6 +16,7 @@ import com.ateflaw.legaldeadlines.presentation.screens.HolidaysScreen
 import com.ateflaw.legaldeadlines.presentation.screens.LandingScreen
 import com.ateflaw.legaldeadlines.presentation.screens.SavedDeadlinesScreen
 import com.ateflaw.legaldeadlines.presentation.screens.RulesCatalogScreen
+import com.ateflaw.legaldeadlines.presentation.screens.BackupRestoreScreen
 import com.ateflaw.legaldeadlines.presentation.viewmodel.RuleCatalogViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListViewModel
@@ -71,7 +72,12 @@ fun AppNavHost(
             SavedDeadlinesScreen(viewModel = deadlineListViewModel)
         }
         composable(Screen.RulesCatalog.route) {
-            RulesCatalogScreen(viewModel = ruleCatalogViewModel)
+            RulesCatalogScreen(viewModel = ruleCatalogViewModel, onOpenBackup = {
+                navController.navigate(Screen.BackupRestore.route)
+            })
+        }
+        composable(Screen.BackupRestore.route) {
+            BackupRestoreScreen(onBack = { navController.popBackStack() })
         }
     }
 }
