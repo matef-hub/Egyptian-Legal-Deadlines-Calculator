@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -63,7 +64,6 @@ import com.ateflaw.legaldeadlines.domain.review.AuditLevel
 import com.ateflaw.legaldeadlines.domain.review.LegalRuleReviewCatalog
 import com.ateflaw.legaldeadlines.presentation.components.SweetAlertNotice
 import com.ateflaw.legaldeadlines.presentation.components.NoticeKind
-import com.ateflaw.legaldeadlines.presentation.components.custom.DiamondDivider
 import com.ateflaw.legaldeadlines.presentation.viewmodel.RuleCatalogViewModel
 
 private const val ALL_LAWS = "كل القوانين"
@@ -134,37 +134,47 @@ fun RulesCatalogScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(top = innerPadding.calculateTopPadding() + 12.dp, start = 16.dp, end = 16.dp)
+            .padding(top = innerPadding.calculateTopPadding() + 8.dp, start = 16.dp, end = 16.dp)
     ) {
-        Text("دليل مواعيد الإجراءات", style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold)
-        Text(
-            "القواعد مصنفة حسب القانون. عند الحفظ يصبح تعديلك نهائيًا، وتظل ملاحظات ملف المراجعة متاحة.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        DiamondDivider(modifier = Modifier.padding(vertical = 8.dp))
-        Spacer(Modifier.height(6.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Text("${state.rules.size} قاعدة • ${laws.size} قانون",
-                modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-            OutlinedButton(onClick = onOpenBackup) {
-                Icon(Icons.Default.Lock, contentDescription = null)
-                Spacer(Modifier.width(4.dp))
-                Text("نسخ احتياطي")
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "دليل مواعيد الإجراءات",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "${state.rules.size} قاعدة • ${laws.size} قانون",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            Button(onClick = {
-                onDismissMessage()
-                editingRule = null
-                openedAtToken = state.savedToken
-                showEditor = true
-            }) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(Modifier.width(5.dp))
-                Text("إضافة ميعاد")
+            androidx.compose.material3.IconButton(
+                onClick = onOpenBackup,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(Icons.Default.Lock, contentDescription = "نسخ احتياطي", tint = MaterialTheme.colorScheme.primary)
+            }
+            Spacer(Modifier.width(8.dp))
+            Button(
+                onClick = {
+                    onDismissMessage()
+                    editingRule = null
+                    openedAtToken = state.savedToken
+                    showEditor = true
+                },
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                modifier = Modifier.height(36.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "إضافة ميعاد", modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("إضافة")
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
@@ -181,7 +191,7 @@ fun RulesCatalogScreen(
                     label = { Text(law, maxLines = 1) })
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(
