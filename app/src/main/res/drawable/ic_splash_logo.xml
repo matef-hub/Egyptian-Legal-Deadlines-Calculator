@@ -51,13 +51,13 @@
                     android:fillColor="#C5A059"/>
             </group>
 
-            <!-- Text Group: Geometric Kufi Arabic "المواعيد القانونية" -->
+            <!-- Text Group: Geometric Kufi Arabic "╪د┘┘à┘ê╪د╪╣┘è╪» ╪د┘┘é╪د┘┘ê┘┘è╪ر" -->
             <group
                 android:name="text_group"
                 android:pivotX="144"
                 android:pivotY="210">
 
-                <!-- Word 1: المواعيد -->
+                <!-- Word 1: ╪د┘┘à┘ê╪د╪╣┘è╪» -->
                 <path
                     android:pathData="
                         M 252,204 L 252,220
@@ -71,7 +71,7 @@
                     android:strokeLineJoin="round"
                     android:fillColor="#00000000"/>
 
-                <!-- Word 2: القانونية -->
+                <!-- Word 2: ╪د┘┘é╪د┘┘ê┘┘è╪ر -->
                 <path
                     android:pathData="
                         M 140,204 L 140,220

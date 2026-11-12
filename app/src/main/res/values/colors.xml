@@ -5,4 +5,6 @@
     <color name="accent_gold">#8B6B23</color>
     <color name="background_light">#F9F9FB</color>
     <color name="surface_white">#FFFFFF</color>
+    <color name="splash_background">#EFE9DC</color>
+    <color name="splash_wordmark">#142B3D</color>
 </resources>

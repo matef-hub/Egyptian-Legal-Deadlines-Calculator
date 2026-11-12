@@ -1,8 +1,11 @@
 package com.ateflaw.legaldeadlines.presentation
 
+import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
 import android.app.Activity
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -28,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
+import androidx.core.animation.doOnEnd
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -46,9 +50,24 @@ import com.ateflaw.legaldeadlines.presentation.viewmodel.RuleCatalogViewModel
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            splashScreen.setOnExitAnimationListener { splash ->
+                val rise = 24f * resources.displayMetrics.density
+                ObjectAnimator.ofPropertyValuesHolder(
+                    splash.view,
+                    PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, -rise),
+                    PropertyValuesHolder.ofFloat(View.ALPHA, 0f)
+                ).apply {
+                    duration = 180L
+                    doOnEnd { splash.remove() }
+                    start()
+                }
+            }
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false

@@ -1,6 +1,12 @@
 package com.ateflaw.legaldeadlines.presentation.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.Image
@@ -38,13 +44,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
@@ -91,6 +102,42 @@ fun LandingScreenContent(
     onNavigateToCalculator: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Animate the actual landing artwork without delaying the screen's controls.
+    var illustrationVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { illustrationVisible = true }
+    val entrance by animateFloatAsState(
+        targetValue = if (illustrationVisible) 1f else 0f,
+        animationSpec = tween(durationMillis = 650),
+        label = "illustration entrance"
+    )
+    val illustrationTransition = rememberInfiniteTransition(label = "landing illustration")
+    val illustrationScale by illustrationTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1800),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "illustration scale"
+    )
+    val illustrationRotation by illustrationTransition.animateFloat(
+        initialValue = -1.2f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1800),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "illustration rotation"
+    )
+    val illustrationLift by illustrationTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1800),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "illustration lift"
+    )
     // Readiness must reflect actual persisted rules, not simulated progress.
     val isDataReady = rules.isNotEmpty()
     val reviewedRuleCount = rules.count { it.reviewStatus == "VERIFIED_ACCURATE" && it.officialSourceUrl.isNotBlank() }
@@ -126,7 +173,17 @@ fun LandingScreenContent(
                     painter = painterResource(R.drawable.ic_meead_illustration),
                     contentDescription = "رسم توضيحي لملف قضائي وتقويم مواعيد",
                     contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxWidth().height(160.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .graphicsLayer {
+                            val entryScale = 0.90f + 0.10f * entrance
+                            scaleX = illustrationScale * entryScale
+                            scaleY = illustrationScale * entryScale
+                            alpha = entrance
+                            rotationZ = illustrationRotation
+                            translationY = (illustrationLift + 16f * (1f - entrance)).dp.toPx()
+                        }
                 )
                 Text(
                     text = "ميعاد",

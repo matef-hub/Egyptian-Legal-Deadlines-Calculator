@@ -2,14 +2,14 @@
 <resources>
     <!-- Base application theme -->
     <style name="Theme.EgyptianLegalDeadlines" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/splash_background</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
-    <!-- Starting theme to prevent default Android 12 splash icon and white screen -->
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">#F4F6F9</item>
-        <item name="windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_meead_illustration</item>
         <item name="postSplashScreenTheme">@style/Theme.EgyptianLegalDeadlines</item>
     </style>
 </resources>
