@@ -106,6 +106,9 @@ import com.ateflaw.legaldeadlines.presentation.components.CalculationResultCard
 import com.ateflaw.legaldeadlines.presentation.components.SweetAlertNotice
 import com.ateflaw.legaldeadlines.presentation.components.NoticeKind
 import com.ateflaw.legaldeadlines.presentation.components.HolidayStatusBar
+import com.ateflaw.legaldeadlines.presentation.components.custom.DiamondDivider
+import com.ateflaw.legaldeadlines.presentation.ui.theme.ArefRuqaaFontFamily
+import com.ateflaw.legaldeadlines.presentation.ui.theme.AntiqueBrass
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
@@ -260,6 +263,25 @@ fun CalculatorScreenContent(
                 },
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Visual masthead; calculator bindings and validation below remain untouched.
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "احتساب الميعاد",
+                    fontFamily = ArefRuqaaFontFamily,
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "دفتر المواعيد الإجرائية",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = AntiqueBrass
+                )
+                DiamondDivider(modifier = Modifier.padding(top = 8.dp))
+            }
+
             // 1. Top Holiday & Calendar Status Bar
             HolidayStatusBar(
                 todayDate = uiState.todayDate,

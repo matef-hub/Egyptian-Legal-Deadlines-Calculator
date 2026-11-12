@@ -57,6 +57,9 @@ import com.ateflaw.legaldeadlines.R
 import com.ateflaw.legaldeadlines.domain.model.Holiday
 import com.ateflaw.legaldeadlines.presentation.components.SweetAlertNotice
 import com.ateflaw.legaldeadlines.presentation.components.NoticeKind
+import com.ateflaw.legaldeadlines.presentation.components.custom.MonthlyHolidayCalendar
+import com.ateflaw.legaldeadlines.presentation.components.custom.DiamondDivider
+import com.ateflaw.legaldeadlines.presentation.ui.theme.ArefRuqaaFontFamily
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.presentation.viewmodel.HolidaysUiState
 import com.ateflaw.legaldeadlines.presentation.viewmodel.HolidaysViewModel
@@ -65,6 +68,7 @@ import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import kotlinx.coroutines.delay
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -162,6 +166,29 @@ fun HolidaysScreenContent(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        item(key = "calendar-overview") {
+                            var selectedMonth by remember { mutableStateOf(YearMonth.now()) }
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    text = "تقويم العطلات",
+                                    fontFamily = ArefRuqaaFontFamily,
+                                    style = MaterialTheme.typography.headlineLarge,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "الأيام الموثقة رسميًا مميزة عن البيانات المرشحة للمراجعة",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                DiamondDivider()
+                                MonthlyHolidayCalendar(
+                                    currentMonth = selectedMonth,
+                                    onPreviousMonth = { selectedMonth = selectedMonth.minusMonths(1) },
+                                    onNextMonth = { selectedMonth = selectedMonth.plusMonths(1) },
+                                    holidays = uiState.holidays
+                                )
+                            }
+                        }
                         item {
                             // Cabinet / Governance Policy Banner
                             Card(
