@@ -115,6 +115,23 @@ android {
     }
 }
 
+// Fail closed for local/manual release tasks too: never accept an unsigned APK as a release.
+tasks.configureEach {
+    if (name == "assembleRelease" || name == "bundleRelease") {
+        doFirst {
+            val path = System.getenv("MEEAD_KEYSTORE_PATH")
+            val credentials = listOf(
+                System.getenv("MEEAD_STORE_PASSWORD"),
+                System.getenv("MEEAD_KEY_ALIAS"),
+                System.getenv("MEEAD_KEY_PASSWORD")
+            )
+            check(!path.isNullOrBlank() && file(path).isFile && credentials.all { !it.isNullOrBlank() }) {
+                "Missing owner-held release signing credentials (MEEAD_*). No unsigned release is permitted."
+            }
+        }
+    }
+}
+
 dependencies {
     implementation(libs.androidx.compose.foundation.layout)
     coreLibraryDesugaring(libs.android.desugar.jdk.libs)
