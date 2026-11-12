@@ -126,15 +126,15 @@ class BackupTransferService(
                 val ownerDecision = row.getAsString("workbook_decision") == "USER_APPROVED"
                 val revision = row.getAsInteger("revision") ?: 0
                 if (id > 169 || ownerDecision || revision >= 3) {
-                    db.insertOrThrow("legal_rules", null, row)
+                    db.insert("legal_rules", android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE, row)
                     importedRules++
                 }
             }
             for (row in records.getValue("rule_edit_history")) {
-                db.insertOrThrow("rule_edit_history", null, row)
+                db.insert("rule_edit_history", android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT, row)
             }
             for (row in records.getValue("saved_deadlines")) {
-                db.insertOrThrow("saved_deadlines", null, row)
+                db.insert("saved_deadlines", android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT, row)
             }
             var importedHolidays = 0
             for (sourceRow in records.getValue("holidays")) {
@@ -151,7 +151,7 @@ class BackupTransferService(
                     !row.getAsString("source_url").orEmpty().startsWith("https://")) {
                     row.put("verification_status", "UNVERIFIED")
                 }
-                db.insertWithOnConflict("holidays", null, row, android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE)
+                db.insert("holidays", android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE, row)
                 importedHolidays++
             }
             Totals(
