@@ -44,7 +44,7 @@ fun HolidayStatusBar(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
         )
@@ -52,7 +52,7 @@ fun HolidayStatusBar(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(10.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -122,11 +122,11 @@ fun HolidayStatusBar(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "قاعدة بيانات العطلات الرسمية المعتمدة: $loadedHolidaysCount عطلة مسجلة",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface
+                text = "العطلات المعتمدة: $loadedHolidaysCount عطلة مسجلة",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

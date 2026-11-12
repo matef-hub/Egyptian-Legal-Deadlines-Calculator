@@ -6,8 +6,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -29,7 +32,8 @@ fun AppNavHost(
     deadlineListViewModel: DeadlineListViewModel,
     holidaysViewModel: HolidaysViewModel,
     ruleCatalogViewModel: RuleCatalogViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     NavHost(
         navController = navController,
@@ -63,21 +67,37 @@ fun AppNavHost(
             )
         }
         composable(Screen.Calculator.route) {
-            CalculatorScreen(viewModel = mainViewModel)
+            CalculatorScreen(
+                viewModel = mainViewModel,
+                modifier = Modifier.padding(innerPadding)
+            )
         }
         composable(Screen.Holidays.route) {
-            HolidaysScreen(viewModel = holidaysViewModel)
+            HolidaysScreen(
+                viewModel = holidaysViewModel,
+                modifier = Modifier.padding(innerPadding)
+            )
         }
         composable(Screen.SavedDeadlines.route) {
-            SavedDeadlinesScreen(viewModel = deadlineListViewModel)
+            SavedDeadlinesScreen(
+                viewModel = deadlineListViewModel,
+                modifier = Modifier.padding(innerPadding)
+            )
         }
         composable(Screen.RulesCatalog.route) {
-            RulesCatalogScreen(viewModel = ruleCatalogViewModel, onOpenBackup = {
-                navController.navigate(Screen.BackupRestore.route)
-            })
+            RulesCatalogScreen(
+                viewModel = ruleCatalogViewModel,
+                innerPadding = innerPadding,
+                onOpenBackup = {
+                    navController.navigate(Screen.BackupRestore.route)
+                }
+            )
         }
         composable(Screen.BackupRestore.route) {
-            BackupRestoreScreen(onBack = { navController.popBackStack() })
+            BackupRestoreScreen(
+                onBack = { navController.popBackStack() },
+                modifier = Modifier.padding(innerPadding)
+            )
         }
     }
 }

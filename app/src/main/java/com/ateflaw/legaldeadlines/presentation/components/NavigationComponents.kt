@@ -16,12 +16,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
@@ -66,7 +65,7 @@ fun ModernTopAppBar(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
-        shadowElevation = 3.dp
+        shadowElevation = 2.dp
     ) {
         TopAppBar(
             title = {
@@ -75,61 +74,47 @@ fun ModernTopAppBar(
                     horizontalArrangement = Arrangement.Start
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.secondaryContainer,
-                        modifier = Modifier.size(42.dp)
+                        modifier = Modifier.size(30.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.Gavel,
                                 contentDescription = stringResource(R.string.nav_legal_deadlines_desc),
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
-                    Column {
-                        Text(
-                            text = stringResource(R.string.app_name),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = when (currentRoute) {
-                                Screen.SavedDeadlines.route -> stringResource(R.string.nav_saved)
-                                Screen.Holidays.route -> stringResource(R.string.nav_holidays)
-                                Screen.RulesCatalog.route -> "دليل المواعيد"
-                                else -> stringResource(R.string.nav_calculator)
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
+                    Text(
+                        text = when (currentRoute) {
+                            Screen.SavedDeadlines.route -> stringResource(R.string.nav_saved)
+                            Screen.Holidays.route -> stringResource(R.string.nav_holidays)
+                            Screen.RulesCatalog.route -> "دليل المواعيد"
+                            else -> stringResource(R.string.nav_calculator)
+                        },
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             },
             actions = {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(end = 8.dp)
+                IconButton(
+                    onClick = onToggleScreen
                 ) {
-                    IconButton(
-                        onClick = onToggleScreen
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.CompareArrows,
-                            contentDescription = stringResource(R.string.nav_toggle_desc),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.CompareArrows,
+                        contentDescription = stringResource(R.string.nav_toggle_desc),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             },
             windowInsets = TopAppBarDefaults.windowInsets,
@@ -150,17 +135,17 @@ fun FloatingBottomNavigationBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(bottom = 16.dp, top = 8.dp)
-            .padding(horizontal = 16.dp)
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .padding(bottom = 8.dp, top = 4.dp)
+            .padding(horizontal = 20.dp)
     ) {
         Surface(
-            shape = RoundedCornerShape(32.dp),
+            shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 2.dp,
-            shadowElevation = 8.dp,
+            shadowElevation = 4.dp,
             border = BorderStroke(
-                width = 1.dp,
+                width = 0.5.dp,
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
             ),
             modifier = Modifier.fillMaxWidth()
@@ -168,7 +153,7 @@ fun FloatingBottomNavigationBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 10.dp),
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -243,29 +228,29 @@ private fun RowScope.FloatingNavItem(
 
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         color = containerColor,
         contentColor = contentColor,
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 2.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 2.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                modifier = Modifier.size(20.dp).graphicsLayer {
+                modifier = Modifier.size(18.dp).graphicsLayer {
                     scaleX = iconScale
                     scaleY = iconScale
                 }
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = label,
                 color = contentColor,
-                fontSize = 10.sp,
+                fontSize = 9.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis

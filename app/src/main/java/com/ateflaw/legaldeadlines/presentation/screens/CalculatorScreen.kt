@@ -42,9 +42,7 @@ import androidx.compose.material.icons.filled.Balance
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -76,7 +74,6 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -98,28 +95,28 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ateflaw.legaldeadlines.domain.model.StartRule
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
+import com.ateflaw.legaldeadlines.domain.model.StartRule
 import com.ateflaw.legaldeadlines.presentation.components.CalculationResultCard
-import com.ateflaw.legaldeadlines.presentation.components.SweetAlertNotice
-import com.ateflaw.legaldeadlines.presentation.components.NoticeKind
 import com.ateflaw.legaldeadlines.presentation.components.HolidayStatusBar
+import com.ateflaw.legaldeadlines.presentation.components.NoticeKind
+import com.ateflaw.legaldeadlines.presentation.components.SweetAlertNotice
 import com.ateflaw.legaldeadlines.presentation.components.custom.DiamondDivider
-import com.ateflaw.legaldeadlines.presentation.ui.theme.ArefRuqaaFontFamily
 import com.ateflaw.legaldeadlines.presentation.ui.theme.AntiqueBrass
+import com.ateflaw.legaldeadlines.presentation.ui.theme.ArefRuqaaFontFamily
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
-import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.MainUiState
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
+import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-import java.time.ZoneId
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -261,9 +258,9 @@ fun CalculatorScreenContent(
                     alpha = formAlpha
                     translationY = formTranslationY
                 },
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Visual masthead; calculator bindings and validation below remain untouched.
+            // Visual masthead
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -271,15 +268,15 @@ fun CalculatorScreenContent(
                 Text(
                     text = "احتساب الميعاد",
                     fontFamily = ArefRuqaaFontFamily,
-                    style = MaterialTheme.typography.headlineLarge,
+                    style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
                     text = "دفتر المواعيد الإجرائية",
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     color = AntiqueBrass
                 )
-                DiamondDivider(modifier = Modifier.padding(top = 8.dp))
+                DiamondDivider(modifier = Modifier.padding(top = 4.dp))
             }
 
             // 1. Top Holiday & Calendar Status Bar
@@ -308,13 +305,13 @@ fun CalculatorScreenContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     // Header
                     Text(
                         text = "بيانات احتساب الميعاد",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
@@ -593,7 +590,7 @@ fun CalculatorScreenContent(
                                     )
                                     Column {
                                         Text(
-                                            text = "ميعاد مسافة الطريق (المواد 16 و17 مرافعات)",
+                                            text = "ميعاد المسافة",
                                             style = MaterialTheme.typography.titleSmall,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.primary

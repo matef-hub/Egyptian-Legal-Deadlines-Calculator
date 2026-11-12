@@ -1,9 +1,11 @@
 package com.ateflaw.legaldeadlines.presentation.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -49,7 +52,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
+import com.ateflaw.legaldeadlines.presentation.viewmodel.RuleCatalogUiState
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.model.LegalRuleDraft
@@ -65,16 +71,36 @@ private const val ALL_LAWS = "كل القوانين"
 @Composable
 fun RulesCatalogScreen(
     viewModel: RuleCatalogViewModel,
-    onOpenBackup: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    innerPadding: PaddingValues = PaddingValues(0.dp),
+    onOpenBackup: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    RulesCatalogScreen(
+        state = state,
+        onDismissMessage = viewModel::dismissMessage,
+        onSaveRule = viewModel::save,
+        modifier = modifier,
+        innerPadding = innerPadding,
+        onOpenBackup = onOpenBackup
+    )
+}
+
+@Composable
+fun RulesCatalogScreen(
+    state: RuleCatalogUiState,
+    onDismissMessage: () -> Unit,
+    onSaveRule: (LegalRule?, LegalRuleDraft) -> Unit,
+    modifier: Modifier = Modifier,
+    innerPadding: PaddingValues = PaddingValues(0.dp),
+    onOpenBackup: () -> Unit = {}
+) {
     var query by remember { mutableStateOf("") }
     var selectedLaw by remember { mutableStateOf(ALL_LAWS) }
     var selectedReview by remember { mutableStateOf("ALL") }
     var editingRule by remember { mutableStateOf<LegalRule?>(null) }
     var showEditor by remember { mutableStateOf(false) }
-    var openedAtToken by remember { mutableStateOf(0L) }
+    var openedAtToken by remember { androidx.compose.runtime.mutableLongStateOf(0L) }
     val laws = remember(state.rules) {
         state.rules.map { it.lawName.ifBlank { "قانون غير مصنف" } }.distinct().sorted()
     }
@@ -105,8 +131,12 @@ fun RulesCatalogScreen(
         }
     }
 
-    Column(modifier = modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Text("دليل المواعيد القانونية", style = MaterialTheme.typography.headlineSmall,
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(top = innerPadding.calculateTopPadding() + 12.dp, start = 16.dp, end = 16.dp)
+    ) {
+        Text("دليل مواعيد الإجراءات", style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold)
         Text(
             "القواعد مصنفة حسب القانون. عند الحفظ يصبح تعديلك نهائيًا، وتظل ملاحظات ملف المراجعة متاحة.",
@@ -124,7 +154,7 @@ fun RulesCatalogScreen(
                 Text("نسخ احتياطي")
             }
             Button(onClick = {
-                viewModel.dismissMessage()
+                onDismissMessage()
                 editingRule = null
                 openedAtToken = state.savedToken
                 showEditor = true
@@ -180,6 +210,7 @@ fun RulesCatalogScreen(
             }
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 grouped.forEach { (law, rules) ->
@@ -194,7 +225,7 @@ fun RulesCatalogScreen(
                     }
                     items(rules, key = { "rule:${it.id}" }) { rule ->
                         RuleCatalogCard(rule = rule, onEdit = {
-                            viewModel.dismissMessage()
+                            onDismissMessage()
                             editingRule = rule
                             openedAtToken = state.savedToken
                             showEditor = true
@@ -209,7 +240,7 @@ fun RulesCatalogScreen(
     SweetAlertNotice(
         message = state.error ?: state.notice,
         kind = if (state.error != null) NoticeKind.ERROR else NoticeKind.SUCCESS,
-        onDismiss = viewModel::dismissMessage
+        onDismiss = onDismissMessage
     )
 
     if (showEditor) {
@@ -217,9 +248,8 @@ fun RulesCatalogScreen(
             rule = editingRule,
             selectedLaw = if (selectedLaw == ALL_LAWS) "" else selectedLaw,
             isSaving = state.saving,
-            error = state.error,
             onDismiss = { if (!state.saving) { showEditor = false; editingRule = null } },
-            onSave = { draft -> viewModel.save(editingRule, draft) }
+            onSave = { draft -> onSaveRule(editingRule, draft) }
         )
     }
 }
@@ -248,7 +278,7 @@ private fun RuleCatalogCard(rule: LegalRule, onEdit: () -> Unit) {
         AuditLevel.VERIFIED -> if (rule.workbookDecision == "USER_APPROVED") "تم حفظ واعتماد التعديل" else "معتمدة بملف المراجعة"
     }
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().wrapContentHeight(),
         colors = CardDefaults.cardColors(containerColor = reviewColor),
         onClick = { expanded = !expanded }
     ) {
@@ -272,24 +302,26 @@ private fun RuleCatalogCard(rule: LegalRule, onEdit: () -> Unit) {
                 maxLines = if (expanded) Int.MAX_VALUE else 3,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodySmall)
-            if (expanded) {
-                if (rule.reviewMethod.isNotBlank()) Text("نوع الميعاد: ${rule.reviewMethod}", style = MaterialTheme.typography.bodySmall)
-                Text("نص المادة", fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.labelLarge)
-                Text(rule.articleText.ifBlank { "لم يُسجل النص الكامل للمادة بعد." },
-                    style = MaterialTheme.typography.bodyMedium)
-                if (rule.reviewVersion > 0 && rule.reviewerNote.isNotBlank()) {
-                    Text("ملاحظات المراجع بالملف: ${rule.reviewerNote}", style = MaterialTheme.typography.bodySmall)
-                }
-                if (rule.notes.isNotBlank()) {
-                    Text("ملاحظات: ${rule.notes}", style = MaterialTheme.typography.bodySmall)
-                }
-                val source = if (LegalRuleReviewCatalog.matchesArticle940(rule)) {
-                    LegalRuleReviewCatalog.ARTICLE_940_SOURCE
-                } else rule.officialSourceUrl
-                if (source.isNotBlank()) {
-                    TextButton(onClick = { uriHandler.openUri(source) }) {
-                        Text("فتح رابط المصدر الوارد بملف المراجعة")
+            AnimatedVisibility(visible = expanded) {
+                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    if (rule.reviewMethod.isNotBlank()) Text("نوع الميعاد: ${rule.reviewMethod}", style = MaterialTheme.typography.bodySmall)
+                    Text("نص المادة", fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelLarge)
+                    Text(rule.articleText.ifBlank { "لم يُسجل النص الكامل للمادة بعد." },
+                        style = MaterialTheme.typography.bodyMedium)
+                    if (rule.reviewVersion > 0 && rule.reviewerNote.isNotBlank()) {
+                        Text("ملاحظات المراجع بالملف: ${rule.reviewerNote}", style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (rule.notes.isNotBlank()) {
+                        Text("ملاحظات: ${rule.notes}", style = MaterialTheme.typography.bodySmall)
+                    }
+                    val source = if (LegalRuleReviewCatalog.matchesArticle940(rule)) {
+                        LegalRuleReviewCatalog.ARTICLE_940_SOURCE
+                    } else rule.officialSourceUrl
+                    if (source.isNotBlank()) {
+                        TextButton(onClick = { uriHandler.openUri(source) }) {
+                            Text("فتح رابط المصدر الوارد بملف المراجعة")
+                        }
                     }
                 }
             }
@@ -312,7 +344,6 @@ private fun RuleEditorDialog(
     rule: LegalRule?,
     selectedLaw: String,
     isSaving: Boolean,
-    error: String?,
     onDismiss: () -> Unit,
     onSave: (LegalRuleDraft) -> Unit
 ) {
@@ -404,4 +435,42 @@ private fun RuleEditorDialog(
             OutlinedButton(onClick = onDismiss, enabled = !isSaving) { Text("إلغاء") }
         }
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun RulesCatalogScreenPreview() {
+    EgyptianLegalDeadlinesTheme {
+        RulesCatalogScreen(
+            state = RuleCatalogUiState(
+                rules = listOf(
+                    LegalRule(
+                        id = 1,
+                        actionName = "تقديم الطعن بالنقض",
+                        lawName = "قانون المرافعات المدنية والتجارية",
+                        lawArticle = "المادة 252",
+                        articleText = "ميعاد الطعن بطريق النقض ستون يوماً.",
+                        duration = 60,
+                        unit = DurationUnit.DAYS,
+                        revision = 1,
+                        reviewMethod = "حساب الميعاد باليوم"
+                    ),
+                    LegalRule(
+                        id = 2,
+                        actionName = "الاستئناف",
+                        lawName = "قانون المرافعات المدنية والتجارية",
+                        lawArticle = "المادة 227",
+                        articleText = "ميعاد الاستئناف أربعون يوماً.",
+                        duration = 40,
+                        unit = DurationUnit.DAYS,
+                        revision = 1,
+                        reviewMethod = "حساب الميعاد باليوم"
+                    )
+                ),
+                loading = false
+            ),
+            onDismissMessage = {},
+            onSaveRule = { _, _ -> }
+        )
+    }
 }

@@ -181,7 +181,7 @@ fun SavedDeadlineItem(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(12.dp)
         ) {
             // Header Row: Action Name and Action Icons
             Row(
@@ -254,7 +254,7 @@ fun SavedDeadlineItem(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             // Metadata: Case Number & Client Name displayed in full-width rows to prevent vertical text compression
             if (deadline.caseNumber.isNotBlank()) {

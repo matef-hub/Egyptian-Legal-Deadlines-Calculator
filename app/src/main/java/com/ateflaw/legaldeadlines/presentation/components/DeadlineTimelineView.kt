@@ -82,7 +82,7 @@ fun DeadlineTimelineView(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -95,7 +95,7 @@ fun DeadlineTimelineView(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(12.dp)
                 .animateContentSize(
                     animationSpec = spring(
                         dampingRatio = Spring.DampingRatioLowBouncy,
@@ -115,7 +115,7 @@ fun DeadlineTimelineView(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(30.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
@@ -124,14 +124,14 @@ fun DeadlineTimelineView(
                             imageVector = Icons.Default.Schedule,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Column(modifier = Modifier.weight(1f, fill = false)) {
                         Text(
                             text = "المسار الإجرائي لسريان الميعاد",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -148,7 +148,7 @@ fun DeadlineTimelineView(
                 CountdownBadge(finalDeadline = finalDeadline)
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Milestones Vertical Flow
             milestones.forEachIndexed { index, milestone ->

@@ -205,7 +205,6 @@ class MainActivity : ComponentActivity() {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(innerPadding)
                     ) {
                         AppNavHost(
                             navController = navController,
@@ -213,6 +212,7 @@ class MainActivity : ComponentActivity() {
                             deadlineListViewModel = deadlineListViewModel,
                             holidaysViewModel = holidaysViewModel,
                             ruleCatalogViewModel = ruleCatalogViewModel,
+                            innerPadding = innerPadding,
                             modifier = Modifier.fillMaxSize()
                         )
                     }

@@ -1,15 +1,10 @@
 package com.ateflaw.legaldeadlines.presentation.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,12 +17,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -39,20 +35,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -61,20 +52,18 @@ import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
 import com.ateflaw.legaldeadlines.R
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.model.StartRule
-import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
-import com.ateflaw.legaldeadlines.presentation.ui.theme.ArefRuqaaFontFamily
-import com.ateflaw.legaldeadlines.presentation.ui.theme.AntiqueBrass
 import com.ateflaw.legaldeadlines.presentation.components.custom.DiamondDivider
+import com.ateflaw.legaldeadlines.presentation.ui.theme.AntiqueBrass
+import com.ateflaw.legaldeadlines.presentation.ui.theme.ArefRuqaaFontFamily
+import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun LandingScreen(
@@ -104,7 +93,7 @@ fun LandingScreenContent(
     val reviewedRuleCount = rules.count { it.reviewStatus == "VERIFIED_ACCURATE" && it.officialSourceUrl.isNotBlank() }
     val animatedProgress = if (isDataReady) 1.0f else 0.0f
     val currentStageText = if (isDataReady) {
-        "تم تحميل ${rules.size} قاعدة، منها ${reviewedRuleCount} معتمدة؛ والعطلات المسجلة ${totalHolidaysCount}. لا تعتمد على الحساب قبل مراجعة القواعد والسند الرسمي."
+        "تم تحميل ${rules.size} قاعدة، منها $reviewedRuleCount معتمدة؛ والعطلات المسجلة ${totalHolidaysCount}. لا تعتمد على الحساب قبل مراجعة القواعد والسند الرسمي."
     } else {
         "جارٍ تحميل القواعد القانونية من قاعدة البيانات..."
     }
@@ -113,32 +102,32 @@ fun LandingScreenContent(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 16.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(vertical = 16.dp),
+                .padding(vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             // Top Section: Legal Badge & Title
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(top = 16.dp)
+                modifier = Modifier.padding(top = 8.dp)
             ) {
-                // Visual identity from the UI concept; the real data readiness state below is preserved.
+                // Visual identity
                 Image(
                     painter = painterResource(R.drawable.ic_meead_illustration),
                     contentDescription = "رسم توضيحي لملف قضائي وتقويم مواعيد",
                     contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxWidth().height(182.dp)
+                    modifier = Modifier.fillMaxWidth().height(150.dp)
                 )
                 Text(
                     text = "ميعاد",
                     fontFamily = ArefRuqaaFontFamily,
-                    fontSize = 45.sp,
+                    fontSize = 38.sp,
                     color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center
                 )
@@ -149,38 +138,28 @@ fun LandingScreenContent(
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = "حاسبة المواعيد القانونية",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontSize = 28.sp),
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
                     text = "المساعد الإجرائي للسادة المحامين",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.secondary,
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "وفقاً لأحكام قانون المرافعات المدنية والتجارية المصري",
+                    text = "وفقاً لأحكام القوانين المصرية",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 )
             }
 
-            DiamondDivider(modifier = Modifier.padding(vertical = 4.dp))
+            DiamondDivider(modifier = Modifier.padding(vertical = 2.dp))
 
             // Middle Section: Loading Status & Progress Bar
             Card(
@@ -198,7 +177,7 @@ fun LandingScreenContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
+                        .padding(14.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Row(
@@ -230,7 +209,7 @@ fun LandingScreenContent(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     // Progress Bar
                     LinearProgressIndicator(
@@ -248,7 +227,7 @@ fun LandingScreenContent(
                         strokeCap = StrokeCap.Round
                     )
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
                         text = currentStageText,
@@ -295,7 +274,7 @@ fun LandingScreenContent(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = "يعمل دون اتصال بالإنترنت • تُعرض حالة توثيق العطلات قبل الاعتماد",
@@ -304,7 +283,7 @@ fun LandingScreenContent(
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Social Links
                 val uriHandler = LocalUriHandler.current

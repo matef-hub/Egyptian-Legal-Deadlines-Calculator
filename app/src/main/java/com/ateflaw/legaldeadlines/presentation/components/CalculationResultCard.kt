@@ -151,7 +151,7 @@ fun CalculationResultCard(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.tertiaryContainer
         ),
@@ -163,8 +163,8 @@ fun CalculationResultCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // Header Row: Check Icon + Title "الميعاد النهائي"
             Row(
@@ -296,9 +296,9 @@ fun CalculationResultCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surface)
-                    .padding(14.dp)
+                    .padding(10.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -322,7 +322,7 @@ fun CalculationResultCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -376,7 +376,7 @@ fun CalculationResultCard(
                     onClick = onAddFinalDeadlineToCalendar,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .height(42.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondary
                     ),
@@ -400,7 +400,7 @@ fun CalculationResultCard(
                         onClick = onAddProactiveAlertToCalendar,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(46.dp),
+                            .height(40.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(
@@ -428,7 +428,7 @@ fun CalculationResultCard(
                         enabled = !isSaved,
                         modifier = Modifier
                             .weight(1f)
-                            .height(46.dp),
+                            .height(40.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
                         ),
@@ -450,7 +450,7 @@ fun CalculationResultCard(
                         onClick = onBackClick,
                         modifier = Modifier
                             .weight(1f)
-                            .height(46.dp),
+                            .height(40.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(

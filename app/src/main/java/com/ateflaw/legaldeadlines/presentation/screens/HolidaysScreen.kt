@@ -163,16 +163,16 @@ fun HolidaysScreenContent(
 
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        contentPadding = PaddingValues(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         item(key = "calendar-overview") {
                             var selectedMonth by remember { mutableStateOf(YearMonth.now()) }
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text(
                                     text = "تقويم العطلات",
                                     fontFamily = ArefRuqaaFontFamily,
-                                    style = MaterialTheme.typography.headlineLarge,
+                                    style = MaterialTheme.typography.headlineMedium,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
@@ -193,7 +193,7 @@ fun HolidaysScreenContent(
                             // Cabinet / Governance Policy Banner
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(
                                     containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                                 )
@@ -201,7 +201,7 @@ fun HolidaysScreenContent(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(14.dp),
+                                        .padding(10.dp),
                                     verticalAlignment = Alignment.Top
                                 ) {
                                     Icon(
@@ -393,7 +393,7 @@ private fun HolidayCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(12.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
