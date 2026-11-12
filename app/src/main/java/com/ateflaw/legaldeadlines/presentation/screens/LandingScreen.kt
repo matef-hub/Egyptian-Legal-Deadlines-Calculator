@@ -10,13 +10,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -102,27 +105,28 @@ fun LandingScreenContent(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 16.dp)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(horizontal = 16.dp),
+        contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(vertical = 10.dp),
+                .padding(vertical = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.Center
         ) {
             // Top Section: Legal Badge & Title
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(top = 8.dp)
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Visual identity
                 Image(
                     painter = painterResource(R.drawable.ic_meead_illustration),
                     contentDescription = "رسم توضيحي لملف قضائي وتقويم مواعيد",
                     contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxWidth().height(150.dp)
+                    modifier = Modifier.fillMaxWidth().height(160.dp)
                 )
                 Text(
                     text = "ميعاد",
@@ -159,7 +163,9 @@ fun LandingScreenContent(
                 )
             }
 
-            DiamondDivider(modifier = Modifier.padding(vertical = 2.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+            DiamondDivider(modifier = Modifier.padding(vertical = 4.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Middle Section: Loading Status & Progress Bar
             Card(
@@ -237,6 +243,8 @@ fun LandingScreenContent(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(40.dp))
 
             // Bottom Section: Navigation Action & Guarantee Note
             Column(
