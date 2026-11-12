@@ -44,6 +44,7 @@ import com.ateflaw.legaldeadlines.presentation.components.ConfirmDeleteDialog
 import com.ateflaw.legaldeadlines.presentation.components.SweetAlertNotice
 import com.ateflaw.legaldeadlines.presentation.components.NoticeKind
 import com.ateflaw.legaldeadlines.presentation.components.SavedDeadlineItem
+import com.ateflaw.legaldeadlines.presentation.components.custom.DiamondDivider
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListUiState
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListViewModel
@@ -144,6 +145,7 @@ fun SavedDeadlinesScreenContent(
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(bottom = 4.dp)
                             )
+                            DiamondDivider()
                         }
 
                         itemsIndexed(

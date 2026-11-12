@@ -56,6 +56,7 @@ import com.ateflaw.legaldeadlines.domain.review.AuditLevel
 import com.ateflaw.legaldeadlines.domain.review.LegalRuleReviewCatalog
 import com.ateflaw.legaldeadlines.presentation.components.SweetAlertNotice
 import com.ateflaw.legaldeadlines.presentation.components.NoticeKind
+import com.ateflaw.legaldeadlines.presentation.components.custom.DiamondDivider
 import com.ateflaw.legaldeadlines.presentation.viewmodel.RuleCatalogViewModel
 
 private const val ALL_LAWS = "كل القوانين"
@@ -110,7 +111,8 @@ fun RulesCatalogScreen(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(Modifier.height(12.dp))
+        DiamondDivider(modifier = Modifier.padding(vertical = 8.dp))
+        Spacer(Modifier.height(6.dp))
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Text("${state.rules.size} قاعدة • ${laws.size} قانون",
                 modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)

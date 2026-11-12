@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -49,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalUriHandler
@@ -67,6 +69,9 @@ import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.model.StartRule
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
+import com.ateflaw.legaldeadlines.presentation.ui.theme.ArefRuqaaFontFamily
+import com.ateflaw.legaldeadlines.presentation.ui.theme.AntiqueBrass
+import com.ateflaw.legaldeadlines.presentation.components.custom.DiamondDivider
 import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
@@ -123,29 +128,26 @@ fun LandingScreenContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(top = 16.dp)
             ) {
-                // Emblem
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(76.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Gavel,
-                            contentDescription = "ميزان العدالة",
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(42.dp)
-                        )
-                    }
-                }
+                // Visual identity from the UI concept; the real data readiness state below is preserved.
+                Image(
+                    painter = painterResource(R.drawable.ic_meead_illustration),
+                    contentDescription = "رسم توضيحي لملف قضائي وتقويم مواعيد",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxWidth().height(182.dp)
+                )
+                Text(
+                    text = "ميعاد",
+                    fontFamily = ArefRuqaaFontFamily,
+                    fontSize = 45.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = "قانون  •  دقة  •  التزام",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = AntiqueBrass,
+                    textAlign = TextAlign.Center
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -177,6 +179,8 @@ fun LandingScreenContent(
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
+
+            DiamondDivider(modifier = Modifier.padding(vertical = 4.dp))
 
             // Middle Section: Loading Status & Progress Bar
             Card(
@@ -294,7 +298,7 @@ fun LandingScreenContent(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "يعمل دون اتصال بالإنترنت • حساب تلقائي لعطلات الجمعة والأعياد الرسمية",
+                    text = "يعمل دون اتصال بالإنترنت • تُعرض حالة توثيق العطلات قبل الاعتماد",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -320,7 +324,7 @@ fun LandingScreenContent(
                     SocialBrandButton(
                         painter = painterResource(R.drawable.ic_linkedin),
                         brandColor = Color(0xFF0077B5),
-                        onClick = { uriHandler.openUri("https://www.linkedin.com/in/atef-law") },
+                        onClick = { uriHandler.openUri("https://www.linkedin.com/in/moateflawyer/") },
                         contentDescription = "LinkedIn"
                     )
 

@@ -15,93 +15,113 @@ val DubaiFontFamily = FontFamily(
     Font(resId = R.font.dubai_bold, weight = FontWeight.Bold)
 )
 
+val CairoFontFamily = FontFamily(
+    Font(resId = R.font.cairo_light, weight = FontWeight.Light),
+    Font(resId = R.font.cairo_regular, weight = FontWeight.Normal),
+    Font(resId = R.font.cairo_medium, weight = FontWeight.Medium),
+    Font(resId = R.font.cairo_semibold, weight = FontWeight.SemiBold),
+    Font(resId = R.font.cairo_bold, weight = FontWeight.Bold),
+    Font(resId = R.font.cairo_black, weight = FontWeight.Black)
+)
+
+val AmiriFontFamily = FontFamily(
+    Font(resId = R.font.amiri_regular, weight = FontWeight.Normal),
+    Font(resId = R.font.amiri_bold, weight = FontWeight.Bold)
+)
+
+val ArefRuqaaFontFamily = FontFamily(
+    Font(resId = R.font.arefruqaa_regular, weight = FontWeight.Normal),
+    Font(resId = R.font.arefruqaa_bold, weight = FontWeight.Bold)
+)
+
+// Main Vintage Typography
 val Typography = Typography(
     displayLarge = TextStyle(
-        fontFamily = DubaiFontFamily,
+        fontFamily = AmiriFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 32.sp,
         lineHeight = 40.sp
     ),
     displayMedium = TextStyle(
-        fontFamily = DubaiFontFamily,
+        fontFamily = AmiriFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 28.sp,
         lineHeight = 36.sp
     ),
     displaySmall = TextStyle(
-        fontFamily = DubaiFontFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontFamily = AmiriFontFamily,
+        fontWeight = FontWeight.Bold,
         fontSize = 24.sp,
         lineHeight = 32.sp
     ),
     headlineLarge = TextStyle(
-        fontFamily = DubaiFontFamily,
+        fontFamily = AmiriFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 24.sp,
         lineHeight = 32.sp
     ),
     headlineMedium = TextStyle(
-        fontFamily = DubaiFontFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontFamily = AmiriFontFamily,
+        fontWeight = FontWeight.Bold,
         fontSize = 20.sp,
         lineHeight = 28.sp
     ),
     headlineSmall = TextStyle(
-        fontFamily = DubaiFontFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontFamily = AmiriFontFamily,
+        fontWeight = FontWeight.Bold,
         fontSize = 18.sp,
         lineHeight = 24.sp
     ),
     titleLarge = TextStyle(
-        fontFamily = DubaiFontFamily,
+        fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 18.sp,
         lineHeight = 24.sp
     ),
     titleMedium = TextStyle(
-        fontFamily = DubaiFontFamily,
-        fontWeight = FontWeight.Medium,
+        fontFamily = CairoFontFamily,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 16.sp,
         lineHeight = 22.sp
     ),
     titleSmall = TextStyle(
-        fontFamily = DubaiFontFamily,
+        fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp
     ),
     bodyLarge = TextStyle(
-        fontFamily = DubaiFontFamily,
+        fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = DubaiFontFamily,
+        fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp
     ),
     bodySmall = TextStyle(
-        fontFamily = DubaiFontFamily,
+        fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 16.sp
     ),
     labelLarge = TextStyle(
-        fontFamily = DubaiFontFamily,
+        fontFamily = CairoFontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 14.sp,
         lineHeight = 20.sp
     ),
     labelMedium = TextStyle(
-        fontFamily = DubaiFontFamily,
+        fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp
     ),
     labelSmall = TextStyle(
-        fontFamily = DubaiFontFamily,
+        fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 10.sp,
         lineHeight = 14.sp

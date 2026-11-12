@@ -2,37 +2,46 @@ package com.ateflaw.legaldeadlines.presentation.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Sophisticated judicial / legal palette matching concept design
-val PrimaryLegal = Color(0xFF0F2B48)       // Deep Egyptian Navy Blue
-val OnPrimaryLegal = Color(0xFFFFFFFF)
-val PrimaryContainerLegal = Color(0xFFD8E4F8)
-val OnPrimaryContainerLegal = Color(0xFF001B3E)
+// Vintage Technical Legal Palette
+val VintageBackground = Color(0xFFEFE9DC) // Vintage parchment paper texture/color
+val VintageFieldFill = Color(0xFFE6DEC8) // Field & Card Fill (Apply alpha = 0.55f at usage)
+val JudicialNavy = Color(0xFF152C3E) // Deep Judicial Navy Blue (Primary Ink)
+val AntiqueBrass = Color(0xFFA6844E) // Accent Gold/Brass
+val TerracottaSeal = Color(0xFF984432) // Urgent / Friday / Holiday Seal (Terracotta red wax seal)
+val BlueprintSteel = Color(0xFF5A6B78) // Technical Stroke (Steel blueprint outline, 1.2.dp)
+val VerifiedEmerald = Color(0xFF2E6F4E) // Verified Status (Deep emerald green)
 
-val SecondaryGold = Color(0xFF7E5E18)      // Legal Gold / Bronze
-val OnSecondaryGold = Color(0xFFFFFFFF)
-val SecondaryContainerGold = Color(0xFFFAF5E8) // Light warm yellow/beige badge background
-val OnSecondaryContainerGold = Color(0xFF5A4300)
+// Mapping vintage colors to Material Theme concepts (Light)
+val PrimaryLegal = JudicialNavy
+val OnPrimaryLegal = VintageBackground
+val PrimaryContainerLegal = AntiqueBrass.copy(alpha = 0.2f)
+val OnPrimaryContainerLegal = JudicialNavy
 
-val TertiaryEmerald = Color(0xFF1E5E3A)    // Court Green
-val OnTertiaryEmerald = Color(0xFFFFFFFF)
-val TertiaryContainerEmerald = Color(0xFFEAF5EC) // Light green result card background
-val OnTertiaryContainerEmerald = Color(0xFF1A532B)
+val SecondaryGold = AntiqueBrass
+val OnSecondaryGold = VintageBackground
+val SecondaryContainerGold = VintageFieldFill.copy(alpha = 0.55f)
+val OnSecondaryContainerGold = JudicialNavy
 
-val BackgroundWarm = Color(0xFFF4F6F9)     // Soft light gray-blue background
-val OnBackgroundDark = Color(0xFF191C1E)
+val TertiaryEmerald = VerifiedEmerald
+val OnTertiaryEmerald = VintageBackground
+val TertiaryContainerEmerald = VerifiedEmerald.copy(alpha = 0.15f)
+val OnTertiaryContainerEmerald = VerifiedEmerald
 
-val SurfaceWarm = Color(0xFFFFFFFF)
-val OnSurfaceDark = Color(0xFF191C1E)
-val SurfaceVariantWarm = Color(0xFFEFF2F6)
-val OnSurfaceVariantDark = Color(0xFF43474E)
+val BackgroundWarm = VintageBackground
+val OnBackgroundDark = JudicialNavy
 
-val OutlineBorder = Color(0xFFC4C7D0)
-val ErrorRed = Color(0xFFD93838)
-val OnErrorRed = Color(0xFFFFFFFF)
-val ErrorContainerRed = Color(0xFFFFDAD6)
-val OnErrorContainerRed = Color(0xFF410002)
+val SurfaceWarm = VintageBackground
+val OnSurfaceDark = JudicialNavy
+val SurfaceVariantWarm = VintageFieldFill.copy(alpha = 0.55f)
+val OnSurfaceVariantDark = BlueprintSteel
 
-// Dark theme accents
+val OutlineBorder = BlueprintSteel
+val ErrorRed = TerracottaSeal
+val OnErrorRed = VintageBackground
+val ErrorContainerRed = TerracottaSeal.copy(alpha = 0.15f)
+val OnErrorContainerRed = TerracottaSeal
+
+// Dark theme accents (Optional, keeping aligned with Vintage theme or standard dark mode)
 val PrimaryLegalDark = Color(0xFFA8C8FF)
 val OnPrimaryLegalDark = Color(0xFF003062)
 val BackgroundDark = Color(0xFF111418)
@@ -40,10 +49,10 @@ val SurfaceDark = Color(0xFF1A1D21)
 val SurfaceVariantDark = Color(0xFF2E3136)
 val OnBackgroundLight = Color(0xFFE2E2E6)
 val OnSurfaceLight = Color(0xFFE2E2E6)
-val OutlineDark = Color(0xFF8E9099)
+val OutlineDark = BlueprintSteel
 
 // Dark theme - Secondary
-val SecondaryGoldDark = Color(0xFFDCC28E)
+val SecondaryGoldDark = AntiqueBrass
 val OnSecondaryGoldDark = Color(0xFF402D04)
 val SecondaryContainerGoldDark = Color(0xFF5A4300)
 val OnSecondaryContainerGoldDark = Color(0xFFFAF5E8)

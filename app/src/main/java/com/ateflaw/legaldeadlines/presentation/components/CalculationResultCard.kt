@@ -57,6 +57,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
+import com.ateflaw.legaldeadlines.presentation.components.custom.BlueprintResultBox
+import com.ateflaw.legaldeadlines.presentation.components.custom.DiamondDivider
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
@@ -185,7 +187,10 @@ fun CalculationResultCard(
                 )
             }
 
+            DiamondDivider()
+
             // Big Highlighted Final Date Display
+            BlueprintResultBox(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -217,6 +222,7 @@ fun CalculationResultCard(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
                 )
+            }
             }
 
             // Interactive Procedural Lifecycle Timeline
