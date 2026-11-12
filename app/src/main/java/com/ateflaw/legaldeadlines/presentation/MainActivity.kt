@@ -155,8 +155,12 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                BackHandler(enabled = currentRoute == Screen.SavedDeadlines.route || currentRoute == Screen.Holidays.route || currentRoute == Screen.RulesCatalog.route) {
-                    navigateTo(Screen.Calculator.route)
+                BackHandler(enabled = currentRoute == Screen.SavedDeadlines.route || currentRoute == Screen.Holidays.route || currentRoute == Screen.RulesCatalog.route || currentRoute == Screen.BackupRestore.route) {
+                    if (currentRoute == Screen.BackupRestore.route) {
+                        navController.popBackStack()
+                    } else {
+                        navigateTo(Screen.Calculator.route)
+                    }
                 }
 
                 Scaffold(

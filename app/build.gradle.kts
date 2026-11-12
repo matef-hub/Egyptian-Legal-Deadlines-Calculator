@@ -32,8 +32,8 @@ android {
         applicationId = "com.ateflaw.legaldeadlines"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 12
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -51,12 +51,23 @@ android {
         arg("room.schemaLocation", "$projectDir/schemas")
     }
 
+    // A signed release must use a stable, OWNER-HELD key. Debug CI builds never load it.
+    // Do not place the keystore or credentials in Git or in a public artifact.
+    val keystorePath = System.getenv("MEEAD_KEYSTORE_PATH")
+    val storePasswordSecret = System.getenv("MEEAD_STORE_PASSWORD")
+    val keyAliasSecret = System.getenv("MEEAD_KEY_ALIAS")
+    val keyPasswordSecret = System.getenv("MEEAD_KEY_PASSWORD")
+    val hasReleaseKey = listOf(keystorePath, storePasswordSecret, keyAliasSecret, keyPasswordSecret)
+        .all { !it.isNullOrBlank() } && file(keystorePath ?: "").isFile
+
     signingConfigs {
-        create("release") {
-            storeFile = file("keystore.jks")
-            storePassword = System.getenv("STORE_PASSWORD") ?: ""
-            keyAlias = System.getenv("KEY_ALIAS") ?: ""
-            keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+        if (hasReleaseKey) {
+            create("release") {
+                storeFile = file(keystorePath!!)
+                storePassword = storePasswordSecret!!
+                keyAlias = keyAliasSecret!!
+                keyPassword = keyPasswordSecret!!
+            }
         }
     }
 
@@ -68,7 +79,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            if (hasReleaseKey) signingConfig = signingConfigs.getByName("release")
         }
         debug {
             buildConfigField("String", "CALENDARIFIC_API_KEY", "\"$calendarificApiKey\"")
@@ -101,6 +112,23 @@ android {
         disable.add("MissingTranslation")
         disable.add("ExtraTranslation")
         disable.add("UnusedResources")
+    }
+}
+
+// Fail closed for local/manual release tasks too: never accept an unsigned APK as a release.
+tasks.configureEach {
+    if (name == "assembleRelease" || name == "bundleRelease") {
+        doFirst {
+            val path = System.getenv("MEEAD_KEYSTORE_PATH")
+            val credentials = listOf(
+                System.getenv("MEEAD_STORE_PASSWORD"),
+                System.getenv("MEEAD_KEY_ALIAS"),
+                System.getenv("MEEAD_KEY_PASSWORD")
+            )
+            check(!path.isNullOrBlank() && file(path).isFile && credentials.all { !it.isNullOrBlank() }) {
+                "Missing owner-held release signing credentials (MEEAD_*). No unsigned release is permitted."
+            }
+        }
     }
 }
 
