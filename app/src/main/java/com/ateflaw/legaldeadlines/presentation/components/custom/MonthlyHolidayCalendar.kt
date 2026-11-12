@@ -40,11 +40,11 @@ fun MonthlyHolidayCalendar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onPreviousMonth) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "السابق", tint = JudicialNavy)
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "السابق", tint = MaterialTheme.colorScheme.onSurface)
             }
-            Text("$monthName $yearString", color = JudicialNavy, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+            Text("$monthName $yearString", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
             IconButton(onClick = onNextMonth) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "التالي", tint = JudicialNavy)
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "التالي", tint = MaterialTheme.colorScheme.onSurface)
             }
         }
         
@@ -55,7 +55,7 @@ fun MonthlyHolidayCalendar(
                     text = dayName,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
-                    color = if (dayName == "الجمعة") TerracottaSeal else JudicialNavy,
+                    color = if (dayName == "الجمعة") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.labelSmall,
                     maxLines = 1
@@ -80,14 +80,14 @@ fun MonthlyHolidayCalendar(
                         val verifiedHoliday = holidays.any { it.holidayDate == date && it.verificationStatus == "VERIFIED_OFFICIAL" }
                         val candidateHoliday = holidays.any { it.holidayDate == date && it.verificationStatus != "VERIFIED_OFFICIAL" }
                         val textColor = when {
-                            isFriday -> TerracottaSeal
-                            verifiedHoliday -> VerifiedEmerald
-                            candidateHoliday -> AntiqueBrass
-                            else -> JudicialNavy
+                            isFriday -> MaterialTheme.colorScheme.error
+                            verifiedHoliday -> MaterialTheme.colorScheme.tertiary
+                            candidateHoliday -> MaterialTheme.colorScheme.secondary
+                            else -> MaterialTheme.colorScheme.onSurface
                         }
                         val bgColor = when {
-                            verifiedHoliday -> VerifiedEmerald.copy(alpha = 0.14f)
-                            candidateHoliday -> AntiqueBrass.copy(alpha = 0.13f)
+                            verifiedHoliday -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f)
+                            candidateHoliday -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.13f)
                             else -> Color.Transparent
                         }
                         
@@ -111,6 +111,18 @@ fun MonthlyHolidayCalendar(
                     }
                 }
             }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Text("● عطلة موثقة", color = MaterialTheme.colorScheme.tertiary,
+                style = MaterialTheme.typography.labelSmall)
+            Text("● مرشحة للمراجعة", color = MaterialTheme.colorScheme.secondary,
+                style = MaterialTheme.typography.labelSmall)
+            Text("● الجمعة", color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.labelSmall)
         }
     }
 }
