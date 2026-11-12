@@ -163,9 +163,9 @@ fun LandingScreenContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(28.dp))
             DiamondDivider(modifier = Modifier.padding(vertical = 4.dp))
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
             // Middle Section: Loading Status & Progress Bar
             Card(
@@ -291,7 +291,7 @@ fun LandingScreenContent(
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 // Social Links
                 val uriHandler = LocalUriHandler.current
@@ -323,6 +323,15 @@ fun LandingScreenContent(
                         contentDescription = "Website"
                     )
                 }
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                Text(
+                    text = "Coded by Mohamed Atef",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    letterSpacing = 0.5.sp
+                )
             }
         }
     }
