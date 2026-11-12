@@ -105,9 +105,9 @@ class BackupTransferService(
             check(count(db, "SELECT COUNT(*) FROM legal_rules") >= 169) {
                 "لم تكتمل تهيئة القواعد الافتراضية بعد؛ افتح الدليل ثم أعد المحاولة."
             }
-            check(count(db, "SELECT COUNT(*) FROM saved_deadlines") == 0 &&
-                count(db, "SELECT COUNT(*) FROM rule_edit_history") == 0 &&
-                count(db, "SELECT COUNT(*) FROM legal_rules WHERE id > 169 OR workbook_decision = 'USER_APPROVED'") == 0) {
+            check(count(db, "SELECT COUNT(*) FROM saved_deadlines") == 0L &&
+                count(db, "SELECT COUNT(*) FROM rule_edit_history") == 0L &&
+                count(db, "SELECT COUNT(*) FROM legal_rules WHERE id > 169 OR workbook_decision = 'USER_APPROVED'") == 0L) {
                 "قاعدة الجهاز الجديد تحتوي بيانات مستخدم. لن نستبدلها؛ صدّر بيانات هذا الجهاز أولًا."
             }
 
