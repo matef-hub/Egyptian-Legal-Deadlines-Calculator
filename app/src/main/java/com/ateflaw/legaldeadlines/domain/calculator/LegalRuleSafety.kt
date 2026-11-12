@@ -1,0 +1,169 @@
+package com.ateflaw.legaldeadlines.domain.calculator
+
+import com.ateflaw.legaldeadlines.domain.model.DurationUnit
+import com.ateflaw.legaldeadlines.domain.model.LegalRule
+import java.time.LocalDate
+import java.net.URI
+import java.util.Locale
+
+/**
+ * Fail-closed application gate. A legal source and a human review are prerequisites
+ * for a result to be used by the Android app. A passing unit test is not legal review.
+ *
+ * The legacy seed is deliberately NOT whitelisted by its numeric duration: many
+ * entries are ages, limitation periods, hours or deadlines measured BEFORE a hearing.
+ * These must have their own verified algorithms and triggers.
+ */
+object LegalRuleSafety {
+    enum class CalculationKind {
+        FORWARD, BACKWARD_FROM_EVENT, EXACT_HOURS, AGE_THRESHOLD,
+        LIMITATION_OR_CONDITION, SPECIAL_UNSUPPORTED
+    }
+
+    private val backwards = setOf(
+        4L, 5L, 6L, 28L, 40L, 53L,
+        115L, 116L, 117L, 118L, 119L, 126L,
+        150L, 159L, 160L, 162L, 166L
+    )
+    // "24 hours" must remain a time-sensitive LEGAL WARNING. The UI shows one
+    // day as requested, and never claims to identify its exact ending hour.
+    private val oneDayTimingCaution = setOf(7L, 24L, 96L, 97L, 108L)
+    // These historic IDs were incorrectly tagged as BEFORE/EXACT_HOURS; old
+    // installed databases still contain those stale enum strings.
+    private val safeForwardCorrections = setOf(39L, 51L, 54L, 137L, 20L)
+    private val ages = setOf(134L, 136L)
+    private val limitations = setOf(
+        13L, 15L, 16L, 17L, 48L, 59L, 60L, 61L, 62L, 63L,
+        64L, 65L, 66L, 67L, 71L, 72L, 73L, 74L, 75L, 76L,
+        77L, 78L, 79L, 80L, 81L, 85L, 86L, 87L, 88L, 89L,
+        92L, 93L, 94L, 95L, 100L, 102L, 131L, 132L,
+        133L, 135L, 138L
+    )
+    private val special = setOf(9L, 10L, 12L, 14L, 18L, 41L, 42L, 43L, 90L, 91L, 103L, 104L, 139L, 154L, 155L, 164L)
+
+    private fun inherentKind(rule: LegalRule): CalculationKind = when {
+        rule.unit == DurationUnit.HOURS -> CalculationKind.EXACT_HOURS
+        rule.id in ages -> CalculationKind.AGE_THRESHOLD
+        rule.id in backwards -> CalculationKind.BACKWARD_FROM_EVENT
+        rule.id in limitations || rule.duration == 0L ->
+            CalculationKind.LIMITATION_OR_CONDITION
+        rule.id in special -> CalculationKind.SPECIAL_UNSUPPORTED
+        else -> CalculationKind.FORWARD
+    }
+
+    fun kind(rule: LegalRule): CalculationKind {
+        // A 24-hour period is displayed as "one day" for the interface but
+        // needs an explicit warning about its exact statutory clock trigger.
+        if (rule.id in oneDayTimingCaution && rule.duration == 1L &&
+            rule.unit == DurationUnit.DAYS) return CalculationKind.FORWARD
+        // Correct older persisted classifications, without modifying any
+        // actual rule duration or text stored on the user's device.
+        if (rule.id in safeForwardCorrections && rule.unit != DurationUnit.HOURS) {
+            return CalculationKind.FORWARD
+        }
+        val inherited = inherentKind(rule)
+        val declared = CalculationKind.entries.firstOrNull { it.name == rule.calculationKind }
+        // An explicit database value cannot downgrade a known unsafe old seed
+        // into a generic forward-calculation rule.
+        return if (inherited != CalculationKind.FORWARD) inherited else declared ?: inherited
+    }
+
+    /**
+     * PREVIEW ONLY: for supported forward-counted rules, or the narrowly defined
+     * 60-day article 82 shatb scenario. Never confers legal approval.
+     * Backwards, hours, age, limitation, unsupported custom rules remain blocked.
+     */
+    fun previewWarnings(rule: LegalRule, eventDate: LocalDate): List<String> {
+        require(rule.duration > 0) { "هذا الإجراء ليس ميعادًا عدديًا قابلًا للحساب." }
+        checkHistoricalApplicability(rule, eventDate)
+        val isShatb60 = rule.id == 10L &&
+            rule.unit == DurationUnit.DAYS &&
+            rule.duration == 60L &&
+            rule.startRule == com.ateflaw.legaldeadlines.domain.model.StartRule.NEXT_DAY &&
+            rule.lawArticle.contains("82") &&
+            rule.lawName.contains("المرافعات")
+        val type = kind(rule)
+        require(type == CalculationKind.FORWARD || isShatb60) {
+            when (type) {
+                CalculationKind.BACKWARD_FROM_EVENT -> "هذا الميعاد يُحسب قبل الجلسة أو الواقعة، وليس بعدها."
+                CalculationKind.EXACT_HOURS -> "هذا الإجراء يتطلب توقيت الواقعة بالساعات والدقائق."
+                CalculationKind.AGE_THRESHOLD -> "هذا حد سن قانوني وليس ميعادًا إجرائيًا."
+                CalculationKind.LIMITATION_OR_CONDITION -> "يستلزم التقادم فحص الوقف والانقطاع وشروط بدء المدة."
+                CalculationKind.SPECIAL_UNSUPPORTED -> "هذا الإجراء له شروط قانونية لم تُنفذ طريقة احتسابها."
+                CalculationKind.FORWARD -> "هذه القاعدة غير مدعومة للحساب."
+            }
+        }
+        require(rule.extensionPolicy == "ARTICLE_18_COURTS") {
+            "سياسة امتداد العطلات لهذه القاعدة غير مدعومة بالمحرك."
+        }
+        return buildList {
+            add("تاريخ محسوب استرشاديًا فقط، وليس ميعادًا قانونيًا معتمدًا. راجع النص النافذ وظروف الدعوى قبل اتخاذ الإجراء.")
+            if (rule.id in oneDayTimingCaution && rule.unit == DurationUnit.DAYS) add(
+                "يوم واحد قد يساوي 24 ساعة تبدأ من ساعة الواقعة نفسها؛ عرض تاريخ اليوم لا يحدد لحظة انقضاء المدة، وفي الدعاوى المستعجلة قد يجيز النص اختصار ميعاد الحضور بإذن قضائي."
+            )
+            if (isShatb60) add(
+                "المادة 82 مرافعات: الستون يومًا لا تغني عن اتخاذ إجراءات تجديد السير وتحديد جلسة وإعلان الخصم؛ وقد تؤثر ظروف الإعلان والاستثناءات القضائية."
+            )
+            if (rule.reviewStatus != "VERIFIED_ACCURATE") add(
+                "لم تُعتمد هذه القاعدة بعد من مراجعة تشريعية مكتملة."
+            )
+            if (rule.officialSourceUrl.isBlank()) add(
+                "لا يوجد رابط رسمي موثّق للنص المُخزن؛ راجع المصدر التشريعي."
+            )
+        }
+    }
+
+    private fun checkHistoricalApplicability(rule: LegalRule, eventDate: LocalDate) {
+        // Current law 14/2025 superseded law 12/2003 on 2025-09-01.
+        // Do not quietly produce a 2026 deadline from the legacy labor seed.
+        // Only unreconciled legacy Labor records are restricted by their IDs.
+        // Workbook revision 1 explicitly cross-checks current Law 14/2025.
+        require(rule.id !in 147L..167L || rule.reviewVersion > 0 ||
+            eventDate.isBefore(LocalDate.of(2025, 9, 1))) {
+            "قواعد قانون العمل غير المراجعة لا تصلح للوقائع من 1 سبتمبر 2025."
+        }
+        // Law 174/2025, as amended by law 160/2026, starts 2027-10-01.
+        require(rule.id !in 92L..127L || eventDate.isBefore(LocalDate.of(2027, 10, 1))) {
+            "قواعد الإجراءات الجنائية القديمة لا تطبق آلياً من 1 أكتوبر 2027. يلزم اعتماد القواعد الجديدة والأحكام الانتقالية."
+        }
+        val event = eventDate.toString()
+        require(rule.effectiveFrom.isBlank() || event >= rule.effectiveFrom) {
+            "لم يبدأ سريان هذه النسخة من القاعدة في تاريخ الواقعة."
+        }
+        require(rule.effectiveTo.isNullOrBlank() || event <= rule.effectiveTo) {
+            "انتهى سريان هذه النسخة من القاعدة قبل تاريخ الواقعة."
+        }
+    }
+
+    fun validate(rule: LegalRule, eventDate: LocalDate) {
+        checkHistoricalApplicability(rule, eventDate)
+        val type = kind(rule)
+        require(type == CalculationKind.FORWARD) {
+            when (type) {
+                CalculationKind.BACKWARD_FROM_EVENT -> "هذا الميعاد يُحسب قبل واقعة أو جلسة؛ ولا يجوز استخدام الحساب الأمامي له."
+                CalculationKind.EXACT_HOURS -> "هذا الإجراء يتطلب توقيتاً دقيقاً بالساعة والدقيقة وليس تاريخ يوم فقط."
+                CalculationKind.AGE_THRESHOLD -> "هذا حد سن قانوني وليس ميعاد طعن ولا تطبق عليه قواعد ترحيل الإجازات."
+                CalculationKind.LIMITATION_OR_CONDITION -> "هذه مدة تقادم أو شرط قانوني يتطلب فحص الوقف والانقطاع وشروط بدء السريان."
+                CalculationKind.SPECIAL_UNSUPPORTED -> "هذا الإجراء يتطلب سياسة خاصة لحسابه ولم تتم مراجعتها بعد."
+                else -> "هذه القاعدة غير مدعومة."
+            }
+        }
+        require(rule.reviewStatus == "VERIFIED_ACCURATE") {
+            "لا يمكن حساب ميعاد ملزم من قاعدة لم تعتمد قانونياً. راجع السند الرسمي وحالة اعتماد القاعدة."
+        }
+        val parsedSource = try { URI(rule.officialSourceUrl) } catch (_: Exception) { null }
+        val sourceHost = parsedSource?.host?.lowercase(Locale.ROOT).orEmpty()
+        val officialHost = sourceHost.endsWith(".gov.eg") ||
+            sourceHost == "alamiria.com" ||
+            sourceHost == "www.alamiria.com"
+        require(parsedSource?.scheme == "https" && officialHost) {
+            "لا يمكن اعتماد قاعدة دون مصدر تشريعي رسمي موثق، مثل المطابع الأميرية أو موقع حكومي مصري."
+        }
+        require(rule.effectiveFrom.isNotBlank()) {
+            "لم يُحدد تاريخ بدء سريان هذه النسخة من القاعدة القانونية."
+        }
+        require(rule.extensionPolicy == "ARTICLE_18_COURTS") {
+            "سياسة امتداد الميعاد غير مدعومة لهذا الإجراء."
+        }
+    }
+}

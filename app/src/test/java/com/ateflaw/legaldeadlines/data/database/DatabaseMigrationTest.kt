@@ -327,4 +327,344 @@ class DatabaseMigrationTest {
             }
         }
     }
+
+    @Test
+    fun testMigration4To5_preservesClientDataAndQuarantinesUnsourcedHolidays() {
+        TestSupportSQLiteDatabase().use { db ->
+            createSchemaV1(db)
+            db.execSQL("INSERT INTO holidays (holiday_date, name) VALUES ('2026-10-06', 'عطلة غير موثقة')")
+            db.execSQL("""
+                INSERT INTO saved_deadlines (id, case_number, client_name, action_name, announcement_date,
+                    duration, unit, distance_days, final_deadline, law_article, calculation_explanation, notes, created_at)
+                VALUES (991, '321/2026', 'اختبار سري', 'استئناف', '2026-10-01',
+                    40, 'DAYS', 0, '2026-11-10', 'المادة 227', 'نتيجة محفوظة', 'سجل أصلي', 1729000000000)
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (159, 'إخطار إنهاء العمل القديم', 2, 'MONTHS', 0, 'NEXT_DAY', 'قانون 12 لسنة 2003', 'قديم', 'قديم')
+            """.trimIndent())
+
+            AppDatabase.MIGRATION_1_2.migrate(db)
+            AppDatabase.MIGRATION_2_3.migrate(db)
+            AppDatabase.MIGRATION_3_4.migrate(db)
+            AppDatabase.MIGRATION_4_5.migrate(db)
+
+            db.query("SELECT case_number, client_name, calculation_explanation FROM saved_deadlines WHERE id = 991")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals("321/2026", cursor.getString(0))
+                    assertEquals("اختبار سري", cursor.getString(1))
+                    assertEquals("نتيجة محفوظة", cursor.getString(2))
+                }
+            db.query("SELECT verification_status, source_url FROM holidays WHERE holiday_date = '2026-10-06'")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals("UNVERIFIED", cursor.getString(0))
+                    assertEquals("", cursor.getString(1))
+                }
+            db.query("SELECT review_status, effective_from, effective_to FROM legal_rules WHERE id = 159")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals("NEEDS_REVIEW", cursor.getString(0))
+                    assertEquals("", cursor.getString(1))
+                    assertEquals("2025-08-31", cursor.getString(2))
+                }
+        }
+    }
+
+
+    @Test
+    fun testMigration5To6_addsPolicyAndVersionWithoutChangingSavedDeadlines() {
+        TestSupportSQLiteDatabase().use { db ->
+            createSchemaV1(db)
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (33, 'استئناف مدني', 40, 'DAYS', 0, 'NEXT_DAY', 'المادة 227', 'قيد المراجعة', 'اختبار')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO saved_deadlines (id, case_number, client_name, action_name, announcement_date,
+                    duration, unit, distance_days, final_deadline, law_article, calculation_explanation, notes, created_at)
+                VALUES (992, '991/2026', 'موكل محفوظ', 'استئناف', '2026-10-01',
+                    40, 'DAYS', 0, '2026-11-10', 'المادة 227', 'الحساب الأصلي', 'لا يحذف', 1729000000000)
+            """.trimIndent())
+            AppDatabase.MIGRATION_1_2.migrate(db)
+            AppDatabase.MIGRATION_2_3.migrate(db)
+            AppDatabase.MIGRATION_3_4.migrate(db)
+            AppDatabase.MIGRATION_4_5.migrate(db)
+            AppDatabase.MIGRATION_5_6.migrate(db)
+
+            db.query("SELECT revision, calculation_kind, duration, review_status FROM legal_rules WHERE id = 33")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals(0, cursor.getInt(0))
+                    assertEquals("UNREVIEWED", cursor.getString(1))
+                    assertEquals(40, cursor.getInt(2))
+                    assertEquals("NEEDS_REVIEW", cursor.getString(3))
+                }
+            db.query("SELECT client_name, notes FROM saved_deadlines WHERE id = 992")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals("موكل محفوظ", cursor.getString(0))
+                    assertEquals("لا يحذف", cursor.getString(1))
+                }
+        }
+    }
+
+
+    @Test
+    fun testMigration6To7_preservesSavedDeadlinesAndCreatesLawGroupedCatalog() {
+        TestSupportSQLiteDatabase().use { db ->
+            createSchemaV1(db)
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (159, 'مهلة إخطار إنهاء عقد العمل', 2, 'MONTHS', 0, 'NEXT_DAY',
+                    'المادة 111 من قانون العمل القديم', 'قاعدة مخزنة', 'اختبار')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO saved_deadlines (id, case_number, client_name, action_name, announcement_date,
+                    duration, unit, distance_days, final_deadline, law_article, calculation_explanation, notes, created_at)
+                VALUES (1007, '123/2026', 'موكل تاريخي', 'ميعاد قديم', '2026-10-01',
+                    40, 'DAYS', 0, '2026-11-10', 'المادة 227', 'النص المحفوظ', 'لا تحذف', 1729000000000)
+            """.trimIndent())
+
+            AppDatabase.MIGRATION_1_2.migrate(db)
+            AppDatabase.MIGRATION_2_3.migrate(db)
+            AppDatabase.MIGRATION_3_4.migrate(db)
+            AppDatabase.MIGRATION_4_5.migrate(db)
+            AppDatabase.MIGRATION_5_6.migrate(db)
+            AppDatabase.MIGRATION_6_7.migrate(db)
+
+            db.query("SELECT law_name, article_text, duration, review_status FROM legal_rules WHERE id = 159")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals("قانون العمل", cursor.getString(0))
+                    assertEquals("", cursor.getString(1))
+                    assertEquals(2, cursor.getInt(2))
+                    assertEquals("NEEDS_REVIEW", cursor.getString(3))
+                }
+            db.query("SELECT case_number, client_name, calculation_explanation FROM saved_deadlines WHERE id = 1007")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals("123/2026", cursor.getString(0))
+                    assertEquals("موكل تاريخي", cursor.getString(1))
+                    assertEquals("النص المحفوظ", cursor.getString(2))
+                }
+            db.query("SELECT COUNT(*) FROM rule_edit_history").use { cursor ->
+                assertTrue(cursor.moveToNext())
+                assertEquals(0, cursor.getInt(0))
+            }
+            assertTrue(AppDatabase.columnExists(db, "legal_rules", "article_text"))
+        }
+    }
+
+
+    @Test
+    fun testMigration7To8_correctsLegacyLawGroupingWithoutChangingUserData() {
+        TestSupportSQLiteDatabase().use { db ->
+            createSchemaV1(db)
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (21, 'رد الخبير', 5, 'DAYS', 0, 'NEXT_DAY', 'المادة 140 إثبات', 'الأصل', '')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (57, 'معارضة رسوم', 8, 'DAYS', 0, 'NEXT_DAY', 'المادة 17 رسوم', 'الأصل', '')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO saved_deadlines (id, case_number, client_name, action_name, announcement_date,
+                    duration, unit, distance_days, final_deadline, law_article, calculation_explanation, notes, created_at)
+                VALUES (1008, '221/2026', 'موكل محمي', 'استئناف', '2026-10-01',
+                    40, 'DAYS', 0, '2026-11-10', 'المادة 227', 'نص محفوظ', 'لا يمس', 1729000000000)
+            """.trimIndent())
+            AppDatabase.MIGRATION_1_2.migrate(db)
+            AppDatabase.MIGRATION_2_3.migrate(db)
+            AppDatabase.MIGRATION_3_4.migrate(db)
+            AppDatabase.MIGRATION_4_5.migrate(db)
+            AppDatabase.MIGRATION_5_6.migrate(db)
+            AppDatabase.MIGRATION_6_7.migrate(db)
+            AppDatabase.MIGRATION_7_8.migrate(db)
+            db.query("SELECT law_name, duration FROM legal_rules WHERE id = 21").use {
+                assertTrue(it.moveToNext())
+                assertEquals("قانون الإثبات", it.getString(0))
+                assertEquals(5, it.getInt(1))
+            }
+            db.query("SELECT law_name FROM legal_rules WHERE id = 57").use {
+                assertTrue(it.moveToNext())
+                assertEquals("قانون الرسوم القضائية رقم 90 لسنة 1944", it.getString(0))
+            }
+            db.query("SELECT client_name, notes FROM saved_deadlines WHERE id = 1008").use {
+                assertTrue(it.moveToNext())
+                assertEquals("موكل محمي", it.getString(0))
+                assertEquals("لا يمس", it.getString(1))
+            }
+        }
+    }
+
+    @Test
+    fun testMigration8To9_fillsOnlyMissingArticle940PreservingUserEdits() {
+        TestSupportSQLiteDatabase().use { db ->
+            createSchemaV1(db)
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule,
+                    law_article, notes, summary)
+                VALUES (82, 'إعلان الرغبة في الأخذ بالشفعة', 15, 'DAYS', 0, 'NEXT_DAY',
+                    'المادة 940 من القانون المدني المصري', 'قيد المراجعة', '')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO saved_deadlines (id, case_number, client_name, action_name, announcement_date,
+                    duration, unit, distance_days, final_deadline, law_article, calculation_explanation, notes, created_at)
+                VALUES (901, '440/2026', 'موكل محفوظ', 'ميعاد شفعة', '2026-11-01',
+                    15, 'DAYS', 0, '2026-11-16', 'المادة 940', 'بيانات محفوظة', 'لا تعدل', 1729000000000)
+            """.trimIndent())
+            AppDatabase.MIGRATION_1_2.migrate(db)
+            AppDatabase.MIGRATION_2_3.migrate(db)
+            AppDatabase.MIGRATION_3_4.migrate(db)
+            AppDatabase.MIGRATION_4_5.migrate(db)
+            AppDatabase.MIGRATION_5_6.migrate(db)
+            AppDatabase.MIGRATION_6_7.migrate(db)
+            AppDatabase.MIGRATION_7_8.migrate(db)
+            // Case A: legacy untouched article receives sourced text.
+            AppDatabase.MIGRATION_8_9.migrate(db)
+            db.query("SELECT article_text, official_source_url FROM legal_rules WHERE id = 82").use {
+                assertTrue(it.moveToNext())
+                assertTrue(it.getString(0).contains("خمسة عشر"))
+                assertTrue(it.getString(1).contains("portal.eta.gov.eg"))
+            }
+            // Case B: a user-supplied text is never overwritten.
+            db.execSQL("UPDATE legal_rules SET article_text = 'نص أدخله المستخدم', revision = 2 WHERE id = 82")
+            AppDatabase.MIGRATION_8_9.migrate(db)
+            db.query("SELECT article_text FROM legal_rules WHERE id = 82").use {
+                assertTrue(it.moveToNext())
+                assertEquals("نص أدخله المستخدم", it.getString(0))
+            }
+            db.query("SELECT client_name, notes FROM saved_deadlines WHERE id = 901").use {
+                assertTrue(it.moveToNext())
+                assertEquals("موكل محفوظ", it.getString(0))
+                assertEquals("لا تعدل", it.getString(1))
+            }
+        }
+    }
+
+
+    @Test
+    fun testMigration9To10_preservesSavedCasesAndInitializesWorkbookFields() {
+        TestSupportSQLiteDatabase().use { db ->
+            createSchemaV1(db)
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (159, 'مهلة الإخطار لإنهاء عقد العمل', 2, 'MONTHS', 0, 'NEXT_DAY',
+                    'المادة 111 من القانون 12 لسنة 2003', 'سجل تاريخي', '')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO saved_deadlines (id, case_number, client_name, action_name, announcement_date,
+                    duration, unit, distance_days, final_deadline, law_article, calculation_explanation, notes, created_at)
+                VALUES (1010, '845/2026', 'موكل قديم', 'ميعاد محفوظ', '2026-01-01',
+                    30, 'DAYS', 0, '2026-01-31', 'المادة 30', 'حساب قديم', 'تحت الحفظ', 1729000000000)
+            """.trimIndent())
+
+            AppDatabase.MIGRATION_1_2.migrate(db)
+            AppDatabase.MIGRATION_2_3.migrate(db)
+            AppDatabase.MIGRATION_3_4.migrate(db)
+            AppDatabase.MIGRATION_4_5.migrate(db)
+            AppDatabase.MIGRATION_5_6.migrate(db)
+            AppDatabase.MIGRATION_6_7.migrate(db)
+            AppDatabase.MIGRATION_7_8.migrate(db)
+            AppDatabase.MIGRATION_8_9.migrate(db)
+            AppDatabase.MIGRATION_9_10.migrate(db)
+
+            db.query("""
+                SELECT workbook_decision, review_method, reviewer_note, review_version,
+                       duration, notes FROM legal_rules WHERE id = 159
+            """.trimIndent()).use { cursor ->
+                assertTrue(cursor.moveToNext())
+                assertEquals("", cursor.getString(0))
+                assertEquals("", cursor.getString(1))
+                assertEquals("", cursor.getString(2))
+                assertEquals(0, cursor.getInt(3))
+                assertEquals(2, cursor.getInt(4))
+                assertEquals("سجل تاريخي", cursor.getString(5))
+            }
+            db.query("SELECT case_number, client_name, calculation_explanation, notes FROM saved_deadlines WHERE id = 1010")
+                .use { cursor ->
+                    assertTrue(cursor.moveToNext())
+                    assertEquals("845/2026", cursor.getString(0))
+                    assertEquals("موكل قديم", cursor.getString(1))
+                    assertEquals("حساب قديم", cursor.getString(2))
+                    assertEquals("تحت الحفظ", cursor.getString(3))
+                }
+        }
+    }
+
+
+    @Test
+    fun testMigration10To11_finalizesPreviouslySavedDraftsWithoutTouchingCases() {
+        TestSupportSQLiteDatabase().use { db ->
+            createSchemaV1(db)
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (82, 'إعلان الرغبة في الشفعة', 15, 'DAYS', 0, 'NEXT_DAY',
+                    'المادة 940 مدني', 'ملاحظة المستخدم', 'سجل الشفعة')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO legal_rules (id, action_name, duration, unit, distance_days, start_rule, law_article, notes, summary)
+                VALUES (17, 'رد القاضي', 0, 'DAYS', 0, 'NEXT_DAY',
+                    'المادة 152 مرافعات', 'ممنوع الحساب', '')
+            """.trimIndent())
+            db.execSQL("""
+                INSERT INTO saved_deadlines (id, case_number, client_name, action_name, announcement_date,
+                    duration, unit, distance_days, final_deadline, law_article, calculation_explanation, notes, created_at)
+                VALUES (1111, '66/2026', 'موكل محفوظ', 'شفعة', '2026-11-01',
+                    15, 'DAYS', 0, '2026-11-16', 'المادة 940', 'ناتج محفوظ', 'بيانات أصلية', 1729000000000)
+            """.trimIndent())
+
+            AppDatabase.MIGRATION_1_2.migrate(db)
+            AppDatabase.MIGRATION_2_3.migrate(db)
+            AppDatabase.MIGRATION_3_4.migrate(db)
+            AppDatabase.MIGRATION_4_5.migrate(db)
+            AppDatabase.MIGRATION_5_6.migrate(db)
+            AppDatabase.MIGRATION_6_7.migrate(db)
+            AppDatabase.MIGRATION_7_8.migrate(db)
+            AppDatabase.MIGRATION_8_9.migrate(db)
+            AppDatabase.MIGRATION_9_10.migrate(db)
+            db.execSQL("""
+                UPDATE legal_rules SET workbook_decision = 'EDITED_PENDING',
+                    review_status = 'NEEDS_REVIEW', article_text = 'نص المادة المدخل من المستخدم',
+                    reviewer_note = 'ملاحظة ملف المراجعة', review_version = 1, revision = 3
+                WHERE id = 82
+            """.trimIndent())
+            db.execSQL("""
+                UPDATE legal_rules SET workbook_decision = 'KEEP_BLOCKED',
+                    review_status = 'KEEP_BLOCKED', review_version = 1
+                WHERE id = 17
+            """.trimIndent())
+            AppDatabase.MIGRATION_10_11.migrate(db)
+
+            db.query("""
+                SELECT workbook_decision, review_status, article_text, reviewer_note,
+                    duration, revision FROM legal_rules WHERE id = 82
+            """.trimIndent()).use { cursor ->
+                assertTrue(cursor.moveToNext())
+                assertEquals("USER_APPROVED", cursor.getString(0))
+                assertEquals("VERIFIED_ACCURATE", cursor.getString(1))
+                assertEquals("نص المادة المدخل من المستخدم", cursor.getString(2))
+                assertEquals("ملاحظة ملف المراجعة", cursor.getString(3))
+                assertEquals(15, cursor.getInt(4))
+                assertEquals(3, cursor.getInt(5))
+            }
+            db.query("SELECT workbook_decision, review_status FROM legal_rules WHERE id = 17")
+                .use {
+                    assertTrue(it.moveToNext())
+                    assertEquals("KEEP_BLOCKED", it.getString(0))
+                    assertEquals("KEEP_BLOCKED", it.getString(1))
+                }
+            db.query("SELECT case_number, client_name, calculation_explanation FROM saved_deadlines WHERE id = 1111")
+                .use {
+                    assertTrue(it.moveToNext())
+                    assertEquals("66/2026", it.getString(0))
+                    assertEquals("موكل محفوظ", it.getString(1))
+                    assertEquals("ناتج محفوظ", it.getString(2))
+                }
+        }
+    }
+
 }

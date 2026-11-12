@@ -11,5 +11,7 @@ interface LegalRuleRepository {
     suspend fun getRuleById(id: Long): LegalRule?
     suspend fun getRulesCount(): Int
     suspend fun insertRules(rules: List<LegalRule>)
+    suspend fun addDraft(draft: com.ateflaw.legaldeadlines.domain.model.LegalRuleDraft): Long
+    suspend fun updateDraft(id: Long, expectedRevision: Int, draft: com.ateflaw.legaldeadlines.domain.model.LegalRuleDraft)
     suspend fun clearRules()
 }

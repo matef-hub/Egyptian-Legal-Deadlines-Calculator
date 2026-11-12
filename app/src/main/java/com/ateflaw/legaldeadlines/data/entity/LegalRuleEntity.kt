@@ -61,6 +61,9 @@ data class LegalRuleEntity(
     @ColumnInfo(name = "article", defaultValue = "")
     val article: String = "",
 
+    @ColumnInfo(name = "article_text", defaultValue = "")
+    val articleText: String = "",
+
     @ColumnInfo(name = "official_source_url", defaultValue = "")
     val officialSourceUrl: String = "",
 
@@ -74,15 +77,33 @@ data class LegalRuleEntity(
     val lastReviewedAt: String = "2026-10-13",
 
     @ColumnInfo(name = "review_status", defaultValue = "NEEDS_REVIEW")
-    val reviewStatus: String = "NEEDS_REVIEW"
+    val reviewStatus: String = "NEEDS_REVIEW",
+
+    @ColumnInfo(name = "revision", defaultValue = "0")
+    val revision: Int = 0,
+
+    @ColumnInfo(name = "calculation_kind", defaultValue = "UNREVIEWED")
+    val calculationKind: String = "UNREVIEWED",
+
+    @ColumnInfo(name = "workbook_decision", defaultValue = "")
+    val workbookDecision: String = "",
+
+    @ColumnInfo(name = "review_method", defaultValue = "")
+    val reviewMethod: String = "",
+
+    @ColumnInfo(name = "reviewer_note", defaultValue = "")
+    val reviewerNote: String = "",
+
+    @ColumnInfo(name = "review_version", defaultValue = "0")
+    val reviewVersion: Int = 0
 ) {
     fun toDomain(): LegalRule = LegalRule(
         id = id,
         actionName = actionName,
         duration = duration,
-        unit = try { DurationUnit.valueOf(unit) } catch (_: Exception) { DurationUnit.DAYS },
+        unit = DurationUnit.valueOf(unit),
         distanceDays = distanceDays,
-        startRule = try { StartRule.valueOf(startRule) } catch (_: Exception) { StartRule.NEXT_DAY },
+        startRule = StartRule.valueOf(startRule),
         lawArticle = lawArticle,
         notes = notes,
         summary = summary,
@@ -94,11 +115,18 @@ data class LegalRuleEntity(
         extensionPolicy = extensionPolicy,
         lawName = lawName,
         article = article,
+        articleText = articleText,
         officialSourceUrl = officialSourceUrl,
         effectiveFrom = effectiveFrom,
         effectiveTo = effectiveTo,
         lastReviewedAt = lastReviewedAt,
-        reviewStatus = reviewStatus
+        reviewStatus = reviewStatus,
+        revision = revision,
+        calculationKind = calculationKind,
+        workbookDecision = workbookDecision,
+        reviewMethod = reviewMethod,
+        reviewerNote = reviewerNote,
+        reviewVersion = reviewVersion
     )
 
     companion object {
@@ -120,11 +148,18 @@ data class LegalRuleEntity(
             extensionPolicy = domain.extensionPolicy,
             lawName = domain.lawName,
             article = domain.article,
+            articleText = domain.articleText,
             officialSourceUrl = domain.officialSourceUrl,
             effectiveFrom = domain.effectiveFrom,
             effectiveTo = domain.effectiveTo,
             lastReviewedAt = domain.lastReviewedAt,
-            reviewStatus = domain.reviewStatus
+            reviewStatus = domain.reviewStatus,
+            revision = domain.revision,
+            calculationKind = domain.calculationKind,
+            workbookDecision = domain.workbookDecision,
+            reviewMethod = domain.reviewMethod,
+            reviewerNote = domain.reviewerNote,
+            reviewVersion = domain.reviewVersion
         )
     }
 }

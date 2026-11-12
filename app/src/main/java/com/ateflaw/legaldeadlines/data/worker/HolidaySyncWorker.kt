@@ -8,6 +8,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.ateflaw.legaldeadlines.BuildConfig
 import com.ateflaw.legaldeadlines.data.database.AppDatabase
 import com.ateflaw.legaldeadlines.data.remote.RetrofitClient
 import com.ateflaw.legaldeadlines.data.service.OfficialHolidayService
@@ -24,6 +25,12 @@ class HolidaySyncWorker(
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
+        // A missing key is a configuration issue, not a transient network
+        // failure. Otherwise WorkManager would retry forever.
+        if (BuildConfig.CALENDARIFIC_API_KEY.isBlank() ||
+            BuildConfig.CALENDARIFIC_API_KEY == "YOUR_API_KEY") {
+            return Result.success()
+        }
         val database = AppDatabase.getInstance(applicationContext)
         val holidayService = OfficialHolidayService(
             holidayDao = database.holidayDao(),

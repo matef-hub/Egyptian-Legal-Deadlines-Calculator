@@ -21,10 +21,22 @@ data class MainUiState(
     val todayHolidayName: String? = null,
     val totalHolidaysCount: Int = 0,
 
+    // Bumped whenever an input affecting the legal result changes.
+    // Used to discard asynchronous calculations based on obsolete inputs.
+    val inputRevision: Long = 0,
     val isCalculating: Boolean = false,
     val result: DeadlineResult? = null,
     val proactiveReminderDays: Int? = 3,
     val errorMessage: String? = null,
     val successMessage: String? = null,
     val isSavedSuccessfully: Boolean = false
-)
+) {
+    fun invalidateCalculation(): MainUiState = copy(
+        inputRevision = inputRevision + 1,
+        isCalculating = false,
+        result = null,
+        isSavedSuccessfully = false,
+        errorMessage = null,
+        successMessage = null
+    )
+}

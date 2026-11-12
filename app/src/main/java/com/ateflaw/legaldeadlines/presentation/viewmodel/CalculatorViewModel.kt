@@ -47,10 +47,13 @@ class CalculatorViewModel(
                     getLegalRulesUseCase.insertRules(LegalRuleSeedData.getSeedRules())
                 } else {
                     _uiState.update { currentState ->
-                        currentState.copy(
-                            rules = rulesList,
-                            selectedRule = currentState.selectedRule
-                        )
+                        // Re-resolve the selected rule after a legal-data update.
+                        // Do not keep a stale rule object in an existing calculation.
+                        val selectedRule = currentState.selectedRule?.let { selected ->
+                            rulesList.firstOrNull { it.id == selected.id }
+                        }
+                        val nextState = currentState.copy(rules = rulesList, selectedRule = selectedRule)
+                        if (selectedRule != currentState.selectedRule) nextState.invalidateCalculation() else nextState
                     }
                 }
             }
@@ -76,17 +79,21 @@ class CalculatorViewModel(
                 )
             }
 
-            // Observe holidays changes to keep count updated
+            // A changed holiday calendar invalidates any previously calculated final date.
+            var previousHolidays: List<com.ateflaw.legaldeadlines.domain.model.Holiday>? = null
             getHolidaysUseCase().collect { holidays ->
+                val holidaysChanged = previousHolidays != null && previousHolidays != holidays
+                previousHolidays = holidays
                 val updatedCount = holidays.size
                 val updatedIsHoliday = holidays.any { it.holidayDate == today }
                 val updatedName = holidays.firstOrNull { it.holidayDate == today }?.name
                 _uiState.update {
-                    it.copy(
+                    val nextState = it.copy(
                         totalHolidaysCount = updatedCount,
                         isTodayHoliday = updatedIsHoliday,
                         todayHolidayName = updatedName
                     )
+                    if (holidaysChanged) nextState.invalidateCalculation() else nextState
                 }
             }
         }
@@ -100,14 +107,22 @@ class CalculatorViewModel(
     }
 
     fun onRuleSelected(rule: LegalRule?) {
-        _uiState.update { it.copy(selectedRule = rule, errorMessage = null) }
+        _uiState.update {
+            val forbidDistance = rule?.id == 10L || rule?.distancePolicy?.equals("NOT_APPLICABLE", ignoreCase = true) == true
+            it.copy(
+                selectedRule = rule,
+                distanceType = if (forbidDistance) DistanceType.NONE else it.distanceType,
+                additionalDistanceDaysInput = if (forbidDistance) "0" else it.additionalDistanceDaysInput
+            ).invalidateCalculation()
+        }
     }
 
     fun onAnnouncementDateChanged(date: LocalDate) {
-        _uiState.update { it.copy(announcementDate = date, errorMessage = null) }
+        _uiState.update { it.copy(announcementDate = date).invalidateCalculation() }
     }
 
     fun onDistanceTypeChanged(type: DistanceType) {
+        if (_uiState.value.selectedRule?.id == 10L) return
         _uiState.update {
             val defaultDays = when (type) {
                 DistanceType.NONE -> "0"
@@ -123,41 +138,43 @@ class CalculatorViewModel(
                 }
                 DistanceType.ABROAD_SERVED_IN_EGYPT -> "0"
             }
-            it.copy(distanceType = type, additionalDistanceDaysInput = defaultDays, errorMessage = null)
+            it.copy(distanceType = type, additionalDistanceDaysInput = defaultDays).invalidateCalculation()
         }
     }
 
     fun onAdditionalDistanceDaysChanged(input: String) {
         val filtered = input.filter { it.isDigit() }
-        _uiState.update { it.copy(additionalDistanceDaysInput = filtered, errorMessage = null) }
+        _uiState.update { it.copy(additionalDistanceDaysInput = filtered).invalidateCalculation() }
     }
 
     fun onLocalDistanceKmChanged(kmStr: String) {
-        val km = kmStr.toDoubleOrNull() ?: 0.0
-        val calculatedDays = DistanceType.calculateLocalDistanceDays(km)
+        val km = kmStr.toDoubleOrNull()
+        val calculatedDays = if (km != null && km.isFinite() && km >= 0.0) {
+            DistanceType.calculateLocalDistanceDays(km)
+        } else 0
         _uiState.update {
             it.copy(
                 localDistanceKmInput = kmStr,
-                additionalDistanceDaysInput = calculatedDays.toString(),
-                errorMessage = null
-            )
+                additionalDistanceDaysInput = calculatedDays.toString()
+            ).invalidateCalculation()
         }
     }
 
     fun onJudicialOrderInputChanged(orderText: String) {
-        _uiState.update { it.copy(judicialOrderInput = orderText, errorMessage = null) }
+        _uiState.update { it.copy(judicialOrderInput = orderText).invalidateCalculation() }
     }
 
     fun onCaseNumberChanged(caseNum: String) {
-        _uiState.update { it.copy(caseNumber = caseNum) }
+        _uiState.update { it.copy(caseNumber = caseNum, isSavedSuccessfully = false, successMessage = null) }
     }
 
     fun onClientNameChanged(name: String) {
-        _uiState.update { it.copy(clientName = name) }
+        _uiState.update { it.copy(clientName = name, isSavedSuccessfully = false, successMessage = null) }
     }
 
     fun calculateDeadline() {
         val currentState = _uiState.value
+        if (currentState.isCalculating) return
         val rule = currentState.selectedRule
 
         if (rule == null) {
@@ -209,7 +226,9 @@ class CalculatorViewModel(
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isCalculating = true, errorMessage = null, isSavedSuccessfully = false) }
+            // The user may have changed a field before this coroutine was scheduled.
+            if (_uiState.value.inputRevision != currentState.inputRevision) return@launch
+            _uiState.update { it.copy(isCalculating = true, errorMessage = null, result = null, isSavedSuccessfully = false) }
             try {
                 val calculationResult = calculateDeadlineUseCase(
                     announcementDate = currentState.announcementDate,
@@ -219,7 +238,7 @@ class CalculatorViewModel(
                     judicialOrderDetails = if (distanceType == DistanceType.ABROAD_JUDICIAL_REDUCTION) currentState.judicialOrderInput else null
                 )
                 _uiState.update {
-                    it.copy(
+                    if (it.inputRevision != currentState.inputRevision) it else it.copy(
                         isCalculating = false,
                         result = calculationResult,
                         errorMessage = null
@@ -227,9 +246,10 @@ class CalculatorViewModel(
                 }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(
+                    if (it.inputRevision != currentState.inputRevision) it else it.copy(
                         isCalculating = false,
-                        errorMessage = "حدث خطأ أثناء احتساب الميعاد: ${e.localizedMessage}"
+                        result = null,
+                        errorMessage = if (e is IllegalArgumentException) "تعذر حساب هذا الإجراء آليًا: ${e.localizedMessage}" else "حدث خطأ تقني أثناء الحساب: ${e.localizedMessage}"
                     )
                 }
             }
@@ -237,24 +257,39 @@ class CalculatorViewModel(
     }
 
     fun resetCalculation() {
-        _uiState.update { it.copy(result = null, isSavedSuccessfully = false, errorMessage = null) }
+        _uiState.update { it.invalidateCalculation() }
     }
 
     fun onProactiveReminderDaysChanged(days: Int?) {
-        _uiState.update { it.copy(proactiveReminderDays = days) }
+        _uiState.update { it.copy(proactiveReminderDays = days, isSavedSuccessfully = false, successMessage = null) }
     }
 
     fun saveCurrentDeadline(proactiveDays: Int? = _uiState.value.proactiveReminderDays) {
         val currentState = _uiState.value
+        if (currentState.isCalculating) return
         val result = currentState.result ?: return
         val rule = currentState.selectedRule ?: return
 
         viewModelScope.launch {
+            if (_uiState.value.inputRevision != currentState.inputRevision) return@launch
             try {
                 val ruleSnapshotText = buildString {
-                    append(rule.actionName)
+                    append("معرف القاعدة: ").append(rule.id)
+                    append(" | الاسم: ").append(rule.actionName)
+                    append(" | حالة المراجعة: ").append(rule.reviewStatus)
+                    append(" | إصدار القاعدة: ").append(rule.revision)
+                    append(" | نوع الحساب: ").append(rule.calculationKind)
+                    append(" | مصدر القانون: ").append(rule.officialSourceUrl)
+                    append(" | بداية السريان: ").append(rule.effectiveFrom)
+                    append(" | نهاية السريان: ").append(rule.effectiveTo ?: "مفتوح")
+                    append(" | آخر مراجعة: ").append(rule.lastReviewedAt)
                     append(" | المدة: ").append(rule.duration.toString().toArabicDigits()).append(" ").append(rule.unit.arabicDisplayName)
                     append(" | ").append(rule.lawArticle.toArabicDigits())
+                    append(" | تاريخ الواقعة: ").append(currentState.announcementDate)
+                    append(" | نوع المسافة: ").append(currentState.distanceType.name)
+                    append(" | أيام المسافة: ").append(result.totalDistanceDays)
+                    append(" | الميعاد النهائي: ").append(result.finalDeadline)
+                    append(" | تحذيرات: ").append(result.warnings.joinToString(" // "))
                     if (rule.triggerEventLabel.isNotBlank()) {
                         append(" | الواقعة: ").append(rule.triggerEventLabel)
                     }
@@ -281,7 +316,7 @@ class CalculatorViewModel(
 
                 saveDeadlineUseCase(deadlineToSave)
                 _uiState.update {
-                    it.copy(
+                    if (it.inputRevision != currentState.inputRevision) it else it.copy(
                         isSavedSuccessfully = true,
                         successMessage = "تم حفظ الميعاد بنجاح في قائمة المواعيد المحفوظة"
                     )

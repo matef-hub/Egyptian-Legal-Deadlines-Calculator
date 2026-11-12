@@ -36,7 +36,7 @@ class AppContainer(private val context: Context) {
     }
 
     val legalRuleRepository: LegalRuleRepository by lazy {
-        LegalRuleRepositoryImpl(database.legalRuleDao())
+        LegalRuleRepositoryImpl(database)
     }
 
     val holidayRepository: HolidayRepository by lazy {

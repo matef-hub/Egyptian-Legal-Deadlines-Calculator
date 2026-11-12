@@ -41,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -81,8 +82,8 @@ fun CalculationResultCard(
 
     // 1. Add FINAL DEADLINE to Calendar (Target Date = finalDeadline)
     val onAddFinalDeadlineToCalendar = {
-        val title = "⚖️ ميعاد قانوني ملزم: ${result.actionSummary.ifBlank { result.lawArticle }}".toArabicDigits()
-        val description = "الميعاد النهائي واجب الالتزام: $dayNameArabic، $finalDateFormatted\n" +
+        val title = "⚠️ تاريخ قانوني للمراجعة: ${result.actionSummary.ifBlank { result.lawArticle }}".toArabicDigits()
+        val description = "تاريخ محسوب استرشادياً ويجب مراجعة العطلات والسند القانوني: $dayNameArabic، $finalDateFormatted\n" +
             "السند التشريعي: ${result.lawArticle.toArabicDigits()}\n\n" +
             result.explanation
 
@@ -94,7 +95,7 @@ fun CalculationResultCard(
                 putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
                 val epochMillis = result.finalDeadline.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, epochMillis)
-                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, epochMillis + 86400000L)
+                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, result.finalDeadline.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
             }
             context.startActivity(intent)
         } catch (_: Exception) {
@@ -118,7 +119,7 @@ fun CalculationResultCard(
         val title = "🔔 تنبيه استباقي: ميعاد ${result.actionSummary.ifBlank { result.lawArticle }} (متبقي ${proactiveDays.toString().toArabicDigits()} أيام)".toArabicDigits()
         val description = "تنبيه إجرائي استباقي قبل فوات الميعاد بـ ${proactiveDays.toString().toArabicDigits()} أيام.\n" +
             "تاريخ التنبيه: $proactiveDayName، $proactiveFormatted.\n" +
-            "الميعاد النهائي الملزم: $dayNameArabic، $finalDateFormatted.\n" +
+            "التاريخ المحسوب للمراجعة: $dayNameArabic، $finalDateFormatted.\n" +
             "السند: ${result.lawArticle.toArabicDigits()}\n\n" +
             "الإجراء المطلوب: تجهيز صحيفة الطعن أو الدعوى ومستنداتها وإيداعها بقلم الكتاب مبكراً.\n\n" +
             result.explanation
@@ -132,7 +133,7 @@ fun CalculationResultCard(
                 // Use ACTUAL PROACTIVE DATE epoch!
                 val epochMillis = proactiveDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, epochMillis)
-                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, epochMillis + 86400000L)
+                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, proactiveDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
             }
             context.startActivity(intent)
         } catch (_: Exception) {
@@ -170,14 +171,14 @@ fun CalculationResultCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "الميعاد النهائي",
+                    text = if (result.isProvisional) "تاريخ حسابي استرشادي" else "الميعاد النهائي",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onTertiaryContainer
                 )
 
                 Icon(
-                    imageVector = Icons.Default.CheckCircle,
+                    imageVector = if (result.isProvisional) Icons.Default.Info else Icons.Default.CheckCircle,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onTertiaryContainer,
                     modifier = Modifier.size(28.dp)
@@ -285,34 +286,6 @@ fun CalculationResultCard(
                 }
             }
 
-            // Prominent Statutory Review Status Warning (if rule is under review)
-            if (result.warnings.isNotEmpty()) {
-                result.warnings.forEach { warning ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.errorContainer)
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            text = warning,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    }
-                }
-            }
-
             // Proactive Alert Configuration Selector
             Column(
                 modifier = Modifier
@@ -409,7 +382,7 @@ fun CalculationResultCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "إضافة الميعاد للاجندة ($finalDateFormatted)",
+                        text = if (result.isProvisional) "إضافة تاريخ استرشادي للتقويم ($finalDateFormatted)" else "إضافة الميعاد للاجندة ($finalDateFormatted)",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -462,7 +435,7 @@ fun CalculationResultCard(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = if (isSaved) "تم الحفظ بالمحفوظات" else "حفظ الميعاد",
+                            text = if (isSaved) "تم الحفظ بالمحفوظات" else if (result.isProvisional) "حفظ تاريخ استرشادي" else "حفظ الميعاد",
                             fontWeight = FontWeight.Bold
                         )
                     }

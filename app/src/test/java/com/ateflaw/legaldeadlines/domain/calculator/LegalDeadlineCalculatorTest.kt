@@ -663,7 +663,10 @@ class LegalDeadlineCalculatorTest {
         assertFalse(result.warnings.isEmpty())
         assertTrue(result.warnings.any { it.contains("قيد المراجعة") })
 
-        val verifiedRule = unverifiedRule.copy(reviewStatus = "VERIFIED_ACCURATE")
+        val verifiedRule = unverifiedRule.copy(
+            reviewStatus = "VERIFIED_ACCURATE",
+            officialSourceUrl = "https://example.org/verified-law"
+        )
         val verifiedResult = calculator.calculate(announcementDate, verifiedRule)
         assertTrue(verifiedResult.warnings.isEmpty())
     }
@@ -709,5 +712,53 @@ class LegalDeadlineCalculatorTest {
         val leapResult = calculator.calculate(LocalDate.of(2028, 1, 31), rule)
         assertEquals(LocalDate.of(2028, 2, 29), leapResult.provisionalDate)
     }
-}
 
+    @Test(expected = IllegalArgumentException::class)
+    fun test27_zeroDurationConditionMustNotInventDeadline() {
+        val conditionRule = LegalRule(
+            id = 17,
+            actionName = "طلب الرد قبل قفل باب المرافعة",
+            duration = 0,
+            unit = DurationUnit.DAYS,
+            startRule = StartRule.SAME_DAY
+        )
+        calculator.calculate(LocalDate.of(2026, 11, 9), conditionRule)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun test28_hourlyDeadlineWithoutTimeMustBeRejected() {
+        val hourlyRule = LegalRule(
+            id = 9998,
+            actionName = "ميعاد 24 ساعة",
+            duration = 24,
+            unit = DurationUnit.HOURS
+        )
+        calculator.calculate(LocalDate.of(2026, 11, 9), hourlyRule)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun test29_extensionPolicyNotSupportedMustNotBeCalculatedAsArticle18() {
+        val specialRule = LegalRule(
+            id = 9999,
+            actionName = "ميعاد له سياسة عطلات خاصة",
+            duration = 10,
+            unit = DurationUnit.DAYS,
+            extensionPolicy = "NOT_APPLICABLE"
+        )
+        calculator.calculate(LocalDate.of(2026, 11, 9), specialRule)
+    }
+
+    @Test
+    fun test30_missingOfficialSourceShowsWarningEvenIfMarkedVerified() {
+        val unsourced = LegalRule(
+            id = 10000,
+            actionName = "مثال يحتاج مصدر",
+            duration = 10,
+            unit = DurationUnit.DAYS,
+            reviewStatus = "VERIFIED_ACCURATE",
+            officialSourceUrl = ""
+        )
+        val result = calculator.calculate(LocalDate.of(2026, 11, 9), unsourced)
+        assertTrue(result.warnings.any { it.contains("مصدر تشريعي") })
+    }
+}

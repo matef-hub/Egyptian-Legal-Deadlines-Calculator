@@ -41,6 +41,8 @@ import androidx.compose.ui.unit.dp
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.SavedDeadline
 import com.ateflaw.legaldeadlines.presentation.components.ConfirmDeleteDialog
+import com.ateflaw.legaldeadlines.presentation.components.SweetAlertNotice
+import com.ateflaw.legaldeadlines.presentation.components.NoticeKind
 import com.ateflaw.legaldeadlines.presentation.components.SavedDeadlineItem
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListUiState
@@ -63,6 +65,11 @@ fun SavedDeadlinesScreen(
         onConfirmDelete = { viewModel.confirmDelete() },
         onDismissDeleteConfirmation = { viewModel.dismissDeleteConfirmation() },
         modifier = modifier
+    )
+    SweetAlertNotice(
+        message = uiState.errorMessage,
+        kind = NoticeKind.ERROR,
+        onDismiss = viewModel::dismissErrorMessage
     )
 }
 

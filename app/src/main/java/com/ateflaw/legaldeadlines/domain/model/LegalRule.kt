@@ -21,9 +21,16 @@ data class LegalRule(
     val extensionPolicy: String = "ARTICLE_18_COURTS", // سياسة امتداد العطلات (السبت يوم عمل للمحاكم)
     val lawName: String = "قانون المرافعات المدنية والتجارية", // اسم القانون
     val article: String = "", // رقم المادة
+    val articleText: String = "", // النص الكامل للمادة كما أدخله المستخدم
     val officialSourceUrl: String = "", // مصدر تشريعي موثوق
-    val effectiveFrom: String = "1968-11-01", // تاريخ بدء النفاذ
+    val effectiveFrom: String = "", // تاريخ بدء النفاذ
     val effectiveTo: String? = null, // تاريخ انتهاء النفاذ إن وجد
     val lastReviewedAt: String = "2026-10-13", // تاريخ آخر مراجعة قانونية
-    val reviewStatus: String = "NEEDS_REVIEW" // حالة المراجعة القانونية (الأصل أنها تحتاج مراجعة ما لم تدقق صراحة)
+    val reviewStatus: String = "NEEDS_REVIEW", // legal approval, never inferred from tests
+    val revision: Int = 0, // persisted built-in catalog revision
+    val calculationKind: String = "UNREVIEWED", // explicit policy
+    val workbookDecision: String = "",
+    val reviewMethod: String = "",
+    val reviewerNote: String = "",
+    val reviewVersion: Int = 0
 )

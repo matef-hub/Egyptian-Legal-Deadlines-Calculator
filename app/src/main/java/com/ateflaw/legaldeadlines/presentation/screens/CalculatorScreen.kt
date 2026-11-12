@@ -69,8 +69,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -105,6 +103,8 @@ import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.presentation.components.CalculationResultCard
+import com.ateflaw.legaldeadlines.presentation.components.SweetAlertNotice
+import com.ateflaw.legaldeadlines.presentation.components.NoticeKind
 import com.ateflaw.legaldeadlines.presentation.components.HolidayStatusBar
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
@@ -115,6 +115,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 import java.time.ZoneId
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -161,7 +162,7 @@ fun CalculatorScreenContent(
 ) {
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
+    var transientAlert by remember { mutableStateOf<String?>(null) }
 
     // Form focus requesters for automatic validation navigation
     val ruleFocusRequester = remember { FocusRequester() }
@@ -227,13 +228,13 @@ fun CalculatorScreenContent(
         derivedStateOf {
             val query = searchQuery.trim()
             if (query.isBlank() || (uiState.selectedRule != null && query == uiState.selectedRule.actionName)) {
-                uiState.rules.take(5)
+                uiState.rules.take(30)
             } else {
                 uiState.rules.filter { rule ->
                     rule.actionName.contains(query, ignoreCase = true) ||
                     rule.lawArticle.contains(query, ignoreCase = true) ||
                     rule.notes.contains(query, ignoreCase = true)
-                }.take(5)
+                }.take(30)
             }
         }
     }
@@ -266,43 +267,6 @@ fun CalculatorScreenContent(
                 holidayName = uiState.todayHolidayName,
                 loadedHolidaysCount = uiState.totalHolidaysCount
             )
-
-            // General error banner if present from ViewModel
-            if (uiState.errorMessage != null) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Error,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = uiState.errorMessage,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(onClick = { onDismissMessages() }) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "إغلاق",
-                                tint = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        }
-                    }
-                }
-            }
 
             // 2. Calculation Input Form Card ("بيانات احتساب الميعاد")
             val cardElevation by animateDpAsState(
@@ -504,8 +468,12 @@ fun CalculatorScreenContent(
                     // -------------------------------------------------------------
                     // FIELD 2: Trigger Event Date (تاريخ الواقعة المنشئة للميعاد)
                     // -------------------------------------------------------------
-                    val triggerLabel = uiState.selectedRule?.triggerEventLabel?.ifBlank { null }
-                        ?: "تاريخ الواقعة المنشئة للميعاد"
+                    val triggerLabel = if (uiState.selectedRule?.id == 10L) {
+                        "تاريخ قرار شطب الدعوى"
+                    } else {
+                        uiState.selectedRule?.triggerEventLabel?.ifBlank { null }
+                            ?: "تاريخ الواقعة المنشئة للميعاد"
+                    }
 
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
@@ -584,7 +552,9 @@ fun CalculatorScreenContent(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { isAdditionalDistanceExpanded = !isAdditionalDistanceExpanded }
+                                    .clickable(enabled = uiState.selectedRule?.id != 10L) {
+                                        isAdditionalDistanceExpanded = !isAdditionalDistanceExpanded
+                                    }
                                     .padding(14.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
@@ -607,7 +577,11 @@ fun CalculatorScreenContent(
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                         Text(
-                                            text = if (isAdditionalDistanceExpanded) "المسافة القانونية المقررة بالقاعدة: $statutoryDistance يوم" else "إضافة أيام مسافة (محلية أو بالخارج)",
+                                            text = if (uiState.selectedRule?.id == 10L) {
+                                                "لا تُضاف أيام مسافة تلقائيًا لتجديد الدعوى من الشطب"
+                                            } else if (isAdditionalDistanceExpanded) {
+                                                "المسافة القانونية المقررة بالقاعدة: $statutoryDistance يوم"
+                                            } else "إضافة أيام مسافة (محلية أو بالخارج)",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -624,7 +598,7 @@ fun CalculatorScreenContent(
 
                             // Expanded Content
                             AnimatedVisibility(
-                                visible = isAdditionalDistanceExpanded,
+                                visible = isAdditionalDistanceExpanded && uiState.selectedRule?.id != 10L,
                                 enter = expandVertically(animationSpec = tween(200, easing = FastOutSlowInEasing)) + fadeIn(animationSpec = tween(200)),
                                 exit = shrinkVertically(animationSpec = tween(180, easing = FastOutSlowInEasing)) + fadeOut(animationSpec = tween(180))
                             ) {
@@ -989,7 +963,7 @@ fun CalculatorScreenContent(
                                     try {
                                         ruleFocusRequester.requestFocus()
                                     } catch (_: Exception) {}
-                                    snackbarHostState.showSnackbar("تنبيه: يجب اختيار الإجراء القانوني أولاً")
+                                    transientAlert = "يجب اختيار الإجراء القانوني أولًا."
                                 }
                             } else {
                                 val distanceDays = uiState.additionalDistanceDaysInput.toIntOrNull()
@@ -1001,7 +975,7 @@ fun CalculatorScreenContent(
                                         try {
                                             distanceFocusRequester.requestFocus()
                                         } catch (_: Exception) {}
-                                        snackbarHostState.showSnackbar("تنبيه: ميعاد المسافة غير صحيح")
+                                        transientAlert = "يرجى تصحيح أيام المسافة أولًا."
                                     }
                                 } else {
                                     isRuleError = false
@@ -1039,7 +1013,7 @@ fun CalculatorScreenContent(
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "احسب الميعاد",
+                                text = if (uiState.selectedRule?.reviewStatus == "VERIFIED_ACCURATE") "احسب الميعاد" else "احسب تاريخًا استرشاديًا",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -1117,19 +1091,27 @@ fun CalculatorScreenContent(
             }
         }
 
-        // Snackbar Host for feedback
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp)
+        // Dialog-style feedback, no persistent error banner or Snackbar.
+        SweetAlertNotice(
+            message = uiState.errorMessage ?: transientAlert ?: uiState.successMessage,
+            kind = if (uiState.errorMessage != null || transientAlert != null) {
+                NoticeKind.ERROR
+            } else NoticeKind.SUCCESS,
+            onDismiss = {
+                transientAlert = null
+                onDismissMessages()
+            }
         )
     }
+
+    // Do not show a warning dialog when registering/calculating a deadline.
+    // Important legal review comments remain visible with the relevant article
+    // in the catalog; explicit errors and save success retain 5-second notices.
 
     // DatePickerDialog Component
     if (showDatePickerDialog) {
         val initialEpochMillis = uiState.announcementDate
-            .atStartOfDay(ZoneId.systemDefault())
+            .atStartOfDay(ZoneOffset.UTC)
             .toInstant()
             .toEpochMilli()
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialEpochMillis)
@@ -1141,7 +1123,7 @@ fun CalculatorScreenContent(
                     onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
                             val selectedLocalDate = Instant.ofEpochMilli(millis)
-                                .atZone(ZoneId.systemDefault())
+                                .atZone(ZoneOffset.UTC)
                                 .toLocalDate()
                             onAnnouncementDateChanged(selectedLocalDate)
                         }

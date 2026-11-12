@@ -1,5 +1,7 @@
 package com.ateflaw.legaldeadlines.data.seed
 
+import com.ateflaw.legaldeadlines.domain.calculator.LegalRuleSafety
+import com.ateflaw.legaldeadlines.domain.review.LegalRuleReviewCatalog
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.Holiday
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
@@ -123,8 +125,10 @@ object LegalRuleSeedData {
                 distanceDays = 0,
                 startRule = StartRule.NEXT_DAY,
                 lawArticle = "المادة 82 من قانون المرافعات المدنية والتجارية",
-                notes = "إذا بقيت الدعوى مشطوبة ستين يوماً ولم يطلب أحد الخصوم السير فيها وإعلان شريكه اعتبرت كأن لم تكن.",
-                summary = "تجديد دعوى من الشطب"
+                notes = "مدة الستين يومًا بالمادة 82 مرافعات تتصل بتجديد السير في الدعوى بعد الشطب. راجع تحديد جلسة التجديد وإعلان الخصم في الوقت المناسب واستثناءات أحكام النقض؛ مجرد حساب المدة لا يكفي.",
+                summary = "تجديد دعوى من الشطب",
+                triggerEventLabel = "تاريخ قرار شطب الدعوى",
+                distancePolicy = "NOT_APPLICABLE"
             ),
             LegalRule(
                 id = 11,
@@ -919,7 +923,10 @@ object LegalRuleSeedData {
                 distanceDays = 0,
                 startRule = StartRule.NEXT_DAY,
                 lawArticle = "المادة 940 من القانون المدني المصري",
-                notes = "يجب إعلان الرغبة في الشفعة رسمياً على يد محضر خلال 15 يوماً من تاريخ الإنذار الموجه من البائع أو المشتري.",
+                articleText = LegalRuleReviewCatalog.ARTICLE_940_TEXT,
+                officialSourceUrl = LegalRuleReviewCatalog.ARTICLE_940_SOURCE,
+                triggerEventLabel = "تاريخ الإنذار الرسمي بالبيع للشفيع",
+                notes = "مدة خمسة عشر يومًا تبدأ من الإنذار الرسمي الصحيح من البائع أو المشتري، وإعلان الرغبة يوجه إليهما معًا. تضاف أيام المسافة متى انطبقت شروطها. يُراجع أيضًا شكل الإنذار والمواد 941 و942 و943 و948 حسب الواقعة.",
                 summary = "إعلان رغبة الشفعة"
             ),
             LegalRule(
@@ -1899,27 +1906,79 @@ object LegalRuleSeedData {
                 notes = "يصدر المحافظ المختص أو من ينيبه قراراً مسبباً بإزالة أو تصحيح الأعمال الموقوفة خلال 15 يوماً على الأكثر من تاريخ إعلان قرار الوقف.",
                 summary = "قرار إزالة أعمال بناء مخالفة"
             )
-        )
+        ).map { rule ->
+            val kind = LegalRuleSafety.kind(rule).name
+            val correctedLawName = when (rule.id) {
+                3L -> "قانون الإثبات"
+                in 21L..24L -> "قانون الإثبات"
+                in 57L..58L -> "قانون الرسوم القضائية رقم 90 لسنة 1944"
+                in 59L..91L -> "القانون المدني"
+                in 92L..127L -> "قانون الإجراءات الجنائية"
+                128L -> "قانون حالات وإجراءات الطعن أمام محكمة النقض رقم 57 لسنة 1959"
+                in 129L..135L -> "قانون الأحوال الشخصية رقم 25 لسنة 1929"
+                in 136L..141L -> "قانون تنظيم إجراءات التقاضي في الأحوال الشخصية رقم 1 لسنة 2000"
+                142L -> "قانون إنشاء محاكم الأسرة رقم 10 لسنة 2004"
+                in 143L..146L -> "قانون مجلس الدولة"
+                in 147L..167L -> "قانون العمل"
+                in 168L..169L -> "قانون البناء"
+                else -> rule.lawName
+            }
+            // All 169 historical seed entries require independent article-by-article
+            // legal review. Never inject a made-up 1968 effective date into laws
+            // enacted decades later.
+            when (rule.id) {
+                in 147L..167L -> rule.copy(
+                    effectiveFrom = "",
+                    effectiveTo = "2025-08-31",
+                    reviewStatus = "NEEDS_REVIEW",
+                    revision = 1,
+                    calculationKind = kind,
+                    lawName = correctedLawName
+                )
+                in 92L..128L -> rule.copy(
+                    effectiveFrom = "",
+                    effectiveTo = "2027-09-30",
+                    reviewStatus = "NEEDS_REVIEW",
+                    revision = 1,
+                    calculationKind = kind,
+                    lawName = correctedLawName
+                )
+                else -> rule.copy(
+                    effectiveFrom = "",
+                    reviewStatus = "NEEDS_REVIEW",
+                    revision = 1,
+                    calculationKind = kind,
+                    lawName = correctedLawName
+                )
+            }
+        }
     }
 
-    fun getInitialOfficialHolidays(): List<Holiday> {
-        return listOf(
-            Holiday(id = 1, holidayDate = LocalDate.of(2026, 1, 7), name = "عيد الميلاد المجيد"),
-            Holiday(id = 2, holidayDate = LocalDate.of(2026, 1, 25), name = "عيد الشرطة وثورة 25 يناير"),
-            Holiday(id = 3, holidayDate = LocalDate.of(2026, 3, 20), name = "وقفة عيد الفطر المبارك"),
-            Holiday(id = 4, holidayDate = LocalDate.of(2026, 3, 21), name = "عيد الفطر المبارك"),
-            Holiday(id = 5, holidayDate = LocalDate.of(2026, 3, 22), name = "إجازة عيد الفطر المبارك"),
-            Holiday(id = 6, holidayDate = LocalDate.of(2026, 4, 13), name = "عيد شم النسيم"),
-            Holiday(id = 7, holidayDate = LocalDate.of(2026, 4, 25), name = "عيد تحرير سيناء"),
-            Holiday(id = 8, holidayDate = LocalDate.of(2026, 5, 1), name = "عيد العمال"),
-            Holiday(id = 9, holidayDate = LocalDate.of(2026, 5, 26), name = "وقفة عرفات"),
-            Holiday(id = 10, holidayDate = LocalDate.of(2026, 5, 27), name = "عيد الأضحى المبارك"),
-            Holiday(id = 11, holidayDate = LocalDate.of(2026, 5, 28), name = "إجازة عيد الأضحى المبارك"),
-            Holiday(id = 12, holidayDate = LocalDate.of(2026, 6, 17), name = "رأس السنة الهجرية"),
-            Holiday(id = 13, holidayDate = LocalDate.of(2026, 6, 30), name = "ثورة 30 يونيو"),
-            Holiday(id = 14, holidayDate = LocalDate.of(2026, 7, 23), name = "ثورة 23 يوليو"),
-            Holiday(id = 15, holidayDate = LocalDate.of(2026, 8, 26), name = "المولد النبوي الشريف"),
-            Holiday(id = 16, holidayDate = LocalDate.of(2026, 10, 6), name = "عيد القوات المسلحة (حرب 6 أكتوبر)")
-        )
-    }
+    // Published Egyptian Presidency calendar for national official holidays in 2026.
+    // Court-specific closure decisions still require separate review.
+    private const val SOURCE_2026_HOLIDAYS = "https://www.presidency.eg/ar/%D9%85%D8%B5%D8%B1/%D8%A7%D9%84%D8%B9%D8%B7%D9%84%D8%A7%D8%AA-%D8%A7%D9%84%D8%B1%D8%B3%D9%85%D9%8A%D8%A9/"
+
+    fun getInitialOfficialHolidays(): List<Holiday> = listOf(
+            Holiday(holidayDate = LocalDate.parse("2026-01-07"), name = "عيد الميلاد المجيد", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-01-29"), name = "ثورة 25 يناير وعيد الشرطة (إجازة منقولة)", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-03-19"), name = "إجازة عيد الفطر المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-03-20"), name = "إجازة عيد الفطر المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-03-21"), name = "إجازة عيد الفطر المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-03-22"), name = "إجازة عيد الفطر المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-03-23"), name = "إجازة عيد الفطر المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-04-13"), name = "عيد شم النسيم", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-04-25"), name = "عيد تحرير سيناء", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-05-07"), name = "إجازة عيد العمال المنقولة", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-05-26"), name = "وقفة عيد الأضحى المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-05-27"), name = "إجازة عيد الأضحى المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-05-28"), name = "إجازة عيد الأضحى المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-05-29"), name = "إجازة عيد الأضحى المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-05-30"), name = "إجازة عيد الأضحى المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-05-31"), name = "إجازة عيد الأضحى المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-06-18"), name = "إجازة رأس السنة الهجرية", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-07-02"), name = "إجازة ثورة 30 يونيو", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-07-23"), name = "ثورة 23 يوليو", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-08-27"), name = "إجازة المولد النبوي الشريف", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
+            Holiday(holidayDate = LocalDate.parse("2026-10-06"), name = "عيد القوات المسلحة", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS)
+    )
 }

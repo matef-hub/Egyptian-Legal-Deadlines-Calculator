@@ -22,5 +22,6 @@ data class DeadlineResult(
     val milestones: List<CalculationMilestone> = emptyList(),
     val distanceType: DistanceType = DistanceType.NONE,
     val judicialOrderDetails: String? = null,
-    val warnings: List<String> = emptyList()
+    val warnings: List<String> = emptyList(),
+    val isProvisional: Boolean = false
 )

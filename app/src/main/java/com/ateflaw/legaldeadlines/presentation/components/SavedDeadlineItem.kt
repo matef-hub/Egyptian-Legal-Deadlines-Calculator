@@ -74,11 +74,11 @@ fun SavedDeadlineItem(
 
     val onAddFinalDeadlineToCalendar = {
         val title = if (deadline.caseNumber.isNotBlank()) {
-            "⚖️ ميعاد قانوني: ${deadline.actionName} (دعوى ${deadline.caseNumber})".toArabicDigits()
+            "⚠️ ميعاد محفوظ للمراجعة: ${deadline.actionName} (دعوى ${deadline.caseNumber})".toArabicDigits()
         } else {
-            "⚖️ ميعاد قانوني: ${deadline.actionName}".toArabicDigits()
+            "⚠️ ميعاد محفوظ للمراجعة: ${deadline.actionName}".toArabicDigits()
         }
-        val descriptionText = "الميعاد النهائي واجب الالتزام: $dayNameArabic، $finalDateFormatted\n" +
+        val descriptionText = "موعد محفوظ للمراجعة وليس ضماناً بصحة حساب الميعاد: $dayNameArabic، $finalDateFormatted\n" +
             "السند التشريعي: ${deadline.lawArticle.toArabicDigits()}\n\n" +
             deadline.calculationExplanation
 
@@ -90,7 +90,7 @@ fun SavedDeadlineItem(
                 putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
                 val epochMillis = deadline.finalDeadline.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, epochMillis)
-                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, epochMillis + 86400000L)
+                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, deadline.finalDeadline.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
             }
             context.startActivity(intent)
         } catch (_: Exception) {
@@ -118,7 +118,7 @@ fun SavedDeadlineItem(
 
         val descriptionText = "تنبيه إجرائي استباقي قبل فوات الميعاد بـ ${proactiveDays.toString().toArabicDigits()} أيام.\n" +
             "تاريخ التنبيه: $proactiveDayName، $proactiveFormatted.\n" +
-            "الميعاد النهائي الملزم: $dayNameArabic، $finalDateFormatted.\n" +
+            "الموعد المسجل للمراجعة: $dayNameArabic، $finalDateFormatted.\n" +
             "السند: ${deadline.lawArticle.toArabicDigits()}\n\n" +
             "الإجراء المطلوب: سرعة قيد الطعن وإيداع الصحيفة بقلم الكتاب.\n\n" +
             deadline.calculationExplanation
@@ -132,7 +132,7 @@ fun SavedDeadlineItem(
                 // Epoch starts on the ACTUAL PROACTIVE DATE!
                 val epochMillis = proactiveDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, epochMillis)
-                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, epochMillis + 86400000L)
+                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, proactiveDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
             }
             context.startActivity(intent)
         } catch (_: Exception) {

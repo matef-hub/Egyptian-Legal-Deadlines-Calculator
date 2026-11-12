@@ -80,6 +80,7 @@ import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTh
 import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.HolidaysViewModel
+import com.ateflaw.legaldeadlines.presentation.viewmodel.RuleCatalogViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -118,6 +119,10 @@ class MainActivity : ComponentActivity() {
             )
         }
 
+        val ruleCatalogViewModel: RuleCatalogViewModel by viewModels {
+            RuleCatalogViewModel.factory(appContainer.legalRuleRepository)
+        }
+
         setContent {
             EgyptianLegalDeadlinesTheme {
                 val view = LocalView.current
@@ -150,7 +155,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                BackHandler(enabled = currentRoute == Screen.SavedDeadlines.route || currentRoute == Screen.Holidays.route) {
+                BackHandler(enabled = currentRoute == Screen.SavedDeadlines.route || currentRoute == Screen.Holidays.route || currentRoute == Screen.RulesCatalog.route) {
                     navigateTo(Screen.Calculator.route)
                 }
 
@@ -170,6 +175,7 @@ class MainActivity : ComponentActivity() {
                                     val target = when (currentRoute) {
                                         Screen.Calculator.route -> Screen.Holidays.route
                                         Screen.Holidays.route -> Screen.SavedDeadlines.route
+                                        Screen.SavedDeadlines.route -> Screen.RulesCatalog.route
                                         else -> Screen.Calculator.route
                                     }
                                     navigateTo(target)
@@ -202,6 +208,7 @@ class MainActivity : ComponentActivity() {
                             mainViewModel = calculatorViewModel,
                             deadlineListViewModel = deadlineListViewModel,
                             holidaysViewModel = holidaysViewModel,
+                            ruleCatalogViewModel = ruleCatalogViewModel,
                             modifier = Modifier.fillMaxSize()
                         )
                     }

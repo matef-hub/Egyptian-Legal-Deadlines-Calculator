@@ -37,7 +37,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "CALENDARIFIC_API_KEY", "\"$calendarificApiKey\"")
+        // No third-party API credential is packaged into a production APK/AAB.
+        buildConfigField("String", "CALENDARIFIC_API_KEY", "\"YOUR_API_KEY\"")
 
         javaCompileOptions {
             annotationProcessorOptions {
@@ -70,9 +71,11 @@ android {
             signingConfig = signingConfigs.getByName("release")
         }
         debug {
+            buildConfigField("String", "CALENDARIFIC_API_KEY", "\"$calendarificApiKey\"")
             isMinifyEnabled = false
-            applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
+            // A distinct package protects existing user records when CI runner debug keys rotate.
+            applicationIdSuffix = ".legalreview" 
+            versionNameSuffix = "-legalreview" 
         }
     }
 
@@ -143,6 +146,8 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.room.testing)
+    // Required by the JVM-only Room migration test fixture (DriverManager jdbc:sqlite:).
+    testImplementation("org.xerial:sqlite-jdbc:3.46.1.0")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     add("androidTestImplementation", platform(libs.androidx.compose.bom))

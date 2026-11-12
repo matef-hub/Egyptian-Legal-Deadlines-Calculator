@@ -65,7 +65,7 @@ data class SavedDeadlineEntity(
         actionName = actionName,
         announcementDate = LocalDate.parse(announcementDate),
         duration = duration,
-        unit = try { DurationUnit.valueOf(unit) } catch (_: Exception) { DurationUnit.DAYS },
+        unit = DurationUnit.valueOf(unit),
         distanceDays = distanceDays,
         finalDeadline = LocalDate.parse(finalDeadline),
         lawArticle = lawArticle,
