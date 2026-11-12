@@ -1,39 +1,46 @@
 package com.ateflaw.legaldeadlines.presentation.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -44,26 +51,29 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
-import com.ateflaw.legaldeadlines.presentation.viewmodel.RuleCatalogUiState
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.model.LegalRuleDraft
 import com.ateflaw.legaldeadlines.domain.review.AuditLevel
 import com.ateflaw.legaldeadlines.domain.review.LegalRuleReviewCatalog
-import com.ateflaw.legaldeadlines.presentation.components.SweetAlertNotice
 import com.ateflaw.legaldeadlines.presentation.components.NoticeKind
+import com.ateflaw.legaldeadlines.presentation.components.SweetAlertNotice
+import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
+import com.ateflaw.legaldeadlines.presentation.viewmodel.RuleCatalogUiState
 import com.ateflaw.legaldeadlines.presentation.viewmodel.RuleCatalogViewModel
 
 private const val ALL_LAWS = "كل القوانين"
@@ -100,7 +110,8 @@ fun RulesCatalogScreen(
     var selectedReview by remember { mutableStateOf("ALL") }
     var editingRule by remember { mutableStateOf<LegalRule?>(null) }
     var showEditor by remember { mutableStateOf(false) }
-    var openedAtToken by remember { androidx.compose.runtime.mutableLongStateOf(0L) }
+    var openedAtToken by remember { mutableLongStateOf(0L) }
+
     val laws = remember(state.rules) {
         state.rules.map { it.lawName.ifBlank { "قانون غير مصنف" } }.distinct().sorted()
     }
@@ -112,12 +123,12 @@ fun RulesCatalogScreen(
         state.rules.filter { rule ->
             val law = rule.lawName.ifBlank { "قانون غير مصنف" }
             (selectedLaw == ALL_LAWS || law == selectedLaw) &&
-                (selectedReview == "ALL" ||
-                    LegalRuleReviewCatalog.finding(rule).level.name == selectedReview) &&
-                (search.isBlank() || listOf(
-                    rule.actionName, law, rule.lawArticle, rule.articleText, rule.notes,
-                    LegalRuleReviewCatalog.finding(rule).note, rule.reviewerNote, rule.reviewMethod
-                ).any { it.contains(search, ignoreCase = true) })
+                    (selectedReview == "ALL" ||
+                            LegalRuleReviewCatalog.finding(rule).level.name == selectedReview) &&
+                    (search.isBlank() || listOf(
+                        rule.actionName, law, rule.lawArticle, rule.articleText, rule.notes,
+                        LegalRuleReviewCatalog.finding(rule).note, rule.reviewerNote, rule.reviewMethod
+                    ).any { it.contains(search, ignoreCase = true) })
         }
     }
     val grouped = remember(filtered) {
@@ -134,31 +145,44 @@ fun RulesCatalogScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(top = innerPadding.calculateTopPadding() + 8.dp, start = 16.dp, end = 16.dp)
+            .padding(top = innerPadding.calculateTopPadding() + 6.dp, start = 16.dp, end = 16.dp)
     ) {
+        // 1. رأس الشاشة المدمج (Compact Header)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "دليل مواعيد الإجراءات",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                    text = "دليل مواعيد الإجراءات",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
-                Text(
-                    "${state.rules.size} قاعدة • ${laws.size} قانون",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Spacer(Modifier.height(2.dp))
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                ) {
+                    Text(
+                        text = "${state.rules.size} قاعدة • ${laws.size} قانون",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    )
+                }
             }
-            androidx.compose.material3.IconButton(
+            IconButton(
                 onClick = onOpenBackup,
                 modifier = Modifier.size(36.dp)
             ) {
-                Icon(Icons.Default.Lock, contentDescription = "نسخ احتياطي", tint = MaterialTheme.colorScheme.primary)
+                Icon(
+                    Icons.Default.Lock,
+                    contentDescription = "نسخ احتياطي",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(6.dp))
             Button(
                 onClick = {
                     onDismissMessage()
@@ -166,34 +190,53 @@ fun RulesCatalogScreen(
                     openedAtToken = state.savedToken
                     showEditor = true
                 },
+                shape = RoundedCornerShape(10.dp),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                 modifier = Modifier.height(36.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "إضافة ميعاد", modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(4.dp))
-                Text("إضافة")
+                Text("إضافة", style = MaterialTheme.typography.labelLarge)
             }
         }
-        Spacer(Modifier.height(12.dp))
+
+        Spacer(Modifier.height(10.dp))
+
+        // 2. شريط البحث
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
-            label = { Text("ابحث عن إجراء أو مادة أو قانون") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            placeholder = { Text("ابحث عن إجراء أو مادة أو قانون...", style = MaterialTheme.typography.bodyMedium) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
             singleLine = true,
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth()
         )
+
         Spacer(Modifier.height(8.dp))
-        Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+        // 3. فلاتر القوانين والحالات
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
             (listOf(ALL_LAWS) + laws).forEach { law ->
-                FilterChip(selected = selectedLaw == law, onClick = { selectedLaw = law },
-                    label = { Text(law, maxLines = 1) })
+                FilterChip(
+                    selected = selectedLaw == law,
+                    onClick = { selectedLaw = law },
+                    label = { Text(law, maxLines = 1, style = MaterialTheme.typography.labelMedium) }
+                )
             }
         }
-        Spacer(Modifier.height(4.dp))
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
             listOf(
                 Triple("ALL", "جميع الحالات", state.rules.size),
                 Triple("CORRECTION", "تحتاج تصحيح", auditCounts[AuditLevel.CORRECTION] ?: 0),
@@ -204,13 +247,17 @@ fun RulesCatalogScreen(
                 Triple("TEXT_ADDED", "النص مضاف", auditCounts[AuditLevel.TEXT_ADDED] ?: 0),
                 Triple("ARTICLE_MATCHED", "النص مطابق", auditCounts[AuditLevel.ARTICLE_MATCHED] ?: 0)
             ).forEach { (key, label, count) ->
-                FilterChip(selected = selectedReview == key,
+                FilterChip(
+                    selected = selectedReview == key,
                     onClick = { selectedReview = key },
-                    label = { Text("$label ($count)") })
+                    label = { Text("$label ($count)", style = MaterialTheme.typography.labelMedium) }
+                )
             }
         }
-        Spacer(Modifier.height(8.dp))
-        // Five-second SweetAlertNotice is displayed below.
+
+        Spacer(Modifier.height(6.dp))
+
+        // 4. قائمة القواعد القانونية
         when {
             state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -220,29 +267,51 @@ fun RulesCatalogScreen(
             }
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 28.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 grouped.forEach { (law, rules) ->
                     item(key = "law:$law") {
-                        Column(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp)) {
-                            Text(law, style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                            Text("${rules.size} ميعاد", style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            HorizontalDivider(Modifier.padding(top = 6.dp))
+                        Column(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp, bottom = 2.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = law,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "${rules.size} ميعاد",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            HorizontalDivider(
+                                modifier = Modifier.padding(top = 4.dp),
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                            )
                         }
                     }
                     items(rules, key = { "rule:${it.id}" }) { rule ->
-                        RuleCatalogCard(rule = rule, onEdit = {
-                            onDismissMessage()
-                            editingRule = rule
-                            openedAtToken = state.savedToken
-                            showEditor = true
-                        })
+                        RuleCatalogCard(
+                            rule = rule,
+                            onEdit = {
+                                onDismissMessage()
+                                editingRule = rule
+                                openedAtToken = state.savedToken
+                                showEditor = true
+                            }
+                        )
                     }
                 }
-                item { Spacer(Modifier.height(16.dp)) }
             }
         }
     }
@@ -269,80 +338,217 @@ private fun RuleCatalogCard(rule: LegalRule, onEdit: () -> Unit) {
     var expanded by remember(rule.id, rule.revision) { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
     val finding = LegalRuleReviewCatalog.finding(rule)
-    val reviewColor = when (finding.level) {
-        AuditLevel.CORRECTION -> MaterialTheme.colorScheme.tertiaryContainer
-        AuditLevel.BLOCKED -> MaterialTheme.colorScheme.errorContainer
-        AuditLevel.HIGH -> MaterialTheme.colorScheme.tertiaryContainer
-        AuditLevel.REVIEW -> MaterialTheme.colorScheme.surfaceVariant
-        AuditLevel.TEXT_ADDED -> MaterialTheme.colorScheme.secondaryContainer
-        AuditLevel.ARTICLE_MATCHED -> MaterialTheme.colorScheme.secondaryContainer
-        AuditLevel.VERIFIED -> MaterialTheme.colorScheme.secondaryContainer
+
+    // ألوان هادئة متناسقة مع الهوية الكلاسيكية
+    val cardContainerColor = when (finding.level) {
+        AuditLevel.CORRECTION -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.55f)
+        AuditLevel.BLOCKED -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.45f)
+        AuditLevel.HIGH -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f)
+        AuditLevel.REVIEW -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+        else -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f)
     }
+
+    // لون الشريط الجانبي الدال على حالة القاعدة
+    val accentStripColor = when (finding.level) {
+        AuditLevel.CORRECTION, AuditLevel.HIGH -> Color(0xFFB45309) // كهرماني دافئ
+        AuditLevel.BLOCKED -> MaterialTheme.colorScheme.error
+        AuditLevel.REVIEW -> MaterialTheme.colorScheme.outline
+        else -> MaterialTheme.colorScheme.primary // كحلي للمعتمدة
+    }
+
     val reviewText = when (finding.level) {
-        AuditLevel.CORRECTION -> "تحتاج تصحيحًا — راجع الملاحظة"
-        AuditLevel.BLOCKED -> "محجوبة من الحساب"
-        AuditLevel.HIGH -> "مراجعة قانونية مهمة"
-        AuditLevel.REVIEW -> "نص المادة ناقص"
-        AuditLevel.TEXT_ADDED -> "النص محفوظ — بانتظار المطابقة"
-        AuditLevel.ARTICLE_MATCHED -> "النص والمدة مطابقان للمصدر — التطبيق يحتاج مراجعة"
-        AuditLevel.VERIFIED -> if (rule.workbookDecision == "USER_APPROVED") "تم حفظ واعتماد التعديل" else "معتمدة بملف المراجعة"
+        AuditLevel.CORRECTION -> "تحتاج تصحيحًا"
+        AuditLevel.BLOCKED -> "محجوبة"
+        AuditLevel.HIGH -> "مراجعة مهمة"
+        AuditLevel.REVIEW -> "نص ناقص"
+        AuditLevel.TEXT_ADDED -> "بانتظار المطابقة"
+        AuditLevel.ARTICLE_MATCHED -> "تحتاج مراجعة تطبيق"
+        AuditLevel.VERIFIED -> if (rule.workbookDecision == "USER_APPROVED") "معتمدة (معدلة)" else "معتمدة"
     }
+
     Card(
-        modifier = Modifier.fillMaxWidth().wrapContentHeight(),
-        colors = CardDefaults.cardColors(containerColor = reviewColor),
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = cardContainerColor),
         onClick = { expanded = !expanded }
     ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text(rule.actionName, modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                Text("${rule.duration} ${rule.unit.arabicDisplayName}",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary)
-            }
-            Text(rule.lawArticle.ifBlank { "بدون رقم مادة" },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = if (expanded) Int.MAX_VALUE else 2,
-                overflow = TextOverflow.Ellipsis)
-            Text("$reviewText • إصدار ${rule.revision}",
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.labelMedium)
-            Text("ملاحظة بالتعديل / التدقيق: ${finding.note}",
-                maxLines = if (expanded) Int.MAX_VALUE else 3,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.bodySmall)
-            AnimatedVisibility(visible = expanded) {
-                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    if (rule.reviewMethod.isNotBlank()) Text("نوع الميعاد: ${rule.reviewMethod}", style = MaterialTheme.typography.bodySmall)
-                    Text("نص المادة", fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.labelLarge)
-                    Text(rule.articleText.ifBlank { "لم يُسجل النص الكامل للمادة بعد." },
-                        style = MaterialTheme.typography.bodyMedium)
-                    if (rule.reviewVersion > 0 && rule.reviewerNote.isNotBlank()) {
-                        Text("ملاحظات المراجع بالملف: ${rule.reviewerNote}", style = MaterialTheme.typography.bodySmall)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+        ) {
+            // شريط جانبي رفيع لتمييز الحالة بصرياً
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .fillMaxHeight()
+                    .background(accentStripColor)
+            )
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // الصف العلوي: اسم الإجراء + كبسولة مدة الميعاد البارزة
+                Row(
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = rule.actionName,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    ) {
+                        Text(
+                            text = "${rule.duration} ${rule.unit.arabicDisplayName}",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
                     }
-                    if (rule.notes.isNotBlank()) {
-                        Text("ملاحظات: ${rule.notes}", style = MaterialTheme.typography.bodySmall)
-                    }
-                    val source = if (LegalRuleReviewCatalog.matchesArticle940(rule)) {
-                        LegalRuleReviewCatalog.ARTICLE_940_SOURCE
-                    } else rule.officialSourceUrl
-                    if (source.isNotBlank()) {
-                        TextButton(onClick = { uriHandler.openUri(source) }) {
-                            Text("فتح رابط المصدر الوارد بملف المراجعة")
+                }
+
+                // رقم المادة وحالة الاعتماد في سطر واحد منظم
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = rule.lawArticle.ifBlank { "بدون رقم مادة" },
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    Text(
+                        text = "•",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "$reviewText (إصدار ${rule.revision})",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = accentStripColor,
+                        maxLines = 1
+                    )
+                }
+
+                // ملاحظة التدقيق المختصرة
+                if (finding.note.isNotBlank()) {
+                    Text(
+                        text = "ملاحظة: ${finding.note}",
+                        maxLines = if (expanded) Int.MAX_VALUE else 2,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
+                    )
+                }
+
+                // التفاصيل الموسعة عند الضغط على البطاقة أو زر "عرض النص"
+                AnimatedVisibility(visible = expanded) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.65f))
+                            .padding(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        if (rule.reviewMethod.isNotBlank()) {
+                            Text(
+                                text = "طريقة الحساب: ${rule.reviewMethod}",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Text(
+                            text = "نص المادة:",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        Text(
+                            text = rule.articleText.ifBlank { "لم يُسجل النص الكامل للمادة بعد." },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        if (rule.reviewVersion > 0 && rule.reviewerNote.isNotBlank()) {
+                            Text(
+                                text = "ملاحظات المراجع: ${rule.reviewerNote}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (rule.notes.isNotBlank()) {
+                            Text(
+                                text = "ملاحظات إضافية: ${rule.notes}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        val source = if (LegalRuleReviewCatalog.matchesArticle940(rule)) {
+                            LegalRuleReviewCatalog.ARTICLE_940_SOURCE
+                        } else rule.officialSourceUrl
+                        if (source.isNotBlank()) {
+                            TextButton(
+                                onClick = { uriHandler.openUri(source) },
+                                contentPadding = PaddingValues(0.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Text("فتح رابط المصدر الرسمي", style = MaterialTheme.typography.labelMedium)
+                            }
                         }
                     }
                 }
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = null)
+
+                // صف الإجراءات المصغر والمضغوط في أسفل البطاقة
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = onEdit,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                        modifier = Modifier.height(30.dp)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(15.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("تعديل", style = MaterialTheme.typography.labelMedium)
+                    }
                     Spacer(Modifier.width(4.dp))
-                    Text("تعديل")
-                }
-                TextButton(onClick = { expanded = !expanded }) {
-                    Text(if (expanded) "إخفاء النص" else "عرض النص")
+                    TextButton(
+                        onClick = { expanded = !expanded },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                        modifier = Modifier.height(30.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (expanded) Icons.Outlined.VisibilityOff else Icons.Outlined.Description,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = if (expanded) "إخفاء النص" else "عرض النص",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
                 }
             }
         }
@@ -377,7 +583,9 @@ private fun RuleEditorDialog(
         title = { Text(if (rule == null) "إضافة ميعاد قانوني" else "تعديل الميعاد القانوني") },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth().heightIn(max = 470.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 470.dp)
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -388,15 +596,23 @@ private fun RuleEditorDialog(
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
-                OutlinedTextField(value = law, onValueChange = { law = it },
-                    label = { Text("القانون *") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = action, onValueChange = { action = it },
-                    label = { Text("اسم الإجراء أو الميعاد *") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = article, onValueChange = { article = it },
-                    label = { Text("رقم المادة والسند القانوني *") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = articleText, onValueChange = { articleText = it },
+                OutlinedTextField(
+                    value = law, onValueChange = { law = it },
+                    label = { Text("القانون *") }, singleLine = true, modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = action, onValueChange = { action = it },
+                    label = { Text("اسم الإجراء أو الميعاد *") }, modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = article, onValueChange = { article = it },
+                    label = { Text("رقم المادة والسند القانوني *") }, modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = articleText, onValueChange = { articleText = it },
                     label = { Text("نص المادة بالكامل ${if (rule == null) "*" else ""}") },
-                    minLines = 4, maxLines = 9, modifier = Modifier.fillMaxWidth())
+                    minLines = 4, maxLines = 9, modifier = Modifier.fillMaxWidth()
+                )
                 OutlinedTextField(
                     value = duration,
                     onValueChange = { input -> duration = input.filter { it.isDigit() }.take(6) },
@@ -406,37 +622,50 @@ private fun RuleEditorDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Text("وحدة المدة (أقل وحدة: يوم واحد)", style = MaterialTheme.typography.labelLarge)
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     DurationUnit.entries.filter { it != DurationUnit.HOURS }.forEach { choice ->
-                        FilterChip(selected = choice == unit, onClick = { unit = choice },
-                            label = { Text(choice.arabicDisplayName) })
+                        FilterChip(
+                            selected = choice == unit, onClick = { unit = choice },
+                            label = { Text(choice.arabicDisplayName) }
+                        )
                     }
                 }
-                OutlinedTextField(value = sourceUrl, onValueChange = { sourceUrl = it },
+                OutlinedTextField(
+                    value = sourceUrl, onValueChange = { sourceUrl = it },
                     label = { Text("رابط المصدر الرسمي (https://)") },
-                    minLines = 1, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = notes, onValueChange = { notes = it },
+                    minLines = 1, modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = notes, onValueChange = { notes = it },
                     label = { Text("ملاحظات قانونية (اختياري)") },
-                    minLines = 2, modifier = Modifier.fillMaxWidth())
-                // Validation feedback appears in the shared five-second notice.
+                    minLines = 2, modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
             Button(onClick = {
-                onSave(LegalRuleDraft(
-                    actionName = action,
-                    lawName = law,
-                    lawArticle = article,
-                    articleText = articleText,
-                    durationText = duration,
-                    unit = unit,
-                    notes = notes,
-                    officialSourceUrl = sourceUrl
-                ))
+                onSave(
+                    LegalRuleDraft(
+                        actionName = action,
+                        lawName = law,
+                        lawArticle = article,
+                        articleText = articleText,
+                        durationText = duration,
+                        unit = unit,
+                        notes = notes,
+                        officialSourceUrl = sourceUrl
+                    )
+                )
             }, enabled = !isSaving) {
                 if (isSaving) CircularProgressIndicator(
-                    modifier = Modifier.height(18.dp).width(18.dp),
+                    modifier = Modifier
+                        .height(18.dp)
+                        .width(18.dp),
                     strokeWidth = 2.dp
                 ) else Text("حفظ واعتماد")
             }

@@ -9,73 +9,34 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.CompareArrows
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.EventAvailable
-import androidx.compose.material.icons.filled.Gavel
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ateflaw.legaldeadlines.LegalDeadlinesApplication
-import com.ateflaw.legaldeadlines.R
-import com.ateflaw.legaldeadlines.presentation.navigation.AppNavHost
-import com.ateflaw.legaldeadlines.presentation.navigation.Screen
 import com.ateflaw.legaldeadlines.presentation.components.FloatingBottomNavigationBar
 import com.ateflaw.legaldeadlines.presentation.components.ModernTopAppBar
+import com.ateflaw.legaldeadlines.presentation.navigation.AppNavHost
+import com.ateflaw.legaldeadlines.presentation.navigation.Screen
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListViewModel
@@ -155,7 +116,12 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                BackHandler(enabled = currentRoute == Screen.SavedDeadlines.route || currentRoute == Screen.Holidays.route || currentRoute == Screen.RulesCatalog.route || currentRoute == Screen.BackupRestore.route) {
+                BackHandler(
+                    enabled = currentRoute == Screen.SavedDeadlines.route ||
+                            currentRoute == Screen.Holidays.route ||
+                            currentRoute == Screen.RulesCatalog.route ||
+                            currentRoute == Screen.BackupRestore.route
+                ) {
                     if (currentRoute == Screen.BackupRestore.route) {
                         navController.popBackStack()
                     } else {
@@ -171,7 +137,7 @@ class MainActivity : ComponentActivity() {
                             enter = fadeIn(animationSpec = tween(durationMillis = 400)) +
                                     slideInVertically(animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)) { -it },
                             exit = fadeOut(animationSpec = tween(durationMillis = 300)) +
-                                   slideOutVertically(animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)) { -it }
+                                    slideOutVertically(animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)) { -it }
                         ) {
                             ModernTopAppBar(
                                 currentRoute = currentRoute,
@@ -193,18 +159,30 @@ class MainActivity : ComponentActivity() {
                             enter = fadeIn(animationSpec = tween(durationMillis = 400)) +
                                     slideInVertically(animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)) { it },
                             exit = fadeOut(animationSpec = tween(durationMillis = 300)) +
-                                   slideOutVertically(animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)) { it }
+                                    slideOutVertically(animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)) { it }
                         ) {
-                            FloatingBottomNavigationBar(
-                                currentRoute = currentRoute,
-                                onNavigateTo = navigateTo
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        brush = Brush.verticalGradient(
+                                            0.0f to Color.Transparent,
+                                            0.35f to MaterialTheme.colorScheme.background.copy(alpha = 0.92f),
+                                            0.65f to MaterialTheme.colorScheme.background,
+                                            1.0f to MaterialTheme.colorScheme.background
+                                        )
+                                    )
+                            ) {
+                                FloatingBottomNavigationBar(
+                                    currentRoute = currentRoute,
+                                    onNavigateTo = navigateTo
+                                )
+                            }
                         }
                     }
                 ) { innerPadding ->
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         AppNavHost(
                             navController = navController,
