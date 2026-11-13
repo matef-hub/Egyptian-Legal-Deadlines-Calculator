@@ -89,6 +89,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -166,6 +167,7 @@ fun CalculatorScreenContent(
     onDismissMessages: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+    val resultScrollState = rememberScrollState()
     val resultDateRequester = remember { BringIntoViewRequester() }
     val coroutineScope = rememberCoroutineScope()
     var transientAlert by remember { mutableStateOf<String?>(null) }
@@ -245,21 +247,33 @@ fun CalculatorScreenContent(
         }
     }
 
-    // Bring the final date itself into view, not the bottom action buttons.
-    val isPreview = LocalInspectionMode.current
-    LaunchedEffect(uiState.result) {
-        if (!isPreview && uiState.result != null) {
-            delay(300.milliseconds)
-            resultDateRequester.bringIntoView()
-        }
-    }
+    // The result is shown in its own scrollable page starting at the top.
 
     Box(modifier = modifier.fillMaxSize()) {
+        if (uiState.result != null) {
+            // Dedicated result view prevents the form from appearing cut off above
+            // the result and always starts at the top of the final deadline.
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(resultScrollState)
+                    .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 28.dp)
+            ) {
+                CalculationResultCard(
+                    result = uiState.result,
+                    isSaved = uiState.isSavedSuccessfully,
+                    initialReminderDays = uiState.proactiveReminderDays,
+                    onReminderDaysChanged = onReminderDaysChanged,
+                    onSaveClick = { days -> onSaveCurrentDeadline(days) },
+                    onBackClick = { onResetCalculation() }
+                )
+            }
+        } else {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 12.dp, vertical = 10.dp)
+                .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 28.dp)
                 .graphicsLayer {
                     alpha = formAlpha
                     translationY = formTranslationY
@@ -1151,6 +1165,26 @@ fun CalculatorScreenContent(
                     }
                 }
             }
+        }
+        } // End of editable input form
+
+        // Fade the first few pixels of scrolled content to avoid a hard cut line.
+        val activeScroll = if (uiState.result == null) scrollState.value else resultScrollState.value
+        if (activeScroll > 0) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(16.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.background,
+                                MaterialTheme.colorScheme.background.copy(alpha = 0f)
+                            )
+                        )
+                    )
+            )
         }
 
         // Dialog-style feedback, no persistent error banner or Snackbar.
