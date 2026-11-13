@@ -19,6 +19,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,6 +32,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -38,6 +41,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
@@ -54,12 +58,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.window.Dialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -70,7 +71,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -85,13 +85,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -164,7 +164,8 @@ fun CalculatorScreenContent(
     var transientAlert by remember { mutableStateOf<String?>(null) }
 
     // Form focus requesters for automatic validation navigation
-    val ruleFocusRequester = remember { FocusRequester() }
+    val searchFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
     val distanceFocusRequester = remember { FocusRequester() }
 
     var isRuleError by remember { mutableStateOf(false) }
@@ -173,7 +174,7 @@ fun CalculatorScreenContent(
     var distanceErrorText by remember { mutableStateOf<String?>(null) }
 
     // Searchable dropdown state
-    var searchQuery by remember { mutableStateOf(uiState.selectedRule?.actionName ?: "") }
+    var searchQuery by remember { mutableStateOf("") }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     var showDatePickerDialog by remember { mutableStateOf(false) }
 
@@ -197,15 +198,6 @@ fun CalculatorScreenContent(
     // Collapsible sections state
     var isAdditionalDistanceExpanded by remember { mutableStateOf(false) }
     var isCaseDetailsExpanded by remember { mutableStateOf(false) }
-
-    // Keep searchQuery in sync when selectedRule changes externally (e.g. reset)
-    LaunchedEffect(uiState.selectedRule) {
-        if (uiState.selectedRule == null) {
-            searchQuery = ""
-        } else if (searchQuery.isBlank() || searchQuery != uiState.selectedRule.actionName) {
-            searchQuery = uiState.selectedRule.actionName
-        }
-    }
 
     // Expand distance section automatically if distance days input is > 0
     LaunchedEffect(uiState.additionalDistanceDaysInput) {
@@ -356,156 +348,55 @@ fun CalculatorScreenContent(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Read-only display with ellipsis; editable search lives in the menu.
-                            ExposedDropdownMenuBox(
-                                expanded = isDropdownExpanded,
-                                onExpandedChange = { expanded ->
-                                    isDropdownExpanded = expanded
-                                    if (expanded) searchQuery = ""
+                            // The selected value is read-only. Search happens in a
+                            // focusable Dialog window, not inside a popup menu.
+                            Surface(
+                                onClick = {
+                                    searchQuery = ""
+                                    isDropdownExpanded = true
                                 },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f).heightIn(min = 56.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (isRuleError) MaterialTheme.colorScheme.error
+                                    else MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                                ),
+                                color = MaterialTheme.colorScheme.surface
                             ) {
-                                Surface(
-                                    modifier = Modifier
-                                        .menuAnchor(
-                                            type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
-                                            enabled = true
-                                        )
-                                        .fillMaxWidth()
-                                        .focusRequester(ruleFocusRequester),
-                                    shape = RoundedCornerShape(10.dp),
-                                    border = BorderStroke(
-                                        width = 1.dp,
-                                        color = if (isRuleError) MaterialTheme.colorScheme.error
-                                            else MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
-                                    ),
-                                    color = MaterialTheme.colorScheme.surface
+                                Row(
+                                    modifier = Modifier.fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .heightIn(min = 56.dp)
-                                            .padding(horizontal = 12.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Text(
-                                            text = uiState.selectedRule?.actionName?.toArabicDigits()
-                                                ?: "اختر الإجراء القانوني",
-                                            modifier = Modifier.weight(1f),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = if (uiState.selectedRule == null)
-                                                MaterialTheme.colorScheme.onSurfaceVariant
-                                            else MaterialTheme.colorScheme.onSurface
-                                        )
-                                        Icon(
-                                            imageVector = Icons.Default.ArrowDropDown,
-                                            contentDescription = "فتح قائمة الإجراءات",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                }
-
-                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                                ExposedDropdownMenu(
-                                    expanded = isDropdownExpanded,
-                                    onDismissRequest = { isDropdownExpanded = false },
-                                    modifier = Modifier
-                                        .exposedDropdownSize()
-                                        .heightIn(max = 280.dp),
-                                    shape = RoundedCornerShape(12.dp),
-                                    containerColor = MaterialTheme.colorScheme.surface,
-                                    shadowElevation = 4.dp,
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-                                ) {
-                                    OutlinedTextField(
-                                        value = searchQuery,
-                                        onValueChange = { searchQuery = it },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                                        placeholder = { Text("ابحث باسم الإجراء أو المادة") },
-                                        leadingIcon = {
-                                            Icon(Icons.Default.Search, contentDescription = null)
-                                        },
-                                        singleLine = true,
-                                        textStyle = MaterialTheme.typography.bodyMedium,
-                                        shape = RoundedCornerShape(10.dp)
+                                    Text(
+                                        text = uiState.selectedRule?.actionName?.toArabicDigits()
+                                            ?: "اختر الإجراء القانوني",
+                                        modifier = Modifier.weight(1f),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
-                                    if (filteredRules.isEmpty()) {
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(
-                                                    text = "لا توجد نتائج مطابقة لـ \"$searchQuery\"",
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    textAlign = TextAlign.Right,
-                                                    modifier = Modifier.fillMaxWidth()
-                                                )
-                                            },
-                                            onClick = {},
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                    } else {
-                                        filteredRules.forEachIndexed { index, rule ->
-                                            if (index > 0) {
-                                                HorizontalDivider(
-                                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
-                                                    thickness = 1.dp
-                                                )
-                                            }
-                                            DropdownMenuItem(
-                                                text = {
-                                                    Column(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        horizontalAlignment = Alignment.End
-                                                    ) {
-                                                        Text(
-                                                            text = rule.actionName,
-                                                            style = MaterialTheme.typography.bodyMedium,
-                                                            fontWeight = FontWeight.Bold,
-                                                            textAlign = TextAlign.Right,
-                                                            color = MaterialTheme.colorScheme.onSurface,
-                                                            modifier = Modifier.fillMaxWidth()
-                                                        )
-                                                        Spacer(modifier = Modifier.height(2.dp))
-                                                        Text(
-                                                            text = "المدة: ${rule.duration.toString().toArabicDigits()} ${rule.unit.arabicDisplayName} | السند: ${rule.lawArticle.toArabicDigits()}",
-                                                            style = MaterialTheme.typography.bodySmall,
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                            textAlign = TextAlign.Right,
-                                                            modifier = Modifier.fillMaxWidth()
-                                                        )
-                                                    }
-                                                },
-                                                onClick = {
-                                                    searchQuery = rule.actionName
-                                                    onRuleSelected(rule)
-                                                    isDropdownExpanded = false
-                                                    isRuleError = false
-                                                    ruleErrorText = null
-                                                },
-                                                modifier = Modifier.fillMaxWidth()
-                                            )
-                                        }
-                                    }
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             }
-                            } // ExposedDropdownMenuBox
                             if (uiState.selectedRule != null) {
                                 IconButton(
                                     onClick = {
                                         onRuleSelected(null)
                                         searchQuery = ""
-                                        isDropdownExpanded = false
                                     },
-                                    modifier = Modifier.size(40.dp)
+                                    modifier = Modifier.size(44.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Clear,
@@ -1034,9 +925,6 @@ fun CalculatorScreenContent(
                                 isDropdownExpanded = true
                                 coroutineScope.launch {
                                     scrollState.animateScrollTo(0)
-                                    try {
-                                        ruleFocusRequester.requestFocus()
-                                    } catch (_: Exception) {}
                                     transientAlert = "يجب اختيار الإجراء القانوني أولًا."
                                 }
                             } else {
@@ -1130,6 +1018,112 @@ fun CalculatorScreenContent(
                 onDismissMessages()
             }
         )
+    }
+
+    if (isDropdownExpanded) {
+        // Dialog has its own focusable window: unlike a non-editable exposed
+        // dropdown, its editable search field can acquire IME focus.
+        Dialog(onDismissRequest = {
+            isDropdownExpanded = false
+            keyboardController?.hide()
+        }) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "اختيار الإجراء القانوني",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        IconButton(onClick = {
+                            isDropdownExpanded = false
+                            keyboardController?.hide()
+                        }) {
+                            Icon(Icons.Default.Close, contentDescription = "إغلاق البحث")
+                        }
+                    }
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(searchFocusRequester),
+                        placeholder = { Text("ابحث باسم الإجراء أو رقم المادة") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Search
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 320.dp),
+                        contentPadding = PaddingValues(bottom = 4.dp)
+                    ) {
+                        if (filteredRules.isEmpty()) {
+                            item {
+                                Text(
+                                    text = "لا توجد إجراءات مطابقة للبحث",
+                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        } else {
+                            items(filteredRules, key = { it.id }) { rule ->
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onRuleSelected(rule)
+                                            isRuleError = false
+                                            ruleErrorText = null
+                                            searchQuery = ""
+                                            isDropdownExpanded = false
+                                            keyboardController?.hide()
+                                        }
+                                        .padding(horizontal = 8.dp, vertical = 12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = rule.actionName.toArabicDigits(),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = "المدة: ${rule.duration.toString().toArabicDigits()} ${rule.unit.arabicDisplayName} — ${rule.lawArticle.toArabicDigits()}",
+                                        style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                HorizontalDivider(
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            LaunchedEffect(Unit) {
+                // Wait until the dialog is attached before requesting focus.
+                delay(120L)
+                searchFocusRequester.requestFocus()
+                keyboardController?.show()
+            }
+        }
     }
 
     // Do not show a warning dialog when registering/calculating a deadline.
