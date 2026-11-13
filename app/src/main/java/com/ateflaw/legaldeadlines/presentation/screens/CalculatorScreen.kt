@@ -487,6 +487,7 @@ fun CalculatorScreenContent(
                                     }
                                 }
                             }
+                            } // ExposedDropdownMenuBox
                             if (uiState.selectedRule != null) {
                                 IconButton(
                                     onClick = {
