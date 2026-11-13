@@ -247,6 +247,11 @@ fun CalculatorScreenContent(
         }
     }
 
+    // Always reset the independent result scroll position for each calculation.
+    LaunchedEffect(uiState.result) {
+        if (uiState.result != null) resultScrollState.scrollTo(0)
+    }
+
     // The result is shown in its own scrollable page starting at the top.
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -1243,12 +1248,12 @@ fun CalculatorScreenContent(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = 360, fontScale = 1.15f, name = "Long RTL legal procedure")
 @Composable
 fun CalculatorScreenPreview() {
     val sampleRule = LegalRule(
         id = 1,
-        actionName = "استئناف حكم مدني",
+        actionName = "استئناف الأحكام الصادرة في الدعاوى المدنية والتجارية",
         duration = 40,
         unit = DurationUnit.DAYS,
         lawArticle = "المادة 227 مرافعات",
