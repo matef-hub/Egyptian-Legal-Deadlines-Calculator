@@ -79,7 +79,8 @@ fun CalculationResultCard(
     onReminderDaysChanged: (Int?) -> Unit = {},
     onSaveClick: (Int?) -> Unit = {},
     onBackClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    dateFocusModifier: Modifier = Modifier
 ) {
     val finalDateFormatted = DateFormatterUtils.formatArabicFullDate(result.finalDeadline)
     val startDateFormatted = DateFormatterUtils.formatArabicFullDate(result.startDate)
@@ -197,7 +198,7 @@ fun CalculationResultCard(
 
             // Big Highlighted Final Date Display
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = dateFocusModifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
             ) {
