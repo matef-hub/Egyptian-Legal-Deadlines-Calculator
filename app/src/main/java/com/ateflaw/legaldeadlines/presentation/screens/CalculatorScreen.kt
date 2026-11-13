@@ -88,6 +88,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
@@ -1039,6 +1040,7 @@ fun CalculatorScreenContent(
                         onValueChange = { searchQuery = it },
                         modifier = Modifier
                             .fillMaxWidth()
+                            .testTag("legal_procedure_search_input")
                             .focusRequester(searchFocusRequester),
                         placeholder = { Text("ابحث باسم الإجراء أو رقم المادة") },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
