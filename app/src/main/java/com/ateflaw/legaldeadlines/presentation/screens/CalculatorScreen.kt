@@ -528,12 +528,15 @@ fun CalculatorScreenContent(
                                 modifier = Modifier.padding(start = 12.dp, top = 4.dp)
                             )
                         } else if (uiState.selectedRule != null) {
+                            val rule = uiState.selectedRule
+                            val durationLabel = if (rule.unit == DurationUnit.DAYS && rule.duration > 10L)
+                                "يومًا" else rule.unit.arabicDisplayName
                             Text(
-                                text = ("الميعاد المحدد: ${uiState.selectedRule.duration} ${uiState.selectedRule.unit.arabicDisplayName} (${uiState.selectedRule.lawArticle})").toArabicDigits(),
+                                text = ("الميعاد المحدد: ${rule.duration} $durationLabel (${rule.lawArticle})").toArabicDigits(),
                                 color = MaterialTheme.colorScheme.secondary,
                                 fontWeight = FontWeight.Medium,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(start = 12.dp, top = 4.dp)
+                                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 20.sp),
+                                modifier = Modifier.padding(top = 4.dp)
                             )
                         }
                     }
@@ -562,7 +565,7 @@ fun CalculatorScreenContent(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = triggerLabel,
+                                text = triggerLabel.toArabicDigits(),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -571,10 +574,10 @@ fun CalculatorScreenContent(
 
                         if (uiState.selectedRule != null && uiState.selectedRule.startRule == StartRule.NEXT_DAY) {
                             Text(
-                                text = "إعمالاً للمادة 15 مرافعات: لا يُحسب هذا اليوم، ويبدأ سريان الميعاد من اليوم التالي.",
-                                style = MaterialTheme.typography.bodySmall,
+                                text = "إعمالاً للمادة 15 مرافعات: لا يُحسب هذا اليوم، ويبدأ سريان الميعاد من اليوم التالي.".toArabicDigits(),
+                                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 20.sp),
                                 color = MaterialTheme.colorScheme.primary,
-                                fontSize = 11.sp
+                                fontSize = 12.sp
                             )
                         }
 
