@@ -232,10 +232,10 @@ private fun RowScope.FloatingNavItem(
         shape = RoundedCornerShape(16.dp),
         color = containerColor,
         contentColor = contentColor,
-        modifier = modifier.heightIn(min = 56.dp)
+        modifier = modifier.heightIn(min = 48.dp)
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 2.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
