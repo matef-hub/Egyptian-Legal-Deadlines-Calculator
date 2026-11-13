@@ -81,9 +81,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
@@ -165,7 +165,6 @@ fun CalculatorScreenContent(
 
     // Form focus requesters for automatic validation navigation
     val searchFocusRequester = remember { FocusRequester() }
-    val keyboardController = LocalSoftwareKeyboardController.current
     val distanceFocusRequester = remember { FocusRequester() }
 
     var isRuleError by remember { mutableStateOf(false) }
@@ -237,7 +236,7 @@ fun CalculatorScreenContent(
 
     // The result is shown in its own scrollable page starting at the top.
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize().clipToBounds()) {
         if (uiState.result != null) {
             // Dedicated result view prevents the form from appearing cut off above
             // the result and always starts at the top of the final deadline.
@@ -245,7 +244,7 @@ fun CalculatorScreenContent(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(resultScrollState)
-                    .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 28.dp)
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp)
             ) {
                 CalculationResultCard(
                     result = uiState.result,
@@ -261,7 +260,7 @@ fun CalculatorScreenContent(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 28.dp)
+                .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp)
                 .graphicsLayer {
                     alpha = formAlpha
                     translationY = formTranslationY
@@ -988,25 +987,6 @@ fun CalculatorScreenContent(
         }
         } // End of editable input form
 
-        // Fade the first few pixels of scrolled content to avoid a hard cut line.
-        val activeScroll = if (uiState.result == null) scrollState.value else resultScrollState.value
-        if (activeScroll > 0) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .height(16.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.background,
-                                MaterialTheme.colorScheme.background.copy(alpha = 0f)
-                            )
-                        )
-                    )
-            )
-        }
-
         // Dialog-style feedback, no persistent error banner or Snackbar.
         SweetAlertNotice(
             message = uiState.errorMessage ?: transientAlert ?: uiState.successMessage,
@@ -1023,10 +1003,8 @@ fun CalculatorScreenContent(
     if (isDropdownExpanded) {
         // Dialog has its own focusable window: unlike a non-editable exposed
         // dropdown, its editable search field can acquire IME focus.
-        Dialog(onDismissRequest = {
-            isDropdownExpanded = false
-            keyboardController?.hide()
-        }) {
+        Dialog(onDismissRequest = { isDropdownExpanded = false }) {
+            val dialogKeyboardController = LocalSoftwareKeyboardController.current
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
@@ -1048,7 +1026,7 @@ fun CalculatorScreenContent(
                         )
                         IconButton(onClick = {
                             isDropdownExpanded = false
-                            keyboardController?.hide()
+                            dialogKeyboardController?.hide()
                         }) {
                             Icon(Icons.Default.Close, contentDescription = "إغلاق البحث")
                         }
@@ -1093,7 +1071,7 @@ fun CalculatorScreenContent(
                                             ruleErrorText = null
                                             searchQuery = ""
                                             isDropdownExpanded = false
-                                            keyboardController?.hide()
+                                            dialogKeyboardController?.hide()
                                         }
                                         .padding(horizontal = 8.dp, vertical = 12.dp),
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -1121,7 +1099,7 @@ fun CalculatorScreenContent(
                 // Wait until the dialog is attached before requesting focus.
                 delay(120L)
                 searchFocusRequester.requestFocus()
-                keyboardController?.show()
+                dialogKeyboardController?.show()
             }
         }
     }
