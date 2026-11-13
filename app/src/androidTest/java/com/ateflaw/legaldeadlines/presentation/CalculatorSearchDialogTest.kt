@@ -1,6 +1,7 @@
 package com.ateflaw.legaldeadlines.presentation
 
 import androidx.compose.ui.test.assertExists
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -61,7 +62,7 @@ class CalculatorSearchDialogTest {
         }
 
         composeTestRule.onNodeWithText("اختر الإجراء القانوني").performClick()
-        composeTestRule.onNodeWithText("ابحث باسم الإجراء أو رقم المادة")
+        composeTestRule.onNodeWithTag("legal_procedure_search_input")
             .performTextInput("الشفعة")
         composeTestRule.onNodeWithText("إعلان الرغبة في الأخذ بالشفعة").assertExists()
     }
