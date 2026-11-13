@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.sp
 import com.ateflaw.legaldeadlines.domain.model.CalculationMilestone
 import com.ateflaw.legaldeadlines.domain.model.MilestoneType
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
+import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -333,7 +334,7 @@ private fun TimelineNodeItem(
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = milestone.title,
+                    text = milestone.title.toArabicDigits(),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (isHighlighted) FontWeight.Bold else FontWeight.SemiBold,
                     color = if (isHighlighted) nodeColor else MaterialTheme.colorScheme.onSurface
@@ -342,7 +343,7 @@ private fun TimelineNodeItem(
                 milestone.legalBasis?.let { basis ->
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = basis,
+                        text = basis.toArabicDigits(),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline,
                         fontSize = 11.sp,
@@ -376,7 +377,7 @@ private fun TimelineNodeItem(
             AnimatedVisibility(visible = expanded) {
                 Column(modifier = Modifier.padding(top = 6.dp)) {
                     Text(
-                        text = milestone.description,
+                        text = milestone.description.toArabicDigits(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface,
                         lineHeight = 18.sp

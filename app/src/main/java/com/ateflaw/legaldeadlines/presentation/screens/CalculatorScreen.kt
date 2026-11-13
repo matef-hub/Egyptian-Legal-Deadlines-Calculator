@@ -1,6 +1,5 @@
 package com.ateflaw.legaldeadlines.presentation.screens
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
@@ -13,7 +12,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,15 +31,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Balance
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
@@ -87,12 +83,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -119,7 +116,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun CalculatorScreen(
@@ -163,7 +159,7 @@ fun CalculatorScreenContent(
     onDismissMessages: () -> Unit
 ) {
     val scrollState = rememberScrollState()
-    val resultDateRequester = remember { BringIntoViewRequester() }
+    val resultScrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
     var transientAlert by remember { mutableStateOf<String?>(null) }
 
@@ -242,21 +238,38 @@ fun CalculatorScreenContent(
         }
     }
 
-    // Bring the final date itself into view, not the bottom action buttons.
-    val isPreview = LocalInspectionMode.current
+    // Always reset the independent result scroll position for each calculation.
     LaunchedEffect(uiState.result) {
-        if (!isPreview && uiState.result != null) {
-            delay(300.milliseconds)
-            resultDateRequester.bringIntoView()
-        }
+        if (uiState.result != null) resultScrollState.scrollTo(0)
     }
 
+    // The result is shown in its own scrollable page starting at the top.
+
     Box(modifier = modifier.fillMaxSize()) {
+        if (uiState.result != null) {
+            // Dedicated result view prevents the form from appearing cut off above
+            // the result and always starts at the top of the final deadline.
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(resultScrollState)
+                    .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 28.dp)
+            ) {
+                CalculationResultCard(
+                    result = uiState.result,
+                    isSaved = uiState.isSavedSuccessfully,
+                    initialReminderDays = uiState.proactiveReminderDays,
+                    onReminderDaysChanged = onReminderDaysChanged,
+                    onSaveClick = { days -> onSaveCurrentDeadline(days) },
+                    onBackClick = { onResetCalculation() }
+                )
+            }
+        } else {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 12.dp, vertical = 10.dp)
+                .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 28.dp)
                 .graphicsLayer {
                     alpha = formAlpha
                     translationY = formTranslationY
@@ -341,57 +354,63 @@ fun CalculatorScreenContent(
                             )
                         }
 
-                        ExposedDropdownMenuBox(
-                            expanded = isDropdownExpanded,
-                            onExpandedChange = { isDropdownExpanded = it },
-                            modifier = Modifier.fillMaxWidth()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { query ->
-                                    searchQuery = query
-                                    isDropdownExpanded = true
-                                    isRuleError = false
-                                    ruleErrorText = null
-                                    if (uiState.selectedRule != null && query != uiState.selectedRule.actionName) {
-                                        onRuleSelected(null)
-                                    }
+                            // Read-only display with ellipsis; editable search lives in the menu.
+                            ExposedDropdownMenuBox(
+                                expanded = isDropdownExpanded,
+                                onExpandedChange = { expanded ->
+                                    isDropdownExpanded = expanded
+                                    if (expanded) searchQuery = ""
                                 },
-                                placeholder = { Text("اختر الإجراء القانوني") },
-                                trailingIcon = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        if (searchQuery.isNotEmpty()) {
-                                            IconButton(
-                                                onClick = {
-                                                    searchQuery = ""
-                                                    onRuleSelected(null)
-                                                    isDropdownExpanded = true
-                                                }
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Clear,
-                                                    contentDescription = "مسح"
-                                                )
-                                            }
-                                        }
-                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded)
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Surface(
+                                    modifier = Modifier
+                                        .menuAnchor(
+                                            type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                            enabled = true
+                                        )
+                                        .fillMaxWidth()
+                                        .focusRequester(ruleFocusRequester),
+                                    shape = RoundedCornerShape(10.dp),
+                                    border = BorderStroke(
+                                        width = 1.dp,
+                                        color = if (isRuleError) MaterialTheme.colorScheme.error
+                                            else MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                                    ),
+                                    color = MaterialTheme.colorScheme.surface
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .heightIn(min = 56.dp)
+                                            .padding(horizontal = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            text = uiState.selectedRule?.actionName?.toArabicDigits()
+                                                ?: "اختر الإجراء القانوني",
+                                            modifier = Modifier.weight(1f),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = if (uiState.selectedRule == null)
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            else MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Icon(
+                                            imageVector = Icons.Default.ArrowDropDown,
+                                            contentDescription = "فتح قائمة الإجراءات",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(20.dp)
+                                        )
                                     }
-                                },
-                                isError = isRuleError,
-                                modifier = Modifier
-                                    .menuAnchor(
-                                        type = ExposedDropdownMenuAnchorType.PrimaryEditable,
-                                        enabled = true
-                                    )
-                                    .fillMaxWidth()
-                                    .focusRequester(ruleFocusRequester),
-                                shape = RoundedCornerShape(10.dp),
-                                singleLine = true,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                                )
-                            )
+                                }
 
                             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                                 ExposedDropdownMenu(
@@ -405,6 +424,20 @@ fun CalculatorScreenContent(
                                     shadowElevation = 4.dp,
                                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                                 ) {
+                                    OutlinedTextField(
+                                        value = searchQuery,
+                                        onValueChange = { searchQuery = it },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                                        placeholder = { Text("ابحث باسم الإجراء أو المادة") },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.Search, contentDescription = null)
+                                        },
+                                        singleLine = true,
+                                        textStyle = MaterialTheme.typography.bodyMedium,
+                                        shape = RoundedCornerShape(10.dp)
+                                    )
                                     if (filteredRules.isEmpty()) {
                                         DropdownMenuItem(
                                             text = {
@@ -464,6 +497,22 @@ fun CalculatorScreenContent(
                                     }
                                 }
                             }
+                            } // ExposedDropdownMenuBox
+                            if (uiState.selectedRule != null) {
+                                IconButton(
+                                    onClick = {
+                                        onRuleSelected(null)
+                                        searchQuery = ""
+                                        isDropdownExpanded = false
+                                    },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = "مسح الإجراء"
+                                    )
+                                }
+                            }
                         }
 
                         if (isRuleError) {
@@ -475,12 +524,15 @@ fun CalculatorScreenContent(
                                 modifier = Modifier.padding(start = 12.dp, top = 4.dp)
                             )
                         } else if (uiState.selectedRule != null) {
+                            val rule = uiState.selectedRule
+                            val durationLabel = if (rule.unit == DurationUnit.DAYS && rule.duration > 10L)
+                                "يومًا" else rule.unit.arabicDisplayName
                             Text(
-                                text = "الميعاد المحدد: ${uiState.selectedRule.duration} ${uiState.selectedRule.unit.arabicDisplayName} (${uiState.selectedRule.lawArticle})",
+                                text = ("الميعاد المحدد: ${rule.duration} $durationLabel (${rule.lawArticle})").toArabicDigits(),
                                 color = MaterialTheme.colorScheme.secondary,
                                 fontWeight = FontWeight.Medium,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(start = 12.dp, top = 4.dp)
+                                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 20.sp),
+                                modifier = Modifier.padding(top = 4.dp)
                             )
                         }
                     }
@@ -509,7 +561,7 @@ fun CalculatorScreenContent(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = triggerLabel,
+                                text = triggerLabel.toArabicDigits(),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -518,10 +570,10 @@ fun CalculatorScreenContent(
 
                         if (uiState.selectedRule != null && uiState.selectedRule.startRule == StartRule.NEXT_DAY) {
                             Text(
-                                text = "إعمالاً للمادة 15 مرافعات: لا يُحسب هذا اليوم، ويبدأ سريان الميعاد من اليوم التالي.",
-                                style = MaterialTheme.typography.bodySmall,
+                                text = "إعمالاً للمادة 15 مرافعات: لا يُحسب هذا اليوم، ويبدأ سريان الميعاد من اليوم التالي.".toArabicDigits(),
+                                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 20.sp),
                                 color = MaterialTheme.colorScheme.primary,
-                                fontSize = 11.sp
+                                fontSize = 12.sp
                             )
                         }
 
@@ -1044,74 +1096,27 @@ fun CalculatorScreenContent(
                 }
             }
 
-            // 3. Calculation Result Card or Initial Welcome Graphic with AnimatedContent
-            AnimatedContent(
-                targetState = uiState.result,
-                transitionSpec = {
-                    (fadeIn(animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)) +
-                     slideInVertically(animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)) { 24 } +
-                     expandVertically(animationSpec = tween(durationMillis = 250)))
-                        .togetherWith(
-                            fadeOut(animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)) +
-                            shrinkVertically(animationSpec = tween(durationMillis = 180))
-                        )
-                },
-                label = "CalculationResultContent"
-            ) { result ->
-                if (result != null) {
-                    CalculationResultCard(
-                        result = result,
-                        isSaved = uiState.isSavedSuccessfully,
-                        initialReminderDays = uiState.proactiveReminderDays,
-                        onReminderDaysChanged = onReminderDaysChanged,
-                        onSaveClick = { days -> onSaveCurrentDeadline(days) },
-                        onBackClick = { onResetCalculation() },
-                        dateFocusModifier = Modifier.bringIntoViewRequester(resultDateRequester)
-                    )
-                } else {
-                    // Initial Welcome Banner
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(80.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Balance,
-                                contentDescription = "ميزان العدالة",
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(46.dp)
+
+        }
+        } // End of editable input form
+
+        // Fade the first few pixels of scrolled content to avoid a hard cut line.
+        val activeScroll = if (uiState.result == null) scrollState.value else resultScrollState.value
+        if (activeScroll > 0) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(16.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.background,
+                                MaterialTheme.colorScheme.background.copy(alpha = 0f)
                             )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(
-                            text = "دقة في الحساب .. أمان في المواعيد",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center
                         )
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Text(
-                            text = "لأن كل يوم يصنع فرقًا",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
+                    )
+            )
         }
 
         // Dialog-style feedback, no persistent error banner or Snackbar.
@@ -1167,12 +1172,12 @@ fun CalculatorScreenContent(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = 360, fontScale = 1.15f, name = "Long RTL legal procedure")
 @Composable
 fun CalculatorScreenPreview() {
     val sampleRule = LegalRule(
         id = 1,
-        actionName = "استئناف حكم مدني",
+        actionName = "استئناف الأحكام الصادرة في الدعاوى المدنية والتجارية",
         duration = 40,
         unit = DurationUnit.DAYS,
         lawArticle = "المادة 227 مرافعات",

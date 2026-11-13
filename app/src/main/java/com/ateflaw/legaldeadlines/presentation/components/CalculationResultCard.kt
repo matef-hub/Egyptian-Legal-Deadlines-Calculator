@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,6 +42,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,12 +60,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
-import com.ateflaw.legaldeadlines.presentation.components.custom.DiamondDivider
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
@@ -171,11 +173,13 @@ fun CalculationResultCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // Header Row: Check Icon + Title "الميعاد النهائي"
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -190,50 +194,54 @@ fun CalculationResultCard(
                     imageVector = if (result.isProvisional) Icons.Default.Info else Icons.Default.CheckCircle,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
-            DiamondDivider()
-
-            // Big Highlighted Final Date Display
+            // A compact, baseline-consistent primary date display.
             Surface(
                 modifier = dateFocusModifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp, horizontal = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarMonth,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarMonth,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = finalDateFormatted,
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontSize = 22.sp,
+                                lineHeight = 30.sp
+                            ),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            textAlign = TextAlign.Center,
+                            maxLines = 2
+                        )
+                    }
                     Text(
-                        text = finalDateFormatted,
-                        style = MaterialTheme.typography.headlineLarge.copy(fontSize = 22.sp),
+                        text = dayNameArabic,
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
                     )
                 }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = dayNameArabic,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
-                )
-            }
             }
 
             // Keep the deadline prominent; the audit timeline is available on demand.
@@ -280,7 +288,7 @@ fun CalculationResultCard(
                     ResultDetailRow(
                         icon = Icons.Default.HourglassTop,
                         label = "مدة الميعاد",
-                        value = "${result.duration}".toArabicDigits() + " ${if (result.duration == 13L || result.duration == 15L) "يوماً" else result.unit.arabicDisplayName}"
+                        value = "${result.duration.toString().toArabicDigits()} ${durationUnitLabel(result.duration, result.unit)}"
                     )
 
                     HorizontalDivider(
@@ -321,176 +329,179 @@ fun CalculationResultCard(
                 }
             }
 
-            // Proactive Alert Configuration Selector
+            // Compact reminder settings. Visual chips are 36dp, but touch
+            // targets retain at least 48dp for accessibility.
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surface)
-                    .padding(10.dp)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
+                Text(
+                    text = "التنبيه الاستباقي للتقويم",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (proactiveReminderDays > 0) {
+                    val proactiveDate = result.finalDeadline.minusDays(proactiveReminderDays.toLong())
                     Text(
-                        text = "التنبيه الاستباقي للتقويم:",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = "بتاريخ ${DateFormatterUtils.formatArabicFullDate(proactiveDate)} (قبل ${proactiveReminderDays.toString().toArabicDigits()} أيام)",
+                        style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    if (proactiveReminderDays > 0) {
-                        val proactiveDate = result.finalDeadline.minusDays(proactiveReminderDays.toLong())
-                        Text(
-                            text = "بتاريخ ${DateFormatterUtils.formatArabicFullDate(proactiveDate)} (قبل ${proactiveReminderDays.toString().toArabicDigits()} أيام)",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
                 }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
                 Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    listOf(1 to "١ يوم", 3 to "٣ أيام", 5 to "٥ أيام", 7 to "أسبوع", 0 to "بدون").forEach { (days, label) ->
-                        val isSelected = proactiveReminderDays == days
-                        val pillBgColor by animateColorAsState(
-                            targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-                            label = "ProactivePillBg"
-                        )
-                        val pillTextColor by animateColorAsState(
-                            targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-                            label = "ProactivePillText"
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .widthIn(min = 60.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(pillBgColor)
-                                .clickable {
-                                    proactiveReminderDays = days
-                                    onReminderDaysChanged(if (days == 0) null else days)
-                                }
-                                .padding(horizontal = 8.dp, vertical = 10.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = label,
-                                fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = pillTextColor,
-                                textAlign = TextAlign.Center
+                    listOf(1 to "١ يوم", 3 to "٣ أيام", 5 to "٥ أيام", 7 to "أسبوع", 0 to "بدون")
+                        .forEach { (days, label) ->
+                            val selected = proactiveReminderDays == days
+                            val pillBgColor by animateColorAsState(
+                                targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer
+                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                                label = "ReminderPillBackground"
                             )
+                            val pillTextColor = if (selected)
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                            Box(
+                                modifier = Modifier
+                                    .widthIn(min = 52.dp)
+                                    .heightIn(min = 48.dp)
+                                    .clickable {
+                                        proactiveReminderDays = days
+                                        onReminderDaysChanged(if (days == 0) null else days)
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Surface(
+                                    modifier = Modifier.height(36.dp),
+                                    shape = RoundedCornerShape(9.dp),
+                                    color = pillBgColor
+                                ) {
+                                    Box(
+                                        modifier = Modifier.padding(horizontal = 8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = pillTextColor,
+                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+                            }
                         }
-                    }
                 }
             }
 
-            // Separated Calendar Actions:
-            // 1. Add Final Deadline (at finalDeadline)
-            // 2. Add Proactive Reminder (at proactiveDate)
+            // One clear primary action; calendar operations remain available
+            // separately so the user never silently creates two events.
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Button(
-                    onClick = onAddFinalDeadlineToCalendar,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp),
+                    onClick = {
+                        onSaveClick(if (proactiveReminderDays == 0) null else proactiveReminderDays)
+                    },
+                    enabled = !isSaved,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
+                        containerColor = MaterialTheme.colorScheme.primary
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CalendarMonth,
-                        contentDescription = null
+                        imageVector = Icons.Default.Bookmark,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (result.isProvisional) "إضافة التاريخ الاسترشادي للتقويم" else "إضافة الميعاد للتقويم",
+                        text = if (isSaved) "تم الحفظ بالمحفوظات"
+                            else if (result.isProvisional) "حفظ تاريخ استرشادي"
+                            else "حفظ الميعاد",
+                        style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.bodyMedium
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
-
-                if (proactiveReminderDays > 0) {
-                    OutlinedButton(
-                        onClick = onAddProactiveAlertToCalendar,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 48.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.NotificationsActive,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "إضافة تنبيه استباقي للتقويم",
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Button(
-                        onClick = { onSaveClick(if (proactiveReminderDays == 0) null else proactiveReminderDays) },
-                        enabled = !isSaved,
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 48.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Bookmark,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = if (isSaved) "تم الحفظ بالمحفوظات" else if (result.isProvisional) "حفظ تاريخ استرشادي" else "حفظ الميعاد",
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
                     OutlinedButton(
-                        onClick = onBackClick,
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 48.dp),
-                        shape = RoundedCornerShape(12.dp)
+                        onClick = onAddFinalDeadlineToCalendar,
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.Default.CalendarMonth,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "احتساب جديد",
-                            fontWeight = FontWeight.Bold
+                            text = "إضافة للتقويم",
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
+                    if (proactiveReminderDays > 0) {
+                        OutlinedButton(
+                            onClick = onAddProactiveAlertToCalendar,
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.NotificationsActive,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "تنبيه استباقي",
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+                TextButton(
+                    onClick = onBackClick,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .heightIn(min = 48.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "احتساب جديد",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
         }
@@ -506,7 +517,7 @@ private fun ResultDetailRow(
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.Top
     ) {
         Row(
             modifier = Modifier.weight(0.43f),
@@ -529,11 +540,22 @@ private fun ResultDetailRow(
         Text(
             text = value,
             modifier = Modifier.weight(0.57f),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Start
+            textAlign = TextAlign.End
         )
+    }
+}
+
+/** Arabic day labels for durations; numeric representation is handled separately. */
+private fun durationUnitLabel(value: Long, unit: DurationUnit): String {
+    if (unit != DurationUnit.DAYS) return unit.arabicDisplayName
+    return when (value) {
+        0L, 1L -> "يوم"
+        2L -> "يومان"
+        in 3L..10L -> "أيام"
+        else -> "يومًا"
     }
 }
 
