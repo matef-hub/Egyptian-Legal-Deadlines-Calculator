@@ -153,13 +153,14 @@ class LegalDeadlineCalculator {
         while (true) {
             val dayOfWeek = currentDate.dayOfWeek
             val (isOfficialHoliday, holidayName) = isHolidayProvider(currentDate)
+            val dayStatus = CourtDayClassifier.classify(currentDate, isOfficialHoliday)
 
-            if (dayOfWeek == DayOfWeek.FRIDAY) {
+            if (dayStatus == CourtDayType.WEEKLY_REST) {
                 val dayNameArabic = getArabicDayName(dayOfWeek)
                 val formattedDate = currentDate.format(dateFormatter).toArabicDigits()
                 excludedDays.add(ExcludedDay(currentDate, "$formattedDate — $dayNameArabic — عطلة أسبوعية"))
                 currentDate = currentDate.plusDays(1)
-            } else if (isOfficialHoliday) {
+            } else if (dayStatus == CourtDayType.OFFICIAL_HOLIDAY) {
                 val holidayDesc = holidayName ?: "عطلة رسمية معتمدة"
                 val formattedDate = currentDate.format(dateFormatter).toArabicDigits()
                 excludedDays.add(ExcludedDay(currentDate, "$formattedDate — عطلة رسمية — $holidayDesc"))

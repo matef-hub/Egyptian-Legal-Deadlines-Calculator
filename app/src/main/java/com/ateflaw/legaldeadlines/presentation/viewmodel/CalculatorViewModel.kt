@@ -13,6 +13,7 @@ import com.ateflaw.legaldeadlines.domain.usecase.GetLegalRulesUseCase
 import com.ateflaw.legaldeadlines.domain.usecase.SaveDeadlineUseCase
 import com.ateflaw.legaldeadlines.domain.usecase.SyncHolidaysUseCase
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,6 +35,7 @@ class CalculatorViewModel(
     init {
         loadLegalRules()
         loadHolidayStatus()
+        watchDateChanges()
         triggerBackgroundSync()
     }
 
@@ -56,6 +58,35 @@ class CalculatorViewModel(
                         if (selectedRule != currentState.selectedRule) nextState.invalidateCalculation() else nextState
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Refresh the day displayed in the calculator after midnight or when the app
+     * returns from the background. Only query Room when the calendar date changed.
+     */
+    fun refreshTodayStatus() {
+        val today = LocalDate.now()
+        if (_uiState.value.todayDate == today) return
+        viewModelScope.launch {
+            val isHoliday = getHolidaysUseCase.isHoliday(today)
+            val holidayName = if (isHoliday) getHolidaysUseCase.getHolidayName(today) else null
+            _uiState.update {
+                it.copy(
+                    todayDate = today,
+                    isTodayHoliday = isHoliday,
+                    todayHolidayName = holidayName
+                )
+            }
+        }
+    }
+
+    private fun watchDateChanges() {
+        viewModelScope.launch {
+            while (true) {
+                delay(60_000L)
+                refreshTodayStatus()
             }
         }
     }
@@ -84,11 +115,14 @@ class CalculatorViewModel(
             getHolidaysUseCase().collect { holidays ->
                 val holidaysChanged = previousHolidays != null && previousHolidays != holidays
                 previousHolidays = holidays
+                // Do not capture today's date once: sync can finish after midnight.
+                val currentDay = LocalDate.now()
                 val updatedCount = holidays.size
-                val updatedIsHoliday = holidays.any { it.holidayDate == today }
-                val updatedName = holidays.firstOrNull { it.holidayDate == today }?.name
+                val updatedIsHoliday = holidays.any { it.holidayDate == currentDay }
+                val updatedName = holidays.firstOrNull { it.holidayDate == currentDay }?.name
                 _uiState.update {
                     val nextState = it.copy(
+                        todayDate = currentDay,
                         totalHolidaysCount = updatedCount,
                         isTodayHoliday = updatedIsHoliday,
                         todayHolidayName = updatedName

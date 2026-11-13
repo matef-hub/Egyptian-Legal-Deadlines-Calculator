@@ -33,6 +33,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -161,6 +163,7 @@ fun CalculatorScreenContent(
     onDismissMessages: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+    val resultDateRequester = remember { BringIntoViewRequester() }
     val coroutineScope = rememberCoroutineScope()
     var transientAlert by remember { mutableStateOf<String?>(null) }
 
@@ -239,12 +242,12 @@ fun CalculatorScreenContent(
         }
     }
 
-    // Scroll to result when calculated
+    // Bring the final date itself into view, not the bottom action buttons.
     val isPreview = LocalInspectionMode.current
     LaunchedEffect(uiState.result) {
         if (!isPreview && uiState.result != null) {
-            delay(250.milliseconds)
-            scrollState.animateScrollTo(scrollState.maxValue)
+            delay(300.milliseconds)
+            resultDateRequester.bringIntoView()
         }
     }
 
@@ -253,22 +256,23 @@ fun CalculatorScreenContent(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(16.dp)
+                .padding(horizontal = 12.dp, vertical = 10.dp)
                 .graphicsLayer {
                     alpha = formAlpha
                     translationY = formTranslationY
                 },
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Visual masthead
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+            // Compact title: the app bar already provides the screen heading.
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "احتساب الميعاد",
                     fontFamily = ArefRuqaaFontFamily,
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
@@ -276,7 +280,6 @@ fun CalculatorScreenContent(
                     style = MaterialTheme.typography.labelSmall,
                     color = AntiqueBrass
                 )
-                DiamondDivider(modifier = Modifier.padding(top = 4.dp))
             }
 
             // 1. Top Holiday & Calendar Status Bar
@@ -305,13 +308,13 @@ fun CalculatorScreenContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Header
                     Text(
                         text = "بيانات احتساب الميعاد",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
@@ -522,7 +525,7 @@ fun CalculatorScreenContent(
                             )
                         }
 
-                        val dateFormattedDisplay = DateFormatterUtils.formatDisplayDate(uiState.announcementDate)
+                        val dateFormattedDisplay = DateFormatterUtils.formatArabicFullDate(uiState.announcementDate)
                         OutlinedTextField(
                             value = dateFormattedDisplay,
                             onValueChange = {},
@@ -1062,7 +1065,8 @@ fun CalculatorScreenContent(
                         initialReminderDays = uiState.proactiveReminderDays,
                         onReminderDaysChanged = onReminderDaysChanged,
                         onSaveClick = { days -> onSaveCurrentDeadline(days) },
-                        onBackClick = { onResetCalculation() }
+                        onBackClick = { onResetCalculation() },
+                        dateFocusModifier = Modifier.bringIntoViewRequester(resultDateRequester)
                     )
                 } else {
                     // Initial Welcome Banner
