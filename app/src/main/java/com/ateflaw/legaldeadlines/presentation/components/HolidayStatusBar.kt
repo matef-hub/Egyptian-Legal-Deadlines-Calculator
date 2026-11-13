@@ -2,13 +2,12 @@ package com.ateflaw.legaldeadlines.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,6 +26,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.ateflaw.legaldeadlines.domain.calculator.CourtDayClassifier
+import com.ateflaw.legaldeadlines.domain.calculator.CourtDayType
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
 import java.time.LocalDate
@@ -39,96 +40,103 @@ fun HolidayStatusBar(
     loadedHolidaysCount: Int,
     modifier: Modifier = Modifier
 ) {
-    val dayNameArabic = DateFormatterUtils.getArabicDayName(todayDate.dayOfWeek)
-    val formattedDate = DateFormatterUtils.formatArabicFullDate(todayDate)
+    val dayType = CourtDayClassifier.classify(todayDate, isTodayHoliday)
+    val dateText = DateFormatterUtils.formatArabicDateWithDay(todayDate)
+    val isWorkingDay = dayType == CourtDayType.WORKING_DAY
+    val statusLabel = when (dayType) {
+        CourtDayType.WEEKLY_REST -> "عطلة أسبوعية"
+        CourtDayType.OFFICIAL_HOLIDAY -> "عطلة رسمية"
+        CourtDayType.WORKING_DAY -> "يوم عمل"
+    }
+    val statusBackground = if (isWorkingDay) {
+        MaterialTheme.colorScheme.tertiaryContainer
+    } else {
+        MaterialTheme.colorScheme.errorContainer
+    }
+    val statusForeground = if (isWorkingDay) {
+        MaterialTheme.colorScheme.onTertiaryContainer
+    } else {
+        MaterialTheme.colorScheme.onErrorContainer
+    }
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
         )
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(10.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                Icon(
+                    imageVector = Icons.Default.CalendarMonth,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = dateText,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
                 Row(
-                    modifier = Modifier.weight(1f, fill = false),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(statusBackground)
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CalendarMonth,
-                        contentDescription = "اليوم",
-                        tint = MaterialTheme.colorScheme.primary
+                        imageVector = if (isWorkingDay) Icons.Default.Work else Icons.Default.EventBusy,
+                        contentDescription = null,
+                        tint = statusForeground,
+                        modifier = Modifier.size(15.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "اليوم: $dayNameArabic/ $formattedDate",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = statusLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = statusForeground
                     )
-                }
-
-                // Status chip
-                val statusBg = if (isTodayHoliday) {
-                    MaterialTheme.colorScheme.errorContainer
-                } else {
-                    MaterialTheme.colorScheme.tertiaryContainer
-                }
-                val statusText = if (isTodayHoliday) {
-                    MaterialTheme.colorScheme.onErrorContainer
-                } else {
-                    MaterialTheme.colorScheme.onTertiaryContainer
-                }
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(statusBg)
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = if (isTodayHoliday) Icons.Default.EventBusy else Icons.Default.Work,
-                            contentDescription = null,
-                            tint = statusText,
-                            modifier = Modifier.width(16.dp).height(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = if (isTodayHoliday) "عطلة رسمية" else "يوم عمل",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = statusText
-                        )
-                    }
                 }
             }
 
             if (isTodayHoliday && !holidayName.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "المناسبة: $holidayName",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
-            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "العطلات المعتمدة: $loadedHolidaysCount عطلة مسجلة",
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Friday - Weekly Rest")
+@Composable
+fun HolidayStatusBarFridayPreview() {
+    EgyptianLegalDeadlinesTheme {
+        HolidayStatusBar(
+            todayDate = LocalDate.of(2026, 11, 13),
+            isTodayHoliday = false,
+            holidayName = null,
+            loadedHolidaysCount = 21
+        )
     }
 }
 
@@ -137,15 +145,15 @@ fun HolidayStatusBar(
 fun HolidayStatusBarWorkDayPreview() {
     EgyptianLegalDeadlinesTheme {
         HolidayStatusBar(
-            todayDate = LocalDate.of(2025, 5, 12),
+            todayDate = LocalDate.of(2026, 11, 12),
             isTodayHoliday = false,
             holidayName = null,
-            loadedHolidaysCount = 15
+            loadedHolidaysCount = 21
         )
     }
 }
 
-@Preview(showBackground = true, name = "Holiday")
+@Preview(showBackground = true, name = "Official Holiday")
 @Composable
 fun HolidayStatusBarHolidayPreview() {
     EgyptianLegalDeadlinesTheme {
@@ -157,4 +165,3 @@ fun HolidayStatusBarHolidayPreview() {
         )
     }
 }
-
