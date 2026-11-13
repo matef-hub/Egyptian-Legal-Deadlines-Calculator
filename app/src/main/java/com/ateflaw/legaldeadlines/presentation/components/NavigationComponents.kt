@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.size
@@ -136,11 +137,11 @@ fun FloatingBottomNavigationBar(
         modifier = modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(bottom = 8.dp, top = 4.dp)
-            .padding(horizontal = 20.dp)
+            .padding(bottom = 6.dp, top = 4.dp)
+            .padding(horizontal = 12.dp)
     ) {
         Surface(
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 2.dp,
             shadowElevation = 4.dp,
@@ -231,7 +232,7 @@ private fun RowScope.FloatingNavItem(
         shape = RoundedCornerShape(16.dp),
         color = containerColor,
         contentColor = contentColor,
-        modifier = modifier
+        modifier = modifier.heightIn(min = 56.dp)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 2.dp, vertical = 6.dp),
@@ -241,7 +242,7 @@ private fun RowScope.FloatingNavItem(
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                modifier = Modifier.size(18.dp).graphicsLayer {
+                modifier = Modifier.size(20.dp).graphicsLayer {
                     scaleX = iconScale
                     scaleY = iconScale
                 }
@@ -250,7 +251,7 @@ private fun RowScope.FloatingNavItem(
             Text(
                 text = label,
                 color = contentColor,
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
