@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.animation.doOnEnd
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ateflaw.legaldeadlines.LegalDeadlinesApplication
@@ -105,6 +106,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             EgyptianLegalDeadlinesTheme {
+                LifecycleResumeEffect(calculatorViewModel) {
+                    calculatorViewModel.refreshTodayStatus()
+                    onPauseOrDispose { }
+                }
                 val view = LocalView.current
                 val isDarkTheme = isSystemInDarkTheme()
                 if (!view.isInEditMode) {
