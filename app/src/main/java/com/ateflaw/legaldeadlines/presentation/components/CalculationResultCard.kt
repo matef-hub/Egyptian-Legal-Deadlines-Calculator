@@ -288,7 +288,7 @@ fun CalculationResultCard(
                     ResultDetailRow(
                         icon = Icons.Default.HourglassTop,
                         label = "مدة الميعاد",
-                        value = "${result.duration}".toArabicDigits() + " ${if (result.duration == 13L || result.duration == 15L) "يوماً" else result.unit.arabicDisplayName}"
+                        value = "${result.duration.toString().toArabicDigits()} ${durationUnitLabel(result.duration, result.unit)}"
                     )
 
                     HorizontalDivider(
@@ -517,7 +517,7 @@ private fun ResultDetailRow(
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.Top
     ) {
         Row(
             modifier = Modifier.weight(0.43f),
@@ -540,11 +540,22 @@ private fun ResultDetailRow(
         Text(
             text = value,
             modifier = Modifier.weight(0.57f),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Start
+            textAlign = TextAlign.End
         )
+    }
+}
+
+/** Arabic day labels for durations; numeric representation is handled separately. */
+private fun durationUnitLabel(value: Long, unit: DurationUnit): String {
+    if (unit != DurationUnit.DAYS) return unit.arabicDisplayName
+    return when (value) {
+        0L, 1L -> "يوم"
+        2L -> "يومان"
+        in 3L..10L -> "أيام"
+        else -> "يومًا"
     }
 }
 
