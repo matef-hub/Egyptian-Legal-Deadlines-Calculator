@@ -33,6 +33,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -161,6 +163,7 @@ fun CalculatorScreenContent(
     onDismissMessages: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+    val resultDateRequester = remember { BringIntoViewRequester() }
     val coroutineScope = rememberCoroutineScope()
     var transientAlert by remember { mutableStateOf<String?>(null) }
 
@@ -239,12 +242,12 @@ fun CalculatorScreenContent(
         }
     }
 
-    // Scroll to result when calculated
+    // Bring the final date itself into view, not the bottom action buttons.
     val isPreview = LocalInspectionMode.current
     LaunchedEffect(uiState.result) {
         if (!isPreview && uiState.result != null) {
-            delay(250.milliseconds)
-            scrollState.animateScrollTo(scrollState.maxValue)
+            delay(300.milliseconds)
+            resultDateRequester.bringIntoView()
         }
     }
 
@@ -1062,7 +1065,8 @@ fun CalculatorScreenContent(
                         initialReminderDays = uiState.proactiveReminderDays,
                         onReminderDaysChanged = onReminderDaysChanged,
                         onSaveClick = { days -> onSaveCurrentDeadline(days) },
-                        onBackClick = { onResetCalculation() }
+                        onBackClick = { onResetCalculation() },
+                        dateFocusModifier = Modifier.bringIntoViewRequester(resultDateRequester)
                     )
                 } else {
                     // Initial Welcome Banner
