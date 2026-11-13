@@ -77,6 +77,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,6 +87,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
@@ -111,7 +113,7 @@ import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.MainUiState
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -164,7 +166,6 @@ fun CalculatorScreenContent(
     var transientAlert by remember { mutableStateOf<String?>(null) }
 
     // Form focus requesters for automatic validation navigation
-    val searchFocusRequester = remember { FocusRequester() }
     val distanceFocusRequester = remember { FocusRequester() }
 
     var isRuleError by remember { mutableStateOf(false) }
@@ -1005,6 +1006,8 @@ fun CalculatorScreenContent(
         // dropdown, its editable search field can acquire IME focus.
         Dialog(onDismissRequest = { isDropdownExpanded = false }) {
             val dialogKeyboardController = LocalSoftwareKeyboardController.current
+            val dialogWindowInfo = LocalWindowInfo.current
+            val searchFocusRequester = remember { FocusRequester() }
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
@@ -1095,9 +1098,10 @@ fun CalculatorScreenContent(
                     }
                 }
             }
-            LaunchedEffect(Unit) {
-                // Wait until the dialog is attached before requesting focus.
-                delay(120L)
+            LaunchedEffect(dialogWindowInfo) {
+                // Input-method focus must be requested after the Dialog window
+                // actually receives focus, not after an arbitrary delay.
+                snapshotFlow { dialogWindowInfo.isWindowFocused }.first { it }
                 searchFocusRequester.requestFocus()
                 dialogKeyboardController?.show()
             }
