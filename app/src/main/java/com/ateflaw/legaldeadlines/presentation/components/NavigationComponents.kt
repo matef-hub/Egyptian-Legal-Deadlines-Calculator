@@ -154,7 +154,7 @@ fun FloatingBottomNavigationBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                    .padding(all = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -219,7 +219,7 @@ private fun RowScope.FloatingNavItem(
         label = "NavItemContentColor"
     )
     val iconScale by animateFloatAsState(
-        targetValue = if (selected) 1.15f else 1.0f,
+        targetValue = if (selected) 1.05f else 1.0f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
@@ -229,7 +229,7 @@ private fun RowScope.FloatingNavItem(
 
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         color = containerColor,
         contentColor = contentColor,
         modifier = modifier.heightIn(min = 48.dp)
