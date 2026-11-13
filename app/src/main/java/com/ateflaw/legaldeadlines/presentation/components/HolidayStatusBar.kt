@@ -30,6 +30,7 @@ import com.ateflaw.legaldeadlines.domain.calculator.CourtDayClassifier
 import com.ateflaw.legaldeadlines.domain.calculator.CourtDayType
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
+import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import java.time.LocalDate
 
 @Composable
@@ -67,7 +68,7 @@ fun HolidayStatusBar(
         )
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Row(
@@ -119,7 +120,7 @@ fun HolidayStatusBar(
                 )
             }
             Text(
-                text = "العطلات المعتمدة: $loadedHolidaysCount عطلة مسجلة",
+                text = "العطلات المعتمدة: ${loadedHolidaysCount.toString().toArabicDigits()} عطلة مسجلة",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
