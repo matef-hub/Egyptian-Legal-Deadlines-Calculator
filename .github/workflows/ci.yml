@@ -78,8 +78,8 @@ jobs:
           fi
           echo "No JUnit imports found in production source set."
 
-      - name: Run Android Unit Tests, Assemble Debug APK & Lint
-        run: ./gradlew testDebugUnitTest assembleDebug lint --stacktrace
+      - name: Run Android unit tests, compile Compose UI tests, assemble debug and lint
+        run: ./gradlew testDebugUnitTest assembleDebugAndroidTest assembleDebug lint --stacktrace
 
       - name: Publish Android debug APK for device acceptance testing
         if: success()
