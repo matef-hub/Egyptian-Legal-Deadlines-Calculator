@@ -1,6 +1,5 @@
 package com.ateflaw.legaldeadlines.presentation.screens
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
@@ -13,7 +12,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,14 +31,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Balance
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Search
@@ -91,7 +85,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -123,7 +116,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun CalculatorScreen(
@@ -168,7 +160,6 @@ fun CalculatorScreenContent(
 ) {
     val scrollState = rememberScrollState()
     val resultScrollState = rememberScrollState()
-    val resultDateRequester = remember { BringIntoViewRequester() }
     val coroutineScope = rememberCoroutineScope()
     var transientAlert by remember { mutableStateOf<String?>(null) }
 
@@ -1105,74 +1096,7 @@ fun CalculatorScreenContent(
                 }
             }
 
-            // 3. Calculation Result Card or Initial Welcome Graphic with AnimatedContent
-            AnimatedContent(
-                targetState = uiState.result,
-                transitionSpec = {
-                    (fadeIn(animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)) +
-                     slideInVertically(animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)) { 24 } +
-                     expandVertically(animationSpec = tween(durationMillis = 250)))
-                        .togetherWith(
-                            fadeOut(animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)) +
-                            shrinkVertically(animationSpec = tween(durationMillis = 180))
-                        )
-                },
-                label = "CalculationResultContent"
-            ) { result ->
-                if (result != null) {
-                    CalculationResultCard(
-                        result = result,
-                        isSaved = uiState.isSavedSuccessfully,
-                        initialReminderDays = uiState.proactiveReminderDays,
-                        onReminderDaysChanged = onReminderDaysChanged,
-                        onSaveClick = { days -> onSaveCurrentDeadline(days) },
-                        onBackClick = { onResetCalculation() },
-                        dateFocusModifier = Modifier.bringIntoViewRequester(resultDateRequester)
-                    )
-                } else {
-                    // Initial Welcome Banner
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(80.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Balance,
-                                contentDescription = "ميزان العدالة",
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(46.dp)
-                            )
-                        }
 
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(
-                            text = "دقة في الحساب .. أمان في المواعيد",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Text(
-                            text = "لأن كل يوم يصنع فرقًا",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
         }
         } // End of editable input form
 
