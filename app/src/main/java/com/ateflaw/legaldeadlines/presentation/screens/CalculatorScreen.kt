@@ -253,22 +253,23 @@ fun CalculatorScreenContent(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(16.dp)
+                .padding(horizontal = 12.dp, vertical = 10.dp)
                 .graphicsLayer {
                     alpha = formAlpha
                     translationY = formTranslationY
                 },
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Visual masthead
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+            // Compact title: the app bar already provides the screen heading.
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "احتساب الميعاد",
                     fontFamily = ArefRuqaaFontFamily,
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
@@ -276,7 +277,6 @@ fun CalculatorScreenContent(
                     style = MaterialTheme.typography.labelSmall,
                     color = AntiqueBrass
                 )
-                DiamondDivider(modifier = Modifier.padding(top = 4.dp))
             }
 
             // 1. Top Holiday & Calendar Status Bar
@@ -305,13 +305,13 @@ fun CalculatorScreenContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Header
                     Text(
                         text = "بيانات احتساب الميعاد",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
@@ -522,7 +522,7 @@ fun CalculatorScreenContent(
                             )
                         }
 
-                        val dateFormattedDisplay = DateFormatterUtils.formatDisplayDate(uiState.announcementDate)
+                        val dateFormattedDisplay = DateFormatterUtils.formatArabicFullDate(uiState.announcementDate)
                         OutlinedTextField(
                             value = dateFormattedDisplay,
                             onValueChange = {},
