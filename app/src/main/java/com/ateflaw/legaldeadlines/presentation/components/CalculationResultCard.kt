@@ -328,10 +328,9 @@ fun CalculationResultCard(
                     .background(MaterialTheme.colorScheme.surface)
                     .padding(10.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
                         text = "التنبيه الاستباقي للتقويم:",
@@ -353,7 +352,7 @@ fun CalculationResultCard(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     listOf(1 to "١ يوم", 3 to "٣ أيام", 5 to "٥ أيام", 7 to "أسبوع", 0 to "بدون").forEach { (days, label) ->
@@ -371,14 +370,14 @@ fun CalculationResultCard(
 
                         Box(
                             modifier = Modifier
-                                .weight(1f)
+                                .widthIn(min = 60.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(pillBgColor)
                                 .clickable {
                                     proactiveReminderDays = days
                                     onReminderDaysChanged(if (days == 0) null else days)
                                 }
-                                .padding(vertical = 8.dp),
+                                .padding(horizontal = 8.dp, vertical = 10.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -404,7 +403,7 @@ fun CalculationResultCard(
                     onClick = onAddFinalDeadlineToCalendar,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(42.dp),
+                        .heightIn(min = 48.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondary
                     ),
@@ -416,19 +415,18 @@ fun CalculationResultCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (result.isProvisional) "إضافة تاريخ استرشادي للتقويم ($finalDateFormatted)" else "إضافة الميعاد للاجندة ($finalDateFormatted)",
+                        text = if (result.isProvisional) "إضافة التاريخ الاسترشادي للتقويم" else "إضافة الميعاد للتقويم",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
 
                 if (proactiveReminderDays > 0) {
-                    val pDate = result.finalDeadline.minusDays(proactiveReminderDays.toLong())
                     OutlinedButton(
                         onClick = onAddProactiveAlertToCalendar,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(40.dp),
+                            .heightIn(min = 48.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(
@@ -439,7 +437,7 @@ fun CalculationResultCard(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "إضافة تنبيه استباقي للتقويم (${DateFormatterUtils.formatArabicFullDate(pDate)})",
+                            text = "إضافة تنبيه استباقي للتقويم",
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.bodySmall
@@ -456,7 +454,7 @@ fun CalculationResultCard(
                         enabled = !isSaved,
                         modifier = Modifier
                             .weight(1f)
-                            .height(40.dp),
+                            .heightIn(min = 48.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
                         ),
@@ -478,7 +476,7 @@ fun CalculationResultCard(
                         onClick = onBackClick,
                         modifier = Modifier
                             .weight(1f)
-                            .height(40.dp),
+                            .heightIn(min = 48.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(
@@ -505,15 +503,14 @@ private fun ResultDetailRow(
     value: String
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
+            modifier = Modifier.weight(0.43f),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Icon(
                 imageVector = icon,
@@ -521,20 +518,20 @@ private fun ResultDetailRow(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(18.dp)
             )
-            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-
         Text(
             text = value,
+            modifier = Modifier.weight(0.57f),
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Start
         )
     }
 }
