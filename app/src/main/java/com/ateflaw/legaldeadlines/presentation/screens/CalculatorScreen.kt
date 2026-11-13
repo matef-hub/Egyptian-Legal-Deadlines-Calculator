@@ -42,6 +42,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Balance
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
@@ -93,6 +95,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -341,57 +344,63 @@ fun CalculatorScreenContent(
                             )
                         }
 
-                        ExposedDropdownMenuBox(
-                            expanded = isDropdownExpanded,
-                            onExpandedChange = { isDropdownExpanded = it },
-                            modifier = Modifier.fillMaxWidth()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { query ->
-                                    searchQuery = query
-                                    isDropdownExpanded = true
-                                    isRuleError = false
-                                    ruleErrorText = null
-                                    if (uiState.selectedRule != null && query != uiState.selectedRule.actionName) {
-                                        onRuleSelected(null)
-                                    }
+                            // Read-only display with ellipsis; editable search lives in the menu.
+                            ExposedDropdownMenuBox(
+                                expanded = isDropdownExpanded,
+                                onExpandedChange = { expanded ->
+                                    isDropdownExpanded = expanded
+                                    if (expanded) searchQuery = ""
                                 },
-                                placeholder = { Text("اختر الإجراء القانوني") },
-                                trailingIcon = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        if (searchQuery.isNotEmpty()) {
-                                            IconButton(
-                                                onClick = {
-                                                    searchQuery = ""
-                                                    onRuleSelected(null)
-                                                    isDropdownExpanded = true
-                                                }
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Clear,
-                                                    contentDescription = "مسح"
-                                                )
-                                            }
-                                        }
-                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded)
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Surface(
+                                    modifier = Modifier
+                                        .menuAnchor(
+                                            type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                            enabled = true
+                                        )
+                                        .fillMaxWidth()
+                                        .focusRequester(ruleFocusRequester),
+                                    shape = RoundedCornerShape(10.dp),
+                                    border = BorderStroke(
+                                        width = 1.dp,
+                                        color = if (isRuleError) MaterialTheme.colorScheme.error
+                                            else MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                                    ),
+                                    color = MaterialTheme.colorScheme.surface
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .heightIn(min = 56.dp)
+                                            .padding(horizontal = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            text = uiState.selectedRule?.actionName?.toArabicDigits()
+                                                ?: "اختر الإجراء القانوني",
+                                            modifier = Modifier.weight(1f),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = if (uiState.selectedRule == null)
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            else MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Icon(
+                                            imageVector = Icons.Default.ArrowDropDown,
+                                            contentDescription = "فتح قائمة الإجراءات",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(20.dp)
+                                        )
                                     }
-                                },
-                                isError = isRuleError,
-                                modifier = Modifier
-                                    .menuAnchor(
-                                        type = ExposedDropdownMenuAnchorType.PrimaryEditable,
-                                        enabled = true
-                                    )
-                                    .fillMaxWidth()
-                                    .focusRequester(ruleFocusRequester),
-                                shape = RoundedCornerShape(10.dp),
-                                singleLine = true,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                                )
-                            )
+                                }
 
                             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                                 ExposedDropdownMenu(
@@ -405,6 +414,20 @@ fun CalculatorScreenContent(
                                     shadowElevation = 4.dp,
                                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                                 ) {
+                                    OutlinedTextField(
+                                        value = searchQuery,
+                                        onValueChange = { searchQuery = it },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                                        placeholder = { Text("ابحث باسم الإجراء أو المادة") },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.Search, contentDescription = null)
+                                        },
+                                        singleLine = true,
+                                        textStyle = MaterialTheme.typography.bodyMedium,
+                                        shape = RoundedCornerShape(10.dp)
+                                    )
                                     if (filteredRules.isEmpty()) {
                                         DropdownMenuItem(
                                             text = {
@@ -464,6 +487,21 @@ fun CalculatorScreenContent(
                                     }
                                 }
                             }
+                            if (uiState.selectedRule != null) {
+                                IconButton(
+                                    onClick = {
+                                        onRuleSelected(null)
+                                        searchQuery = ""
+                                        isDropdownExpanded = false
+                                    },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = "مسح الإجراء"
+                                    )
+                                }
+                            }
                         }
 
                         if (isRuleError) {
@@ -476,7 +514,7 @@ fun CalculatorScreenContent(
                             )
                         } else if (uiState.selectedRule != null) {
                             Text(
-                                text = "الميعاد المحدد: ${uiState.selectedRule.duration} ${uiState.selectedRule.unit.arabicDisplayName} (${uiState.selectedRule.lawArticle})",
+                                text = ("الميعاد المحدد: ${uiState.selectedRule.duration} ${uiState.selectedRule.unit.arabicDisplayName} (${uiState.selectedRule.lawArticle})").toArabicDigits(),
                                 color = MaterialTheme.colorScheme.secondary,
                                 fontWeight = FontWeight.Medium,
                                 style = MaterialTheme.typography.bodySmall,
