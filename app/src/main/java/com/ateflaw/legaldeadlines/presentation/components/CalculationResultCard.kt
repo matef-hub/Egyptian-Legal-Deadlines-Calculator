@@ -55,7 +55,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -158,28 +157,17 @@ fun CalculationResultCard(
         }
     }
 
-    Card(
+    // A single layout grid: no oversized green parent card wrapped around
+    // smaller cards. Every section now shares the same horizontal edges.
+    Column(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-        ),
-        border = CardDefaults.outlinedCardBorder().copy(
-            brush = SolidColor(MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.3f))
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
             // Header Row: Check Icon + Title "الميعاد النهائي"
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -406,7 +394,11 @@ fun CalculationResultCard(
             // One clear primary action; calendar operations remain available
             // separately so the user never silently creates two events.
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Button(
@@ -504,7 +496,6 @@ fun CalculationResultCard(
                     )
                 }
             }
-        }
     }
 }
 
