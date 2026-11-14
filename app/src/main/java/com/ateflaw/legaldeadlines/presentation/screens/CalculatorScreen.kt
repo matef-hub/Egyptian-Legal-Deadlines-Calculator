@@ -231,9 +231,13 @@ fun CalculatorScreenContent(
         }
     }
 
-    // Always reset the independent result scroll position for each calculation.
+    // Enter each screen at its top, also after "احتساب جديد".
     LaunchedEffect(uiState.result) {
-        if (uiState.result != null) resultScrollState.scrollTo(0)
+        if (uiState.result != null) {
+            resultScrollState.scrollTo(0)
+        } else {
+            scrollState.scrollTo(0)
+        }
     }
 
     // The result is shown in its own scrollable page starting at the top.
