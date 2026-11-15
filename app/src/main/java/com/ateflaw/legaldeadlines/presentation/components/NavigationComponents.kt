@@ -38,6 +38,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -128,12 +129,18 @@ fun ModernTopAppBar(
                             modifier = Modifier.size(20.dp)
                         )
                     }
+                    val menuItemColors = MenuDefaults.itemColors(
+                        textColor = MaterialTheme.colorScheme.onSurface,
+                        leadingIconColor = MaterialTheme.colorScheme.primary
+                    )
                     DropdownMenu(
                         expanded = settingsExpanded,
-                        onDismissRequest = { settingsExpanded = false }
+                        onDismissRequest = { settingsExpanded = false },
+                        containerColor = MaterialTheme.colorScheme.surface
                     ) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.nav_backup_desc)) },
+                            colors = menuItemColors,
                             leadingIcon = {
                                 Icon(Icons.Default.SettingsBackupRestore, contentDescription = null)
                             },
@@ -144,6 +151,7 @@ fun ModernTopAppBar(
                         )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.nav_about)) },
+                            colors = menuItemColors,
                             leadingIcon = {
                                 Icon(Icons.Default.Info, contentDescription = null)
                             },

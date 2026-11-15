@@ -1,6 +1,8 @@
 package com.ateflaw.legaldeadlines.presentation.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.Image
@@ -94,7 +96,11 @@ fun LandingScreenContent(
     // Readiness must reflect actual persisted rules, not simulated progress.
     val isDataReady = rules.isNotEmpty()
     val reviewedRuleCount = rules.count { it.reviewStatus == "VERIFIED_ACCURATE" && it.officialSourceUrl.isNotBlank() }
-    val animatedProgress = if (isDataReady) 1.0f else 0.0f
+    val animatedProgress by animateFloatAsState(
+        targetValue = if (isDataReady) 1.0f else 0.0f,
+        animationSpec = tween(durationMillis = 800),
+        label = "progressAnimation"
+    )
     val currentStageText = if (isDataReady) {
         "تم تحميل ${rules.size} قاعدة، منها $reviewedRuleCount معتمدة؛ والعطلات المسجلة ${totalHolidaysCount}. لا تعتمد على الحساب قبل مراجعة القواعد والسند الرسمي."
     } else {
@@ -165,9 +171,9 @@ fun LandingScreenContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(14.dp))
             DiamondDivider(modifier = Modifier.padding(vertical = 4.dp))
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // Middle Section: Loading Status & Progress Bar
             Card(
@@ -219,6 +225,8 @@ fun LandingScreenContent(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    val progressColor = if (isDataReady) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+
                     // Progress Bar
                     LinearProgressIndicator(
                         progress = { animatedProgress },
@@ -230,8 +238,8 @@ fun LandingScreenContent(
                                 progressBarRangeInfo = ProgressBarRangeInfo(animatedProgress, 0f..1f)
                                 contentDescription = "شريط تقدم التهيئة"
                             },
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                        color = progressColor,
+                        trackColor = progressColor.copy(alpha = 0.15f),
                         strokeCap = StrokeCap.Round
                     )
 
@@ -257,41 +265,46 @@ fun LandingScreenContent(
                     visible = isDataReady,
                     enter = fadeIn() + scaleIn()
                 ) {
-                    Button(
-                        onClick = onNavigateToCalculator,
-                        modifier = Modifier
-                            .widthIn(max = 320.dp)
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        Button(
+                            onClick = onNavigateToCalculator,
+                            modifier = Modifier
+                                .widthIn(max = 320.dp)
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Text(
+                                text = "استعراض الحاسبة القانونية",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
                         Text(
-                            text = "استعراض الحاسبة القانونية",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary
+                            text = "يعمل دون اتصال بالإنترنت • تُعرض حالة توثيق العطلات قبل الاعتماد",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "يعمل دون اتصال بالإنترنت • تُعرض حالة توثيق العطلات قبل الاعتماد",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -326,7 +339,7 @@ fun LandingScreenContent(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
                     text = "Coded by Mohamed Atef",

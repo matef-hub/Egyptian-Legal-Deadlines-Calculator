@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ميعاد</string>
-    <string name="nav_calculator">الحاسبة</string>
+    <string name="nav_calculator">حاسبة المواعيد</string>
     <string name="nav_holidays">العطلات</string>
     <string name="nav_saved">المحفوظات</string>
     <string name="nav_settings">الإعدادات</string>
     <string name="nav_about">عن البرنامج</string>
     <string name="nav_backup">النسخ الاحتياطي</string>
-    <string name="nav_backup_desc">نقل البيانات والنسخ الاحتياطي</string>
+    <string name="nav_backup_desc">نسخ البيانات</string>
     <string name="nav_legal_deadlines_desc">ميعاد</string>
 
     <string name="about_subtitle">مساعدك في مراجعة المواعيد القانونية المصرية</string>

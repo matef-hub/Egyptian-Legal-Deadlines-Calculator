@@ -8,8 +8,8 @@
     </style>
 
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/splash_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_meead_illustration</item>
+        <item name="windowSplashScreenBackground">@android:color/white</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_meead_logo</item>
         <item name="postSplashScreenTheme">@style/Theme.EgyptianLegalDeadlines</item>
     </style>
 </resources>
