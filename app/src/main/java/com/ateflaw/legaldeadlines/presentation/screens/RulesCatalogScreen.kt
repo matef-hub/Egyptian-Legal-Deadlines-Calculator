@@ -147,19 +147,12 @@ fun RulesCatalogScreen(
             .fillMaxSize()
             .padding(top = innerPadding.calculateTopPadding() + 6.dp, start = 16.dp, end = 16.dp)
     ) {
-        // 1. رأس الشاشة المدمج (Compact Header)
+        // 1. رأس الشاشة المدمج (Compact Header) - Stats only
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "دليل مواعيد الإجراءات",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(Modifier.height(2.dp))
                 Surface(
                     shape = RoundedCornerShape(6.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)

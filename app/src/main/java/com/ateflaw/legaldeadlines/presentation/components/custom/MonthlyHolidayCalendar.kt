@@ -40,11 +40,11 @@ fun MonthlyHolidayCalendar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onPreviousMonth) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "السابق", tint = MaterialTheme.colorScheme.onSurface)
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "السابق", tint = MaterialTheme.colorScheme.onSurface)
             }
             Text("$monthName $yearString", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
             IconButton(onClick = onNextMonth) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "التالي", tint = MaterialTheme.colorScheme.onSurface)
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "التالي", tint = MaterialTheme.colorScheme.onSurface)
             }
         }
         

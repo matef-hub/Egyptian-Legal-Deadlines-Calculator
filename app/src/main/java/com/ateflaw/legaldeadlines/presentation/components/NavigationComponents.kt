@@ -25,8 +25,8 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Gavel
@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.sp
 import com.ateflaw.legaldeadlines.R
 import com.ateflaw.legaldeadlines.presentation.navigation.Screen
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
+import com.ateflaw.legaldeadlines.presentation.ui.theme.ArefRuqaaFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,8 +99,8 @@ fun ModernTopAppBar(
                             Screen.RulesCatalog.route -> "دليل المواعيد"
                             else -> stringResource(R.string.nav_calculator)
                         },
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontFamily = ArefRuqaaFontFamily,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -191,7 +192,7 @@ fun FloatingBottomNavigationBar(
                 FloatingNavItem(
                     selected = currentRoute == Screen.RulesCatalog.route,
                     onClick = { onNavigateTo(Screen.RulesCatalog.route) },
-                    icon = Icons.Default.MenuBook,
+                    icon = Icons.AutoMirrored.Filled.MenuBook,
                     label = "الدليل",
                     modifier = Modifier.weight(1f)
                 )

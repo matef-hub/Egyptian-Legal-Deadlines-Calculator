@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,10 +44,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
@@ -58,8 +61,6 @@ import com.ateflaw.legaldeadlines.domain.model.Holiday
 import com.ateflaw.legaldeadlines.presentation.components.SweetAlertNotice
 import com.ateflaw.legaldeadlines.presentation.components.NoticeKind
 import com.ateflaw.legaldeadlines.presentation.components.custom.MonthlyHolidayCalendar
-import com.ateflaw.legaldeadlines.presentation.components.custom.DiamondDivider
-import com.ateflaw.legaldeadlines.presentation.ui.theme.ArefRuqaaFontFamily
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.presentation.viewmodel.HolidaysUiState
 import com.ateflaw.legaldeadlines.presentation.viewmodel.HolidaysViewModel
@@ -67,6 +68,7 @@ import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import kotlinx.coroutines.delay
 import java.time.DayOfWeek
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlin.time.Duration.Companion.milliseconds
@@ -93,6 +95,10 @@ fun HolidaysScreenContent(
     onDismissSnackbar: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var isNoteExpanded by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    val noteRotation by animateFloatAsState(targetValue = if (isNoteExpanded) 180f else 0f, label = "Note Arrow Rotation")
+    
     Box(modifier = modifier.fillMaxSize()) {
         AnimatedContent(
             targetState = Pair(uiState.isLoading, uiState.holidays.isEmpty()),
@@ -169,18 +175,6 @@ fun HolidaysScreenContent(
                         item(key = "calendar-overview") {
                             var selectedMonth by remember { mutableStateOf(YearMonth.now()) }
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(
-                                    text = "تقويم العطلات",
-                                    fontFamily = ArefRuqaaFontFamily,
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = "الأيام الموثقة رسميًا مميزة عن البيانات المرشحة للمراجعة",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                DiamondDivider()
                                 MonthlyHolidayCalendar(
                                     currentMonth = selectedMonth,
                                     onPreviousMonth = { selectedMonth = selectedMonth.minusMonths(1) },
@@ -192,7 +186,17 @@ fun HolidaysScreenContent(
                         item {
                             // Cabinet / Governance Policy Banner
                             Card(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        isNoteExpanded = !isNoteExpanded
+                                        if (isNoteExpanded) {
+                                            coroutineScope.launch {
+                                                delay(5000.milliseconds)
+                                                isNoteExpanded = false
+                                            }
+                                        }
+                                    },
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(
                                     containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
@@ -213,20 +217,32 @@ fun HolidaysScreenContent(
                                             .padding(top = 2.dp)
                                     )
                                     Spacer(modifier = Modifier.width(12.dp))
-                                    Column {
+                                    Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = "تنويه بشأن قرارات مجلس الوزراء",
                                             style = MaterialTheme.typography.titleSmall,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.primary
                                         )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = stringResource(R.string.holidays_governance_note),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                        androidx.compose.animation.AnimatedVisibility(visible = isNoteExpanded) {
+                                            Column {
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = stringResource(R.string.holidays_governance_note),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
                                     }
+                                    Icon(
+                                        imageVector = Icons.Default.KeyboardArrowDown,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier
+                                            .padding(top = 2.dp)
+                                            .rotate(noteRotation)
+                                    )
                                 }
                             }
                         }
