@@ -51,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -387,24 +388,20 @@ private fun HolidayCard(
     val dayName = DateFormatterUtils.getArabicDayName(holiday.holidayDate.dayOfWeek)
     val fullFormattedDate = DateFormatterUtils.formatArabicFullDate(holiday.holidayDate)
 
-    val cardBorderColor = if (isToday) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+    val cardBorderColor = when {
+        isToday -> MaterialTheme.colorScheme.secondary
+        isFuture -> MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
     }
 
-    val cardContainerColor = if (isToday) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-    } else {
-        MaterialTheme.colorScheme.surfaceContainer
-    }
+    val cardContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+        .compositeOver(MaterialTheme.colorScheme.surface)
 
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = cardContainerColor),
-        border = androidx.compose.foundation.BorderStroke(1.dp, cardBorderColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isToday) 4.dp else 1.dp)
+        border = androidx.compose.foundation.BorderStroke(1.dp, cardBorderColor)
     ) {
         Column(
             modifier = Modifier
@@ -426,12 +423,12 @@ private fun HolidayCard(
 
                 // Status chip (Today / Future / Past)
                 val statusBg = when {
-                    isToday -> MaterialTheme.colorScheme.primaryContainer
-                    isFuture -> MaterialTheme.colorScheme.secondaryContainer
-                    else -> MaterialTheme.colorScheme.surfaceContainerHigh
+                    isToday -> MaterialTheme.colorScheme.primary
+                    isFuture -> MaterialTheme.colorScheme.secondaryContainer.compositeOver(cardContainerColor)
+                    else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.08f).compositeOver(cardContainerColor)
                 }
                 val statusTextColor = when {
-                    isToday -> MaterialTheme.colorScheme.onPrimaryContainer
+                    isToday -> MaterialTheme.colorScheme.onPrimary
                     isFuture -> MaterialTheme.colorScheme.onSecondaryContainer
                     else -> MaterialTheme.colorScheme.onSurfaceVariant
                 }
@@ -481,7 +478,7 @@ private fun HolidayCard(
                 Spacer(modifier = Modifier.height(8.dp))
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
+                    color = MaterialTheme.colorScheme.tertiaryContainer.compositeOver(cardContainerColor)
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -503,6 +500,22 @@ private fun HolidayCard(
                     }
                 }
             }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Holiday cards")
+@Preview(showBackground = true, name = "Holiday cards - dark", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun HolidayCardsPreview() {
+    EgyptianLegalDeadlinesTheme {
+        Column(
+            modifier = Modifier.background(MaterialTheme.colorScheme.background).padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            HolidayCard(Holiday(id = 1, holidayDate = LocalDate.now(), name = "عيد الميلاد المجيد"))
+            HolidayCard(Holiday(id = 2, holidayDate = LocalDate.of(2025, 1, 30), name = "ثورة ٢٥ يناير وعيد الشرطة"))
+            HolidayCard(Holiday(id = 3, holidayDate = LocalDate.now().plusDays(1), name = "إجازة عيد الفطر المبارك"))
         }
     }
 }

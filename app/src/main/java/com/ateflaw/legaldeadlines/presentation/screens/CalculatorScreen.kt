@@ -208,19 +208,9 @@ fun CalculatorScreenContent(
         }
     }
 
-    // Filter rules based on typed query (Limit to 5 results to prevent lag)
     val filteredRules by remember(uiState.rules, searchQuery) {
         derivedStateOf {
-            val query = searchQuery.trim()
-            if (query.isBlank() || (uiState.selectedRule != null && query == uiState.selectedRule.actionName)) {
-                uiState.rules.take(30)
-            } else {
-                uiState.rules.filter { rule ->
-                    rule.actionName.contains(query, ignoreCase = true) ||
-                    rule.lawArticle.contains(query, ignoreCase = true) ||
-                    rule.notes.contains(query, ignoreCase = true)
-                }.take(30)
-            }
+            filterLegalRules(uiState.rules, searchQuery, uiState.selectedRule)
         }
     }
 

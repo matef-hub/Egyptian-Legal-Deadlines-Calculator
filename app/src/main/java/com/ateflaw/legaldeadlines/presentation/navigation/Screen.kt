@@ -7,4 +7,5 @@ sealed class Screen(val route: String, val title: String) {
     data object SavedDeadlines : Screen("saved_deadlines", "المواعيد المحفوظة")
     data object RulesCatalog : Screen("rules_catalog", "دليل المواعيد")
     data object BackupRestore : Screen("backup_restore", "النسخ الاحتياطي")
+    data object About : Screen("about", "عن البرنامج")
 }

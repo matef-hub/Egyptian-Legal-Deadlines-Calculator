@@ -62,6 +62,7 @@ import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Modern interactive milestone timeline view displaying the procedural lifecycle of a legal deadline.
@@ -249,7 +250,7 @@ private fun TimelineNodeItem(
     var itemVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay((index * 150).toLong())
+        kotlinx.coroutines.delay((index * 150).toLong().milliseconds)
         itemVisible = true
     }
 

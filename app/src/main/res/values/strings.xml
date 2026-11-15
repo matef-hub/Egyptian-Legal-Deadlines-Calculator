@@ -4,8 +4,24 @@
     <string name="nav_calculator">الحاسبة</string>
     <string name="nav_holidays">العطلات</string>
     <string name="nav_saved">المحفوظات</string>
-    <string name="nav_toggle_desc">التبديل بين الشاشات</string>
+    <string name="nav_settings">الإعدادات</string>
+    <string name="nav_about">عن البرنامج</string>
+    <string name="nav_backup">النسخ الاحتياطي</string>
+    <string name="nav_backup_desc">نقل البيانات والنسخ الاحتياطي</string>
     <string name="nav_legal_deadlines_desc">ميعاد</string>
+
+    <string name="about_subtitle">مساعدك في مراجعة المواعيد القانونية المصرية</string>
+    <string name="about_idea_title">فكرة البرنامج</string>
+    <string name="about_idea">يساعد ميعاد المحامين على مراجعة المواعيد الإجرائية في ضوء القواعد القانونية والعطلات، مع عرض السند القانوني وتفاصيل الاحتساب للمراجعة.</string>
+    <string name="about_how_title">طريقة الاستخدام</string>
+    <string name="about_how_step_one">١. من الحاسبة، اختر الإجراء القانوني وحدد تاريخ الواقعة، وأضف ميعاد المسافة عند الحاجة.</string>
+    <string name="about_how_step_two">٢. احسب الميعاد وراجع تفاصيل النتيجة والسند القانوني وحالة العطلات، ثم احفظه إذا أردت الرجوع إليه.</string>
+    <string name="about_how_step_three">٣. استخدم الدليل للاطلاع على القواعد وتعديلها، وشاشتي العطلات والمحفوظات لمراجعة بياناتك.</string>
+    <string name="about_how_step_four">٤. من الإعدادات يمكنك تصدير نسخة احتياطية مشفرة أو استعادة نسخة على تثبيت خالٍ من بيانات المستخدم.</string>
+    <string name="about_developer_title">تطوير البرنامج</string>
+    <string name="about_developer">Mohamed Atef — محامٍ مصري ومطوّر للتقنيات القانونية.</string>
+    <string name="about_version">الإصدار %1$s</string>
+    <string name="about_legal_note">النتائج للمساعدة في المراجعة؛ راجع النص التشريعي الساري والوقائع والعطلات قبل الاعتماد على أي ميعاد.</string>
 
     <string name="today_label">اليوم</string>
     <string name="official_working_day">يوم عمل رسمي</string>

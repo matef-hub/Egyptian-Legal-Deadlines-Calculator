@@ -34,7 +34,7 @@ class HolidaySyncWorker(
         val database = AppDatabase.getInstance(applicationContext)
         val holidayService = OfficialHolidayService(
             holidayDao = database.holidayDao(),
-            apiService = RetrofitClient.apiService
+            apiService = { RetrofitClient.apiService }
         )
 
         val currentYear = LocalDate.now().year

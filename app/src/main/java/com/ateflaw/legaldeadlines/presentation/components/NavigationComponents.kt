@@ -24,12 +24,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Gavel
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SettingsBackupRestore
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +44,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -60,9 +67,11 @@ import com.ateflaw.legaldeadlines.presentation.ui.theme.ArefRuqaaFontFamily
 @Composable
 fun ModernTopAppBar(
     currentRoute: String?,
-    onToggleScreen: () -> Unit,
+    onOpenSettingsPage: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var settingsExpanded by remember { mutableStateOf(false) }
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
@@ -97,6 +106,8 @@ fun ModernTopAppBar(
                             Screen.SavedDeadlines.route -> stringResource(R.string.nav_saved)
                             Screen.Holidays.route -> stringResource(R.string.nav_holidays)
                             Screen.RulesCatalog.route -> "دليل المواعيد"
+                            Screen.BackupRestore.route -> stringResource(R.string.nav_backup)
+                            Screen.About.route -> stringResource(R.string.nav_about)
                             else -> stringResource(R.string.nav_calculator)
                         },
                         style = MaterialTheme.typography.titleLarge,
@@ -108,15 +119,40 @@ fun ModernTopAppBar(
                 }
             },
             actions = {
-                IconButton(
-                    onClick = onToggleScreen
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.CompareArrows,
-                        contentDescription = stringResource(R.string.nav_toggle_desc),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
+                Box {
+                    IconButton(onClick = { settingsExpanded = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.nav_settings),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = settingsExpanded,
+                        onDismissRequest = { settingsExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.nav_backup_desc)) },
+                            leadingIcon = {
+                                Icon(Icons.Default.SettingsBackupRestore, contentDescription = null)
+                            },
+                            onClick = {
+                                settingsExpanded = false
+                                onOpenSettingsPage(Screen.BackupRestore.route)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.nav_about)) },
+                            leadingIcon = {
+                                Icon(Icons.Default.Info, contentDescription = null)
+                            },
+                            onClick = {
+                                settingsExpanded = false
+                                onOpenSettingsPage(Screen.About.route)
+                            }
+                        )
+                    }
                 }
             },
             windowInsets = TopAppBarDefaults.windowInsets,
@@ -267,7 +303,7 @@ private fun ModernTopAppBarPreview() {
     EgyptianLegalDeadlinesTheme {
         ModernTopAppBar(
             currentRoute = Screen.Calculator.route,
-            onToggleScreen = {}
+            onOpenSettingsPage = {}
         )
     }
 }

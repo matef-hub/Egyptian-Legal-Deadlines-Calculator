@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,12 +29,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.VisibilityOff
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -65,6 +68,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.model.LegalRuleDraft
@@ -82,8 +87,7 @@ private const val ALL_LAWS = "كل القوانين"
 fun RulesCatalogScreen(
     viewModel: RuleCatalogViewModel,
     modifier: Modifier = Modifier,
-    innerPadding: PaddingValues = PaddingValues(0.dp),
-    onOpenBackup: () -> Unit = {}
+    innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     val state by viewModel.uiState.collectAsState()
     RulesCatalogScreen(
@@ -91,8 +95,7 @@ fun RulesCatalogScreen(
         onDismissMessage = viewModel::dismissMessage,
         onSaveRule = viewModel::save,
         modifier = modifier,
-        innerPadding = innerPadding,
-        onOpenBackup = onOpenBackup
+        innerPadding = innerPadding
     )
 }
 
@@ -102,8 +105,7 @@ fun RulesCatalogScreen(
     onDismissMessage: () -> Unit,
     onSaveRule: (LegalRule?, LegalRuleDraft) -> Unit,
     modifier: Modifier = Modifier,
-    innerPadding: PaddingValues = PaddingValues(0.dp),
-    onOpenBackup: () -> Unit = {}
+    innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     var query by remember { mutableStateOf("") }
     var selectedLaw by remember { mutableStateOf(ALL_LAWS) }
@@ -165,17 +167,6 @@ fun RulesCatalogScreen(
                     )
                 }
             }
-            IconButton(
-                onClick = onOpenBackup,
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    Icons.Default.Lock,
-                    contentDescription = "نسخ احتياطي",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            Spacer(Modifier.width(6.dp))
             Button(
                 onClick = {
                     onDismissMessage()
@@ -571,102 +562,206 @@ private fun RuleEditorDialog(
     var notes by remember(initial) { mutableStateOf(initial.notes) }
     var sourceUrl by remember(initial) { mutableStateOf(initial.officialSourceUrl) }
 
-    AlertDialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (rule == null) "إضافة ميعاد قانوني" else "تعديل الميعاد القانوني") },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 470.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+        properties = DialogProperties(decorFitsSystemWindows = false)
+    ) {
+        BoxWithConstraints(modifier = Modifier.imePadding()) {
+            Surface(
+                modifier = Modifier.fillMaxWidth().heightIn(max = maxHeight * 0.92f),
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surface
             ) {
-                Surface(color = MaterialTheme.colorScheme.errorContainer) {
-                    Text(
-                        "سيُحفظ التعديل ويُعتمد نهائيًا في دليلك. ملاحظات ملف المراجعة وسجل النسخ السابقة محفوظان.",
-                        modifier = Modifier.padding(10.dp),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                OutlinedTextField(
-                    value = law, onValueChange = { law = it },
-                    label = { Text("القانون *") }, singleLine = true, modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = action, onValueChange = { action = it },
-                    label = { Text("اسم الإجراء أو الميعاد *") }, modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = article, onValueChange = { article = it },
-                    label = { Text("رقم المادة والسند القانوني *") }, modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = articleText, onValueChange = { articleText = it },
-                    label = { Text("نص المادة بالكامل ${if (rule == null) "*" else ""}") },
-                    minLines = 4, maxLines = 9, modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = duration,
-                    onValueChange = { input -> duration = input.filter { it.isDigit() }.take(6) },
-                    label = { Text("مقدار المدة *") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Text("وحدة المدة (أقل وحدة: يوم واحد)", style = MaterialTheme.typography.labelLarge)
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    DurationUnit.entries.filter { it != DurationUnit.HOURS }.forEach { choice ->
-                        FilterChip(
-                            selected = choice == unit, onClick = { unit = choice },
-                            label = { Text(choice.arabicDisplayName) }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = if (rule == null) "إضافة ميعاد قانوني" else "تعديل الميعاد القانوني",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = onDismiss, enabled = !isSaving) {
+                            Icon(Icons.Default.Close, contentDescription = "إغلاق")
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(10.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Icon(
+                                    Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = "سيُحفظ التعديل ويُعتمد نهائيًا في دليلك. ملاحظات ملف المراجعة وسجل النسخ السابقة محفوظان.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                        OutlinedTextField(
+                            value = law,
+                            onValueChange = { law = it },
+                            label = { Text("القانون *") },
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = action,
+                            onValueChange = { action = it },
+                            label = { Text("اسم الإجراء أو الميعاد *") },
+                            maxLines = 3,
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = article,
+                            onValueChange = { article = it },
+                            label = { Text("رقم المادة والسند القانوني *") },
+                            maxLines = 3,
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = articleText,
+                            onValueChange = { articleText = it },
+                            label = { Text("نص المادة بالكامل ${if (rule == null) "*" else ""}") },
+                            minLines = 4,
+                            maxLines = 9,
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = duration,
+                            onValueChange = { input -> duration = input.filter { it.isDigit() }.take(6) },
+                            label = { Text("مقدار المدة *") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Text(
+                            "وحدة المدة (أقل وحدة: يوم واحد)",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            DurationUnit.entries.filter { it != DurationUnit.HOURS }.forEach { choice ->
+                                FilterChip(
+                                    selected = choice == unit,
+                                    onClick = { unit = choice },
+                                    label = { Text(choice.arabicDisplayName) },
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                            }
+                        }
+                        OutlinedTextField(
+                            value = sourceUrl,
+                            onValueChange = { sourceUrl = it },
+                            label = { Text("رابط المصدر الرسمي (https://)") },
+                            minLines = 1,
+                            maxLines = 3,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = notes,
+                            onValueChange = { notes = it },
+                            label = { Text("ملاحظات قانونية (اختياري)") },
+                            minLines = 2,
+                            maxLines = 5,
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = {
+                                onSave(
+                                    LegalRuleDraft(
+                                        actionName = action,
+                                        lawName = law,
+                                        lawArticle = article,
+                                        articleText = articleText,
+                                        durationText = duration,
+                                        unit = unit,
+                                        notes = notes,
+                                        officialSourceUrl = sourceUrl
+                                    )
+                                )
+                            },
+                            enabled = !isSaving,
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp),
+                            modifier = Modifier.weight(1.4f).heightIn(min = 48.dp)
+                        ) {
+                            if (isSaving) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("حفظ واعتماد", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            enabled = !isSaving,
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp),
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                        ) {
+                            Text("إلغاء", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
                 }
-                OutlinedTextField(
-                    value = sourceUrl, onValueChange = { sourceUrl = it },
-                    label = { Text("رابط المصدر الرسمي (https://)") },
-                    minLines = 1, modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = notes, onValueChange = { notes = it },
-                    label = { Text("ملاحظات قانونية (اختياري)") },
-                    minLines = 2, modifier = Modifier.fillMaxWidth()
-                )
             }
-        },
-        confirmButton = {
-            Button(onClick = {
-                onSave(
-                    LegalRuleDraft(
-                        actionName = action,
-                        lawName = law,
-                        lawArticle = article,
-                        articleText = articleText,
-                        durationText = duration,
-                        unit = unit,
-                        notes = notes,
-                        officialSourceUrl = sourceUrl
-                    )
-                )
-            }, enabled = !isSaving) {
-                if (isSaving) CircularProgressIndicator(
-                    modifier = Modifier
-                        .height(18.dp)
-                        .width(18.dp),
-                    strokeWidth = 2.dp
-                ) else Text("حفظ واعتماد")
-            }
-        },
-        dismissButton = {
-            OutlinedButton(onClick = onDismiss, enabled = !isSaving) { Text("إلغاء") }
         }
-    )
+    }
 }
 
 @Preview(showBackground = true)

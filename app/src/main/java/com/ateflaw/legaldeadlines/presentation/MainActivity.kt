@@ -1,11 +1,8 @@
 package com.ateflaw.legaldeadlines.presentation
 
-import android.animation.ObjectAnimator
-import android.animation.PropertyValuesHolder
 import android.app.Activity
 import android.os.Build
 import android.os.Bundle
-import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -31,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
-import androidx.core.animation.doOnEnd
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -51,24 +47,9 @@ import com.ateflaw.legaldeadlines.presentation.viewmodel.RuleCatalogViewModel
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            splashScreen.setOnExitAnimationListener { splash ->
-                val rise = 24f * resources.displayMetrics.density
-                ObjectAnimator.ofPropertyValuesHolder(
-                    splash.view,
-                    PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, -rise),
-                    PropertyValuesHolder.ofFloat(View.ALPHA, 0f)
-                ).apply {
-                    duration = 180L
-                    doOnEnd { splash.remove() }
-                    start()
-                }
-            }
-        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
@@ -125,7 +106,10 @@ class MainActivity : ComponentActivity() {
                 val isLanding = currentRoute == Screen.Landing.route
 
                 val navigateTo: (String) -> Unit = { route ->
-                    if (currentRoute != route) {
+                    if (currentRoute == Screen.BackupRestore.route || currentRoute == Screen.About.route) {
+                        navController.popBackStack()
+                    }
+                    if (navController.currentDestination?.route != route) {
                         if (route == Screen.Calculator.route) {
                             navController.popBackStack(Screen.Calculator.route, inclusive = false)
                         } else {
@@ -144,9 +128,10 @@ class MainActivity : ComponentActivity() {
                     enabled = currentRoute == Screen.SavedDeadlines.route ||
                             currentRoute == Screen.Holidays.route ||
                             currentRoute == Screen.RulesCatalog.route ||
-                            currentRoute == Screen.BackupRestore.route
+                            currentRoute == Screen.BackupRestore.route ||
+                            currentRoute == Screen.About.route
                 ) {
-                    if (currentRoute == Screen.BackupRestore.route) {
+                    if (currentRoute == Screen.BackupRestore.route || currentRoute == Screen.About.route) {
                         navController.popBackStack()
                     } else {
                         navigateTo(Screen.Calculator.route)
@@ -165,14 +150,17 @@ class MainActivity : ComponentActivity() {
                         ) {
                             ModernTopAppBar(
                                 currentRoute = currentRoute,
-                                onToggleScreen = {
-                                    val target = when (currentRoute) {
-                                        Screen.Calculator.route -> Screen.Holidays.route
-                                        Screen.Holidays.route -> Screen.SavedDeadlines.route
-                                        Screen.SavedDeadlines.route -> Screen.RulesCatalog.route
-                                        else -> Screen.Calculator.route
+                                onOpenSettingsPage = { route ->
+                                    if (currentRoute != route) {
+                                        navController.navigate(route) {
+                                            if (currentRoute == Screen.BackupRestore.route ||
+                                                currentRoute == Screen.About.route
+                                            ) {
+                                                popUpTo(currentRoute) { inclusive = true }
+                                            }
+                                            launchSingleTop = true
+                                        }
                                     }
-                                    navigateTo(target)
                                 }
                             )
                         }
@@ -211,9 +199,9 @@ class MainActivity : ComponentActivity() {
                         AppNavHost(
                             navController = navController,
                             mainViewModel = calculatorViewModel,
-                            deadlineListViewModel = deadlineListViewModel,
-                            holidaysViewModel = holidaysViewModel,
-                            ruleCatalogViewModel = ruleCatalogViewModel,
+                            deadlineListViewModel = { deadlineListViewModel },
+                            holidaysViewModel = { holidaysViewModel },
+                            ruleCatalogViewModel = { ruleCatalogViewModel },
                             innerPadding = innerPadding,
                             modifier = Modifier.fillMaxSize()
                         )

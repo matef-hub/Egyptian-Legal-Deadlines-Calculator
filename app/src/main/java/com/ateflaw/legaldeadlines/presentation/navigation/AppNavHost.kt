@@ -20,6 +20,7 @@ import com.ateflaw.legaldeadlines.presentation.screens.LandingScreen
 import com.ateflaw.legaldeadlines.presentation.screens.SavedDeadlinesScreen
 import com.ateflaw.legaldeadlines.presentation.screens.RulesCatalogScreen
 import com.ateflaw.legaldeadlines.presentation.screens.BackupRestoreScreen
+import com.ateflaw.legaldeadlines.presentation.screens.AboutScreen
 import com.ateflaw.legaldeadlines.presentation.viewmodel.RuleCatalogViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.CalculatorViewModel
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListViewModel
@@ -29,9 +30,9 @@ import com.ateflaw.legaldeadlines.presentation.viewmodel.HolidaysViewModel
 fun AppNavHost(
     navController: NavHostController,
     mainViewModel: CalculatorViewModel,
-    deadlineListViewModel: DeadlineListViewModel,
-    holidaysViewModel: HolidaysViewModel,
-    ruleCatalogViewModel: RuleCatalogViewModel,
+    deadlineListViewModel: () -> DeadlineListViewModel,
+    holidaysViewModel: () -> HolidaysViewModel,
+    ruleCatalogViewModel: () -> RuleCatalogViewModel,
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
@@ -74,27 +75,30 @@ fun AppNavHost(
         }
         composable(Screen.Holidays.route) {
             HolidaysScreen(
-                viewModel = holidaysViewModel,
+                viewModel = holidaysViewModel(),
                 modifier = Modifier.padding(innerPadding)
             )
         }
         composable(Screen.SavedDeadlines.route) {
             SavedDeadlinesScreen(
-                viewModel = deadlineListViewModel,
+                viewModel = deadlineListViewModel(),
                 modifier = Modifier.padding(innerPadding)
             )
         }
         composable(Screen.RulesCatalog.route) {
             RulesCatalogScreen(
-                viewModel = ruleCatalogViewModel,
-                innerPadding = innerPadding,
-                onOpenBackup = {
-                    navController.navigate(Screen.BackupRestore.route)
-                }
+                viewModel = ruleCatalogViewModel(),
+                innerPadding = innerPadding
             )
         }
         composable(Screen.BackupRestore.route) {
             BackupRestoreScreen(
+                onBack = { navController.popBackStack() },
+                modifier = Modifier.padding(innerPadding)
+            )
+        }
+        composable(Screen.About.route) {
+            AboutScreen(
                 onBack = { navController.popBackStack() },
                 modifier = Modifier.padding(innerPadding)
             )

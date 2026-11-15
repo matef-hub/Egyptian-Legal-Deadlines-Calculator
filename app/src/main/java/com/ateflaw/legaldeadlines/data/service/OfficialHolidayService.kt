@@ -22,7 +22,7 @@ import java.time.LocalDate
  */
 class OfficialHolidayService(
     private val holidayDao: HolidayDao,
-    private val apiService: CalendarificApiService
+    private val apiService: () -> CalendarificApiService
 ) {
 
     fun getAllHolidays(): Flow<List<Holiday>> {
@@ -71,7 +71,7 @@ class OfficialHolidayService(
             }
 
 
-            val response = apiService.getHolidays(
+            val response = apiService().getHolidays(
                 apiKey = apiKey,
                 country = "EG",
                 year = year,

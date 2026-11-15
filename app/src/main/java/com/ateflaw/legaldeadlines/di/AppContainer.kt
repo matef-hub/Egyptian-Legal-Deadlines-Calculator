@@ -31,7 +31,7 @@ class AppContainer(private val context: Context) {
     val holidayService: OfficialHolidayService by lazy {
         OfficialHolidayService(
             holidayDao = database.holidayDao(),
-            apiService = RetrofitClient.apiService
+            apiService = { RetrofitClient.apiService }
         )
     }
 

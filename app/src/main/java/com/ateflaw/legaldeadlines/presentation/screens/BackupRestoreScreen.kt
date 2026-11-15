@@ -33,9 +33,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.ateflaw.legaldeadlines.R
 import com.ateflaw.legaldeadlines.data.backup.BackupTransferService
 import com.ateflaw.legaldeadlines.data.database.AppDatabase
 import com.ateflaw.legaldeadlines.presentation.components.NoticeKind
@@ -104,7 +106,7 @@ fun BackupRestoreScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text("نقل البيانات والنسخ الاحتياطي", style = MaterialTheme.typography.headlineSmall,
+        Text(stringResource(R.string.nav_backup_desc), style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
         Text(
             "احفظ المواعيد والقواعد التي عدّلتها وسجل مراجعاتها في ملف مشفّر بكلمة مرور. " +
@@ -161,7 +163,7 @@ fun BackupRestoreScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             CircularProgressIndicator()
             Text("جارٍ تنفيذ العملية محليًا…", style = MaterialTheme.typography.labelMedium)
         }
-        TextButton(onClick = onBack, enabled = !busy) { Text("العودة إلى دليل المواعيد") }
+        TextButton(onClick = onBack, enabled = !busy) { Text(stringResource(R.string.btn_back)) }
     }
 
     if (confirmation) {
