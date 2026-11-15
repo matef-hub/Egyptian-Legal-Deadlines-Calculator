@@ -667,4 +667,20 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migration11To12PreservesTheStoredDateAndDefaultsToProvisional() {
+        TestSupportSQLiteDatabase().use { db ->
+            db.execSQL("CREATE TABLE saved_deadlines (id INTEGER PRIMARY KEY, final_deadline TEXT, case_number TEXT)")
+            db.execSQL("INSERT INTO saved_deadlines VALUES (42, '2026-10-08', '66/2026')")
+            AppDatabase.MIGRATION_11_12.migrate(db)
+            db.query("SELECT final_deadline, case_number, is_provisional FROM saved_deadlines WHERE id = 42")
+                .use {
+                    assertTrue(it.moveToNext())
+                    assertEquals("2026-10-08", it.getString(0))
+                    assertEquals("66/2026", it.getString(1))
+                    assertEquals(1, it.getInt(2))
+                }
+        }
+    }
+
 }

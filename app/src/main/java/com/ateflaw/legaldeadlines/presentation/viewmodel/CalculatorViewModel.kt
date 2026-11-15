@@ -3,20 +3,21 @@ package com.ateflaw.legaldeadlines.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.ateflaw.legaldeadlines.data.seed.LegalRuleSeedData
 import com.ateflaw.legaldeadlines.domain.model.DistanceType
+import com.ateflaw.legaldeadlines.domain.model.Holiday
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.model.SavedDeadline
 import com.ateflaw.legaldeadlines.domain.usecase.CalculateDeadlineUseCase
 import com.ateflaw.legaldeadlines.domain.usecase.GetHolidaysUseCase
 import com.ateflaw.legaldeadlines.domain.usecase.GetLegalRulesUseCase
 import com.ateflaw.legaldeadlines.domain.usecase.SaveDeadlineUseCase
-import com.ateflaw.legaldeadlines.domain.usecase.SyncHolidaysUseCase
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -25,38 +26,30 @@ class CalculatorViewModel(
     private val getLegalRulesUseCase: GetLegalRulesUseCase,
     private val getHolidaysUseCase: GetHolidaysUseCase,
     private val calculateDeadlineUseCase: CalculateDeadlineUseCase,
-    private val saveDeadlineUseCase: SaveDeadlineUseCase,
-    private val syncHolidaysUseCase: SyncHolidaysUseCase
+    private val saveDeadlineUseCase: SaveDeadlineUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
+    private var saveJob: Job? = null
 
     init {
         loadLegalRules()
         loadHolidayStatus()
         watchDateChanges()
-        triggerBackgroundSync()
     }
 
     private fun loadLegalRules() {
         viewModelScope.launch {
-            if (getLegalRulesUseCase.getRulesCount() == 0) {
-                getLegalRulesUseCase.insertRules(LegalRuleSeedData.getSeedRules())
-            }
-            getLegalRulesUseCase().collect { rulesList ->
-                if (rulesList.isEmpty()) {
-                    getLegalRulesUseCase.insertRules(LegalRuleSeedData.getSeedRules())
-                } else {
-                    _uiState.update { currentState ->
-                        // Re-resolve the selected rule after a legal-data update.
-                        // Do not keep a stale rule object in an existing calculation.
-                        val selectedRule = currentState.selectedRule?.let { selected ->
-                            rulesList.firstOrNull { it.id == selected.id }
-                        }
-                        val nextState = currentState.copy(rules = rulesList, selectedRule = selectedRule)
-                        if (selectedRule != currentState.selectedRule) nextState.invalidateCalculation() else nextState
+            getLegalRulesUseCase().catch {
+                _uiState.update { it.copy(errorMessage = "تعذر تهيئة دليل القواعد القانونية.") }
+            }.collect { rulesList ->
+                _uiState.update { currentState ->
+                    val selectedRule = currentState.selectedRule?.let { selected ->
+                        rulesList.firstOrNull { it.id == selected.id }
                     }
+                    val nextState = currentState.copy(rules = rulesList, selectedRule = selectedRule)
+                    if (selectedRule != currentState.selectedRule) nextState.invalidateCalculation() else nextState
                 }
             }
         }
@@ -70,13 +63,12 @@ class CalculatorViewModel(
         val today = LocalDate.now()
         if (_uiState.value.todayDate == today) return
         viewModelScope.launch {
-            val isHoliday = getHolidaysUseCase.isHoliday(today)
-            val holidayName = if (isHoliday) getHolidaysUseCase.getHolidayName(today) else null
+            val holiday = getHolidaysUseCase.officialHolidayOn(today)
             _uiState.update {
                 it.copy(
                     todayDate = today,
-                    isTodayHoliday = isHoliday,
-                    todayHolidayName = holidayName
+                    isTodayHoliday = holiday != null,
+                    todayHolidayName = holiday?.name
                 )
             }
         }
@@ -93,50 +85,25 @@ class CalculatorViewModel(
 
     private fun loadHolidayStatus() {
         viewModelScope.launch {
-            if (getHolidaysUseCase.getCount() == 0) {
-                getHolidaysUseCase.insertHolidays(LegalRuleSeedData.getInitialOfficialHolidays())
-            }
-            val today = LocalDate.now()
-            val isHoliday = getHolidaysUseCase.isHoliday(today)
-            val holidayName = if (isHoliday) getHolidaysUseCase.getHolidayName(today) else null
-            val count = getHolidaysUseCase.getCount()
-
-            _uiState.update {
-                it.copy(
-                    todayDate = today,
-                    isTodayHoliday = isHoliday,
-                    todayHolidayName = holidayName,
-                    totalHolidaysCount = count
-                )
-            }
-
-            // A changed holiday calendar invalidates any previously calculated final date.
-            var previousHolidays: List<com.ateflaw.legaldeadlines.domain.model.Holiday>? = null
-            getHolidaysUseCase().collect { holidays ->
-                val holidaysChanged = previousHolidays != null && previousHolidays != holidays
-                previousHolidays = holidays
-                // Do not capture today's date once: sync can finish after midnight.
-                val currentDay = LocalDate.now()
-                val updatedCount = holidays.size
-                val updatedIsHoliday = holidays.any { it.holidayDate == currentDay }
-                val updatedName = holidays.firstOrNull { it.holidayDate == currentDay }?.name
+            var previousHolidays: List<Holiday>? = null
+            getHolidaysUseCase().catch {
+                _uiState.update { it.copy(errorMessage = "تعذر قراءة تقويم العطلات.") }
+            }.collect { holidays ->
+                val official = holidays.filter(Holiday::isVerifiedOfficial)
+                val holidaysChanged = previousHolidays != null && previousHolidays != official
+                previousHolidays = official
+                val today = LocalDate.now()
+                val holiday = official.firstOrNull { it.holidayDate == today }
                 _uiState.update {
                     val nextState = it.copy(
-                        todayDate = currentDay,
-                        totalHolidaysCount = updatedCount,
-                        isTodayHoliday = updatedIsHoliday,
-                        todayHolidayName = updatedName
+                        todayDate = today,
+                        totalHolidaysCount = official.size,
+                        isTodayHoliday = holiday != null,
+                        todayHolidayName = holiday?.name
                     )
                     if (holidaysChanged) nextState.invalidateCalculation() else nextState
                 }
             }
-        }
-    }
-
-    private fun triggerBackgroundSync() {
-        viewModelScope.launch {
-            val currentYear = LocalDate.now().year
-            syncHolidaysUseCase(currentYear)
         }
     }
 
@@ -300,11 +267,11 @@ class CalculatorViewModel(
 
     fun saveCurrentDeadline(proactiveDays: Int? = _uiState.value.proactiveReminderDays) {
         val currentState = _uiState.value
-        if (currentState.isCalculating) return
+        if (saveJob?.isActive == true || currentState.isCalculating || currentState.isSavedSuccessfully) return
         val result = currentState.result ?: return
         val rule = currentState.selectedRule ?: return
 
-        viewModelScope.launch {
+        saveJob = viewModelScope.launch {
             if (_uiState.value.inputRevision != currentState.inputRevision) return@launch
             try {
                 val ruleSnapshotText = buildString {
@@ -322,7 +289,7 @@ class CalculatorViewModel(
                     append(" | تاريخ الواقعة: ").append(currentState.announcementDate)
                     append(" | نوع المسافة: ").append(currentState.distanceType.name)
                     append(" | أيام المسافة: ").append(result.totalDistanceDays)
-                    append(" | الميعاد النهائي: ").append(result.finalDeadline)
+                    append(" | تاريخ نهاية المدة المحسوبة: ").append(result.finalDeadline)
                     append(" | تحذيرات: ").append(result.warnings.joinToString(" // "))
                     if (rule.triggerEventLabel.isNotBlank()) {
                         append(" | الواقعة: ").append(rule.triggerEventLabel)
@@ -345,7 +312,8 @@ class CalculatorViewModel(
                     createdAt = System.currentTimeMillis(),
                     proactiveReminderDays = reminderDaysToSave,
                     ruleSnapshot = ruleSnapshotText,
-                    distanceType = currentState.distanceType.name
+                    distanceType = currentState.distanceType.name,
+                    isProvisional = result.isProvisional
                 )
 
                 saveDeadlineUseCase(deadlineToSave)
@@ -372,8 +340,7 @@ class CalculatorViewModel(
             getLegalRulesUseCase: GetLegalRulesUseCase,
             getHolidaysUseCase: GetHolidaysUseCase,
             calculateDeadlineUseCase: CalculateDeadlineUseCase,
-            saveDeadlineUseCase: SaveDeadlineUseCase,
-            syncHolidaysUseCase: SyncHolidaysUseCase
+            saveDeadlineUseCase: SaveDeadlineUseCase
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -381,8 +348,7 @@ class CalculatorViewModel(
                     getLegalRulesUseCase,
                     getHolidaysUseCase,
                     calculateDeadlineUseCase,
-                    saveDeadlineUseCase,
-                    syncHolidaysUseCase
+                    saveDeadlineUseCase
                 ) as T
             }
         }

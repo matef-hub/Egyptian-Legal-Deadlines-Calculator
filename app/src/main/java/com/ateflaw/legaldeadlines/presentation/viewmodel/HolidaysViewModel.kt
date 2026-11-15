@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 data class HolidaysUiState(
     val holidays: List<Holiday> = emptyList(),
@@ -45,25 +44,24 @@ class HolidaysViewModel(
         }
     }
 
-    fun syncHolidays(forceRefresh: Boolean = true) {
+    fun syncHolidays() {
+        if (_uiState.value.isSyncing) return
         viewModelScope.launch {
             _uiState.update { it.copy(isSyncing = true, syncMessage = null) }
-            val currentYear = LocalDate.now().year
-            val result = syncHolidaysUseCase(currentYear, forceRefresh)
+            val result = syncHolidaysUseCase()
             if (result.isSuccess) {
                 val count = result.getOrDefault(0)
                 _uiState.update {
                     it.copy(
                         isSyncing = false,
-                        syncMessage = "تم استقبال $count عطلة مرشحة من المصدر الخارجي. لا تعتبر قرارات رسمية دون التحقق من سندها."
+                        syncMessage = "تمت مراجعة التقويم المركزي. يوجد $count تاريخ عطلة موثّق."
                     )
                 }
             } else {
-                val msg = result.exceptionOrNull()?.message ?: "تعذر تحديث البيانات المرشحة. راجع تواريخ العطلات المنشورة رسميًا."
                 _uiState.update {
                     it.copy(
                         isSyncing = false,
-                        syncMessage = msg
+                        syncMessage = "تعذر تنزيل التقويم المركزي. آخر نسخة صالحة متاحة للعمل دون اتصال."
                     )
                 }
             }

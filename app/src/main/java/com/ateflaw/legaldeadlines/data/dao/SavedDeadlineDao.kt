@@ -12,8 +12,14 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface SavedDeadlineDao {
 
-    @Query("SELECT * FROM saved_deadlines ORDER BY created_at DESC")
-    fun getAllSortedByCreatedAt(): Flow<List<SavedDeadlineEntity>>
+    @Query("""
+        SELECT * FROM saved_deadlines
+        ORDER BY (final_deadline < DATE('now', 'localtime')),
+            CASE WHEN final_deadline >= DATE('now', 'localtime') THEN final_deadline END ASC,
+            CASE WHEN final_deadline < DATE('now', 'localtime') THEN final_deadline END DESC,
+            created_at DESC
+    """)
+    fun observeByDeadline(): Flow<List<SavedDeadlineEntity>>
 
     @Query("SELECT * FROM saved_deadlines WHERE id = :id LIMIT 1")
     suspend fun getById(id: Long): SavedDeadlineEntity?

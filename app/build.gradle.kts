@@ -1,5 +1,4 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -13,17 +12,6 @@ kotlin {
     }
 }
 
-val localProperties = Properties().apply {
-    val localPropertiesFile = rootProject.file("local.properties")
-    if (localPropertiesFile.exists()) {
-        localPropertiesFile.inputStream().use { load(it) }
-    }
-}
-
-val calendarificApiKey: String = (localProperties.getProperty("CALENDARIFIC_API_KEY")
-    ?: (project.findProperty("CALENDARIFIC_API_KEY") as? String)
-    ?: "YOUR_API_KEY").trim('"')
-
 android {
     namespace = "com.ateflaw.legaldeadlines"
     compileSdk = 37
@@ -32,13 +20,10 @@ android {
         applicationId = "com.ateflaw.legaldeadlines"
         minSdk = 24
         targetSdk = 37
-        versionCode = 15
-        versionName = "1.1.3"
+        versionCode = 16
+        versionName = "1.1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        // No third-party API credential is packaged into a production APK/AAB.
-        buildConfigField("String", "CALENDARIFIC_API_KEY", "\"YOUR_API_KEY\"")
 
         javaCompileOptions {
             annotationProcessorOptions {
@@ -82,8 +67,7 @@ android {
             if (hasReleaseKey) signingConfig = signingConfigs.getByName("release")
         }
         debug {
-            buildConfigField("String", "CALENDARIFIC_API_KEY", "\"$calendarificApiKey\"")
-            isMinifyEnabled = false
+                isMinifyEnabled = false
             // A distinct package protects existing user records when CI runner debug keys rotate.
             applicationIdSuffix = ".legalreview" 
             versionNameSuffix = "-legalreview" 
@@ -95,6 +79,8 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    sourceSets.getByName("main").assets.srcDir(rootProject.file("calendar"))
 
     buildFeatures {
         compose = true
@@ -159,10 +145,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     // Networking
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp)
-    implementation(libs.okhttp.logging.interceptor)
 
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
@@ -172,6 +155,7 @@ dependencies {
 
     // Testing
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20240303")
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.room.testing)
     // Required by the JVM-only Room migration test fixture (DriverManager jdbc:sqlite:).

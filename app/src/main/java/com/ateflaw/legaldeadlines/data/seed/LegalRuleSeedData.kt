@@ -3,13 +3,11 @@ package com.ateflaw.legaldeadlines.data.seed
 import com.ateflaw.legaldeadlines.domain.calculator.LegalRuleSafety
 import com.ateflaw.legaldeadlines.domain.review.LegalRuleReviewCatalog
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
-import com.ateflaw.legaldeadlines.domain.model.Holiday
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.model.StartRule
-import java.time.LocalDate
 
 /**
- * Seed data provider for Egyptian legal procedural rules and initial official national holidays.
+ * Seed data provider for Egyptian legal procedural rules.
  */
 object LegalRuleSeedData {
 
@@ -1953,32 +1951,4 @@ object LegalRuleSeedData {
             }
         }
     }
-
-    // Published Egyptian Presidency calendar for national official holidays in 2026.
-    // Court-specific closure decisions still require separate review.
-    private const val SOURCE_2026_HOLIDAYS = "https://www.presidency.eg/ar/%D9%85%D8%B5%D8%B1/%D8%A7%D9%84%D8%B9%D8%B7%D9%84%D8%A7%D8%AA-%D8%A7%D9%84%D8%B1%D8%B3%D9%85%D9%8A%D8%A9/"
-
-    fun getInitialOfficialHolidays(): List<Holiday> = listOf(
-            Holiday(holidayDate = LocalDate.parse("2026-01-07"), name = "عيد الميلاد المجيد", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-01-29"), name = "ثورة 25 يناير وعيد الشرطة (إجازة منقولة)", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-03-19"), name = "إجازة عيد الفطر المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-03-20"), name = "إجازة عيد الفطر المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-03-21"), name = "إجازة عيد الفطر المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-03-22"), name = "إجازة عيد الفطر المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-03-23"), name = "إجازة عيد الفطر المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-04-13"), name = "عيد شم النسيم", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-04-25"), name = "عيد تحرير سيناء", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-05-07"), name = "إجازة عيد العمال المنقولة", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-05-26"), name = "وقفة عيد الأضحى المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-05-27"), name = "إجازة عيد الأضحى المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-05-28"), name = "إجازة عيد الأضحى المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-05-29"), name = "إجازة عيد الأضحى المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-05-30"), name = "إجازة عيد الأضحى المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-05-31"), name = "إجازة عيد الأضحى المبارك", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-06-18"), name = "إجازة رأس السنة الهجرية", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-07-02"), name = "إجازة ثورة 30 يونيو", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-07-23"), name = "ثورة 23 يوليو", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-08-27"), name = "إجازة المولد النبوي الشريف", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS),
-            Holiday(holidayDate = LocalDate.parse("2026-10-06"), name = "عيد القوات المسلحة", verificationStatus = "VERIFIED_OFFICIAL", sourceUrl = SOURCE_2026_HOLIDAYS)
-    )
 }

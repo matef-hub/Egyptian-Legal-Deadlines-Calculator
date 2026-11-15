@@ -1,125 +1,113 @@
 package com.ateflaw.legaldeadlines.data.service
 
-import com.ateflaw.legaldeadlines.BuildConfig
+import android.content.Context
+import android.util.AtomicFile
 import com.ateflaw.legaldeadlines.data.dao.HolidayDao
-import com.ateflaw.legaldeadlines.data.entity.HolidayEntity
-import com.ateflaw.legaldeadlines.data.remote.CalendarificApiService
 import com.ateflaw.legaldeadlines.domain.model.Holiday
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.File
+import java.io.IOException
 import java.time.LocalDate
+import java.util.concurrent.TimeUnit
 
-/**
- * Service managing official Egyptian holidays:
- * - Reads holidays from Room
- * - Checks whether a date is an official holiday
- * - Returns holiday name
- * - Synchronizes holidays from Calendarific
- * - Updates Room idempotently
- * - Operates offline using cached Room data
- */
 class OfficialHolidayService(
-    private val holidayDao: HolidayDao,
-    private val apiService: () -> CalendarificApiService
+    private val context: Context,
+    private val holidayDao: HolidayDao
 ) {
+    private val bundled by lazy {
+        context.assets.open(HolidayFeed.FILE_NAME).use { HolidayFeed.parse(HolidayFeed.read(it)) }
+    }
+    private val cache = AtomicFile(File(context.noBackupFilesDir, HolidayFeed.FILE_NAME))
+    private val snapshot = MutableStateFlow<HolidayFeed?>(null)
+    private val loadLock = Mutex()
+    private val syncLock = Mutex()
+    private val client = OkHttpClient.Builder()
+        .callTimeout(20, TimeUnit.SECONDS)
+        .followRedirects(false)
+        .build()
 
-    fun getAllHolidays(): Flow<List<Holiday>> {
-        return holidayDao.getAll().map { list ->
-            list.map { it.toDomain() }
+    fun getAllHolidays(): Flow<List<Holiday>> = flow {
+        current()
+        emitAll(combine(snapshot.filterNotNull(), holidayDao.getAll()) { feed, legacy ->
+            feed.includingLegacy(legacy.map { it.toDomain() })
+        })
+    }
+
+    suspend fun getAllHolidaysList(): List<Holiday> =
+        current().includingLegacy(holidayDao.getAllList().map { it.toDomain() })
+
+    suspend fun getHoliday(date: LocalDate): Holiday? = current().holidayOn(date)
+
+    private suspend fun current(): HolidayFeed = withContext(Dispatchers.IO) {
+        snapshot.value ?: loadLock.withLock {
+            snapshot.value ?: loadSnapshot().also { snapshot.value = it }
         }
     }
 
-    suspend fun getAllHolidaysList(): List<Holiday> = withContext(Dispatchers.IO) {
-        holidayDao.getAllList().map { it.toDomain() }
+    private fun loadSnapshot(): HolidayFeed {
+        val baseline = bundled
+        val previous = try {
+            cache.openRead().use { HolidayFeed.parse(HolidayFeed.read(it)) }
+        } catch (_: Exception) {
+            return baseline
+        }
+        return if (previous.acceptsUpdate(baseline)) previous else baseline
     }
 
-    suspend fun getHolidaysCount(): Int = withContext(Dispatchers.IO) {
-        holidayDao.count()
-    }
-
-    suspend fun isHoliday(date: LocalDate): Boolean = withContext(Dispatchers.IO) {
-        holidayDao.getHoliday(date.toString())?.let { it.verificationStatus == "VERIFIED_OFFICIAL" && it.sourceUrl.startsWith("https://") } ?: false
-    }
-
-    suspend fun getHolidayName(date: LocalDate): String? = withContext(Dispatchers.IO) {
-        holidayDao.getHoliday(date.toString())?.takeIf { it.verificationStatus == "VERIFIED_OFFICIAL" && it.sourceUrl.startsWith("https://") }?.name
-    }
-
-    suspend fun insertHolidays(holidays: List<Holiday>) = withContext(Dispatchers.IO) {
-        holidayDao.insertAll(holidays.map { HolidayEntity.fromDomain(it) })
-    }
-
-    @Suppress("KotlinConstantConditions")
-    suspend fun syncHolidays(year: Int, forceRefresh: Boolean = false): Result<Int> = withContext(Dispatchers.IO) {
-        try {
-            if (!forceRefresh) {
-                val existingCount = holidayDao.countHolidaysForYear(year.toString())
-                if (existingCount > 0) {
-                    return@withContext Result.success(existingCount)
-                }
-            }
-
-            val apiKey = BuildConfig.CALENDARIFIC_API_KEY
-            if (apiKey.isBlank() || apiKey == "YOUR_API_KEY") {
-                // If API key is not configured, explicitly communicate reliance on verified local database
-                val localCount = holidayDao.count()
-                return@withContext Result.failure(
-                    IllegalStateException("لا يوجد مفتاح لمصدر العطلات الخارجي. توجد $localCount عطلة محلية مرشحة، ويلزم قرار رسمي للتحقق منها.")
-                )
-            }
-
-
-            val response = apiService().getHolidays(
-                apiKey = apiKey,
-                country = "EG",
-                year = year,
-                type = "national"
-            )
-
-            if (response.isSuccessful) {
-                val holidayDtos = response.body()?.response?.holidays ?: emptyList()
-                val parsedHolidays = holidayDtos.mapNotNull { dto ->
-                    val iso = dto.date?.iso
-                    val name = dto.name ?: "عطلة رسمية"
-                    if (iso != null) {
-                        try {
-                            val parsedDate = if (iso.length >= 10) {
-                                LocalDate.parse(iso.substring(0, 10))
-                            } else {
-                                LocalDate.of(dto.date.datetime!!.year, dto.date.datetime.month, dto.date.datetime.day)
-                            }
-                            Holiday(
-                                id = 0,
-                                holidayDate = parsedDate,
-                                name = name,
-                                verificationStatus = "THIRD_PARTY_UNVERIFIED",
-                                sourceUrl = "https://calendarific.com/"
-                            )
-                        } catch (_: Exception) {
-                            null
-                        }
-                    } else null
-                }
-
-                if (parsedHolidays.isNotEmpty()) {
-                    // Safe idempotent upsert: insert all
-                    // A third-party import may NOT replace a source-verified official
-                    // decision for the same date.
-                    val candidates = parsedHolidays.filter { candidate ->
-                        holidayDao.getHoliday(candidate.holidayDate.toString())
-                            ?.verificationStatus != "VERIFIED_OFFICIAL"
+    suspend fun syncHolidays(): Result<Int> = withContext(Dispatchers.IO) {
+        syncLock.withLock {
+            try {
+                val before = current()
+                val bytes = download()
+                val incoming = HolidayFeed.parse(bytes)
+                currentCoroutineContext().ensureActive()
+                if (incoming.revision > before.revision) {
+                    require(incoming.acceptsUpdate(before)) { "Calendar revision would remove dates without a decision" }
+                    val output = cache.startWrite()
+                    try {
+                        output.write(bytes)
+                        cache.finishWrite(output)
+                    } catch (failure: Exception) {
+                        cache.failWrite(output)
+                        throw failure
                     }
-                    holidayDao.insertAll(candidates.map { HolidayEntity.fromDomain(it) })
+                    snapshot.value = incoming
+                } else if (incoming.revision == before.revision) {
+                    require(incoming == before) { "Calendar content changed without a new revision" }
                 }
-                Result.success(parsedHolidays.size)
-            } else {
-                Result.failure(Exception("Calendarific API returned error ${response.code()}: ${response.message()}"))
+                Result.success(current().holidays.size)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                Result.failure(failure)
             }
-        } catch (e: Exception) {
-            // Offline or network error: return failure result gracefully without crashing
-            Result.failure(e)
         }
+    }
+
+    private fun download(): ByteArray {
+        val request = Request.Builder().url(FEED_URL).build()
+        return client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw IOException("Calendar request returned HTTP ${response.code}")
+            response.body.byteStream().use(HolidayFeed::read)
+        }
+    }
+
+    companion object {
+        private const val FEED_URL =
+            "https://raw.githubusercontent.com/matef-hub/Egyptian-Legal-Deadlines-Calculator/main/calendar/egypt-holidays.json"
     }
 }

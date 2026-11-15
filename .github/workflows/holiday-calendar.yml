@@ -1,0 +1,34 @@
+name: Holiday calendar validation
+
+on:
+  pull_request:
+    paths:
+      - calendar/egypt-holidays.json
+      - tools/check_holiday_feed.py
+      - .github/workflows/holiday-calendar.yml
+  push:
+    branches: [main]
+    paths:
+      - calendar/egypt-holidays.json
+      - tools/check_holiday_feed.py
+      - .github/workflows/holiday-calendar.yml
+
+permissions:
+  contents: read
+
+jobs:
+  check-calendar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check date sources and revision
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if git show "$BASE_SHA:calendar/egypt-holidays.json" > "$RUNNER_TEMP/previous-calendar.json" 2>/dev/null; then
+            python3 tools/check_holiday_feed.py --previous "$RUNNER_TEMP/previous-calendar.json"
+          else
+            python3 tools/check_holiday_feed.py
+          fi

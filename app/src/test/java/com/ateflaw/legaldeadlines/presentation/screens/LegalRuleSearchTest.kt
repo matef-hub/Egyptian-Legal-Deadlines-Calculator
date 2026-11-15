@@ -30,7 +30,7 @@ class LegalRuleSearchTest {
     }
 
     @Test
-    fun nameAndArticleMatchesAreRankedBeforeNotesBeforeApplyingLimit() {
+    fun nameAndArticleMatchesAreRankedBeforeNotesWithoutTruncation() {
         val notesMatches = (1L..31L).map { id ->
             rule(id = id, actionName = "إجراء $id", notes = "محكمة الاستئناف")
         }
@@ -44,18 +44,18 @@ class LegalRuleSearchTest {
             selectedRule = null
         )
 
-        assertEquals(30, results.size)
+        assertEquals(34, results.size)
         assertEquals(listOf(42L, 41L, 40L), results.take(3).map { it.id })
         assertTrue(results.drop(3).all { it.id in 1L..31L })
     }
 
     @Test
-    fun blankSearchKeepsOriginalOrderAndLimit() {
+    fun blankSearchKeepsAllRulesInOriginalOrder() {
         val rules = (1L..35L).map { rule(it, "إجراء $it") }
 
         val results = filterLegalRules(rules, "  ", selectedRule = null)
 
-        assertEquals(rules.take(30), results)
+        assertEquals(rules, results)
     }
 
     @Test
@@ -71,6 +71,14 @@ class LegalRuleSearchTest {
         )
 
         assertEquals(listOf(1L, 2L), results.map { it.id })
+    }
+
+    @Test
+    fun arabicAndPersianDigitsAndDiacriticsMatchWesternArticleNumbers() {
+        val rules = LegalRuleSeedData.getSeedRules()
+        for (query in listOf("المادة 82", "المَادَّة ٨٢", "المادة ۸۲")) {
+            assertEquals(listOf(10L), filterLegalRules(rules, query, null).map(LegalRule::id))
+        }
     }
 
     private fun rule(

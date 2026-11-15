@@ -25,9 +25,7 @@ object LegalRuleSafety {
         115L, 116L, 117L, 118L, 119L, 126L,
         150L, 159L, 160L, 162L, 166L
     )
-    // "24 hours" must remain a time-sensitive LEGAL WARNING. The UI shows one
-    // day as requested, and never claims to identify its exact ending hour.
-    private val oneDayTimingCaution = setOf(7L, 24L, 96L, 97L, 108L)
+    private val clockSensitive = setOf(7L, 24L, 96L, 97L, 108L)
     // These historic IDs were incorrectly tagged as BEFORE/EXACT_HOURS; old
     // installed databases still contain those stale enum strings.
     private val safeForwardCorrections = setOf(39L, 51L, 54L, 137L, 20L)
@@ -42,7 +40,7 @@ object LegalRuleSafety {
     private val special = setOf(9L, 10L, 12L, 14L, 18L, 41L, 42L, 43L, 90L, 91L, 103L, 104L, 139L, 154L, 155L, 164L)
 
     private fun inherentKind(rule: LegalRule): CalculationKind = when {
-        rule.unit == DurationUnit.HOURS -> CalculationKind.EXACT_HOURS
+        rule.unit == DurationUnit.HOURS || rule.id in clockSensitive -> CalculationKind.EXACT_HOURS
         rule.id in ages -> CalculationKind.AGE_THRESHOLD
         rule.id in backwards -> CalculationKind.BACKWARD_FROM_EVENT
         rule.id in limitations || rule.duration == 0L ->
@@ -52,10 +50,6 @@ object LegalRuleSafety {
     }
 
     fun kind(rule: LegalRule): CalculationKind {
-        // A 24-hour period is displayed as "one day" for the interface but
-        // needs an explicit warning about its exact statutory clock trigger.
-        if (rule.id in oneDayTimingCaution && rule.duration == 1L &&
-            rule.unit == DurationUnit.DAYS) return CalculationKind.FORWARD
         // Correct older persisted classifications, without modifying any
         // actual rule duration or text stored on the user's device.
         if (rule.id in safeForwardCorrections && rule.unit != DurationUnit.HOURS) {
@@ -93,14 +87,11 @@ object LegalRuleSafety {
                 CalculationKind.FORWARD -> "هذه القاعدة غير مدعومة للحساب."
             }
         }
-        require(rule.extensionPolicy == "ARTICLE_18_COURTS") {
+        require(rule.extensionPolicy == "ARTICLE_18_COURTS" || rule.extensionPolicy == "NO_AUTOMATIC_EXTENSION") {
             "سياسة امتداد العطلات لهذه القاعدة غير مدعومة بالمحرك."
         }
         return buildList {
             add("تاريخ محسوب استرشاديًا فقط، وليس ميعادًا قانونيًا معتمدًا. راجع النص النافذ وظروف الدعوى قبل اتخاذ الإجراء.")
-            if (rule.id in oneDayTimingCaution && rule.unit == DurationUnit.DAYS) add(
-                "يوم واحد قد يساوي 24 ساعة تبدأ من ساعة الواقعة نفسها؛ عرض تاريخ اليوم لا يحدد لحظة انقضاء المدة، وفي الدعاوى المستعجلة قد يجيز النص اختصار ميعاد الحضور بإذن قضائي."
-            )
             if (isShatb60) add(
                 "المادة 82 مرافعات: الستون يومًا لا تغني عن اتخاذ إجراءات تجديد السير وتحديد جلسة وإعلان الخصم؛ وقد تؤثر ظروف الإعلان والاستثناءات القضائية."
             )
@@ -116,11 +107,8 @@ object LegalRuleSafety {
     private fun checkHistoricalApplicability(rule: LegalRule, eventDate: LocalDate) {
         // Current law 14/2025 superseded law 12/2003 on 2025-09-01.
         // Do not quietly produce a 2026 deadline from the legacy labor seed.
-        // Only unreconciled legacy Labor records are restricted by their IDs.
-        // Workbook revision 1 explicitly cross-checks current Law 14/2025.
-        require(rule.id !in 147L..167L || rule.reviewVersion > 0 ||
-            eventDate.isBefore(LocalDate.of(2025, 9, 1))) {
-            "قواعد قانون العمل غير المراجعة لا تصلح للوقائع من 1 سبتمبر 2025."
+        require(rule.id !in 147L..167L || eventDate.isBefore(LocalDate.of(2025, 9, 1))) {
+            "هذه قاعدة من قانون العمل السابق. للوقائع من ١ سبتمبر ٢٠٢٥ اختر الإجراء من قانون العمل رقم ١٤ لسنة ٢٠٢٥."
         }
         // Law 174/2025, as amended by law 160/2026, starts 2027-10-01.
         require(rule.id !in 92L..127L || eventDate.isBefore(LocalDate.of(2027, 10, 1))) {
@@ -162,7 +150,7 @@ object LegalRuleSafety {
         require(rule.effectiveFrom.isNotBlank()) {
             "لم يُحدد تاريخ بدء سريان هذه النسخة من القاعدة القانونية."
         }
-        require(rule.extensionPolicy == "ARTICLE_18_COURTS") {
+        require(rule.extensionPolicy == "ARTICLE_18_COURTS" || rule.extensionPolicy == "NO_AUTOMATIC_EXTENSION") {
             "سياسة امتداد الميعاد غير مدعومة لهذا الإجراء."
         }
     }

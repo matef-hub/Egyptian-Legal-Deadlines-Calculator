@@ -1,27 +1,25 @@
 package com.ateflaw.legaldeadlines.presentation.screens
 
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
+import com.ateflaw.legaldeadlines.utils.normalizedArabicSearchText
 
 internal fun filterLegalRules(
     rules: List<LegalRule>,
     searchQuery: String,
     selectedRule: LegalRule?
 ): List<LegalRule> {
-    val query = searchQuery.trim()
-    return if (query.isBlank() || (selectedRule != null && query == selectedRule.actionName)) {
-        rules.take(30)
-    } else {
-        rules.filter { rule ->
-            rule.actionName.contains(query, ignoreCase = true) ||
-                rule.lawArticle.contains(query, ignoreCase = true) ||
-                rule.notes.contains(query, ignoreCase = true)
-        }.sortedBy { rule ->
-            when {
-                rule.actionName.startsWith(query, ignoreCase = true) -> 0
-                rule.actionName.contains(query, ignoreCase = true) -> 1
-                rule.lawArticle.contains(query, ignoreCase = true) -> 2
-                else -> 3
-            }
-        }.take(30)
-    }
+    val query = searchQuery.normalizedArabicSearchText()
+    if (query.isBlank() || query == selectedRule?.actionName?.normalizedArabicSearchText()) return rules
+    return rules.mapNotNull { rule ->
+        val name = rule.actionName.normalizedArabicSearchText()
+        val rank = when {
+            name.startsWith(query) -> 0
+            name.contains(query) -> 1
+            rule.lawArticle.normalizedArabicSearchText().contains(query) -> 2
+            rule.lawName.normalizedArabicSearchText().contains(query) ||
+                rule.notes.normalizedArabicSearchText().contains(query) -> 3
+            else -> return@mapNotNull null
+        }
+        rule to rank
+    }.sortedBy { it.second }.map { it.first }
 }

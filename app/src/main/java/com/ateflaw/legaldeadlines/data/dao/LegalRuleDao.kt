@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.ateflaw.legaldeadlines.data.entity.LegalRuleEntity
 import com.ateflaw.legaldeadlines.data.entity.RuleEditHistoryEntity
 import kotlinx.coroutines.flow.Flow
@@ -47,6 +48,12 @@ interface LegalRuleDao {
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertDraft(rule: LegalRuleEntity): Long
+
+    @Update
+    suspend fun updateBuiltIn(rule: LegalRuleEntity)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM rule_edit_history WHERE rule_id = :id)")
+    suspend fun hasEditHistory(id: Long): Boolean
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertEditHistory(revision: RuleEditHistoryEntity): Long

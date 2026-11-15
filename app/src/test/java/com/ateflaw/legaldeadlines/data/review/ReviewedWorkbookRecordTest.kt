@@ -36,7 +36,7 @@ class ReviewedWorkbookRecordTest {
     @Test fun twentyFourHourEntriesAreKeptAsOneDayWithoutHourCalculation() {
         listOf(7L, 24L, 96L, 97L, 108L).forEach { id ->
             val entry = rule(id, method = "ساعات")
-            assertEquals("FORWARD", entry.normalizedKind)
+            assertEquals("EXACT_HOURS", entry.normalizedKind)
             assertNull(entry.correctedDuration)
         }
     }

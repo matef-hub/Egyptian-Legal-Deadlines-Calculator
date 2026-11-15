@@ -58,13 +58,14 @@ class LegalDeadlineCalculator {
         require(rule.duration > 0) {
             "هذا الإجراء مرتبط بشرط أو واقعة قانونية وليس بميعاد عددي قابل للحساب تلقائياً. راجع نص القاعدة."
         }
-        require(rule.unit != DurationUnit.HOURS) {
+        require(LegalRuleSafety.kind(rule) != LegalRuleSafety.CalculationKind.EXACT_HOURS) {
             "مواعيد الساعات تتطلب وقت الواقعة بالساعة والدقيقة، ولا يمكن حسابها من تاريخ يوم فقط."
         }
         require(rule.distanceDays >= 0 && additionalDistanceDays >= 0) {
             "لا يجوز أن يكون ميعاد المسافة قيمة سالبة."
         }
-        require(rule.extensionPolicy == "ARTICLE_18_COURTS") {
+        val applyCourtExtensions = rule.extensionPolicy == "ARTICLE_18_COURTS"
+        require(applyCourtExtensions || rule.extensionPolicy == "NO_AUTOMATIC_EXTENSION") {
             "سياسة امتداد هذا الإجراء غير مدعومة بالمحرك الحالي، ويجب مراجعة كيفية حساب العطلات قبل اعتماد النتيجة."
         }
 
@@ -150,7 +151,7 @@ class LegalDeadlineCalculator {
         var currentDate = provisionalDate
         val excludedDays = mutableListOf<ExcludedDay>()
 
-        while (true) {
+        while (applyCourtExtensions) {
             val dayOfWeek = currentDate.dayOfWeek
             val (isOfficialHoliday, holidayName) = isHolidayProvider(currentDate)
             val dayStatus = CourtDayClassifier.classify(currentDate, isOfficialHoliday)
@@ -193,11 +194,11 @@ class LegalDeadlineCalculator {
                 date = startDate,
                 title = "بدء سريان الميعاد الإجرائي",
                 description = if (rule.startRule == StartRule.NEXT_DAY) {
-                    "يبدأ احتساب الميعاد من اليوم التالي للواقعة (${startDate.format(dateFormatter).toArabicDigits()}) ولا يُحسب يوم الواقعة نفسه إعمالاً للمادة ١٥ مرافعات."
+                    "يبدأ احتساب الميعاد من اليوم التالي للواقعة (${startDate.format(dateFormatter).toArabicDigits()}) ويُستبعد يوم الواقعة من العد."
                 } else {
                     "يبدأ احتساب الميعاد من نفس يوم الواقعة (${startDate.format(dateFormatter).toArabicDigits()}) وفقاً للقاعدة المقررة."
                 },
-                legalBasis = "المادة ١٥ من قانون المرافعات المدنية والتجارية"
+                legalBasis = if (applyCourtExtensions) "المادة ١٥ من قانون المرافعات المدنية والتجارية" else rule.lawArticle
             )
         )
 
@@ -247,10 +248,9 @@ class LegalDeadlineCalculator {
             CalculationMilestone(
                 type = MilestoneType.FINAL_DEADLINE,
                 date = finalDeadline,
-                title = "الميعاد النهائي واجب الالتزام به",
-                description = "آخر يوم عمل لإيداع صحيفة الطعن أو اتخاذ الإجراء بقلم الكتاب (${finalDeadline.format(dateFormatter).toArabicDigits()}) (${getArabicDayName(finalDeadline.dayOfWeek)})" +
-                    if (finalDeadline.dayOfWeek == DayOfWeek.SATURDAY) " [يوم السبت يوم عمل رسمي بالمحاكم المصرية]." else " [يوم عمل رسمي].",
-                legalBasis = "المادتان ١٥ و ١٨ من قانون المرافعات"
+                title = "تاريخ نهاية المدة المحسوبة",
+                description = "${finalDeadline.format(dateFormatter).toArabicDigits()} (${getArabicDayName(finalDeadline.dayOfWeek)})",
+                legalBasis = rule.lawArticle.ifBlank { rule.lawName }
             )
         )
 
@@ -419,16 +419,12 @@ class LegalDeadlineCalculator {
                     .append("\n")
             }
         } else {
-            sb.append("٧. الأيام المستبعدة: لا يوجد أيام مستبعدة (صادف الميعاد المبدئي يوم عمل رسمي مباشرة).\n")
+            sb.append("٧. لم يُطبّق امتداد للعطلات في هذا الحساب.\n")
         }
 
-        sb.append("٨. الميعاد النهائي واجب الالتزام به: ")
+        sb.append("٨. تاريخ نهاية المدة المحسوبة: ")
             .append(finalDeadline.format(dateFormatter).toArabicDigits())
             .append(" (").append(getArabicDayName(finalDeadline.dayOfWeek)).append(")")
-
-        if (finalDeadline.dayOfWeek == DayOfWeek.SATURDAY) {
-            sb.append(" [ملاحظة قانونية: يوم السبت يُعد يوم عمل كامل في المحاكم المصرية وفقاً للقانون].")
-        }
 
         return sb.toString()
     }

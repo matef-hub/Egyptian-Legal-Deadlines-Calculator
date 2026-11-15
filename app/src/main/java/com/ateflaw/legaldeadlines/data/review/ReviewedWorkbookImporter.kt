@@ -15,24 +15,25 @@ object ReviewedWorkbookImporter {
             records.forEach { item ->
                 val seed = builtin[item.id] ?: error("Unknown original rule ${item.id}")
                 val expiry = when (item.id) {
-                    in 147L..167L -> null // reviewed against effective 2025 Labor Law
+                    in 147L..167L -> "2025-08-31"
                     in 92L..127L -> "2027-09-30" // transition to new Criminal Procedure Law
                     else -> seed.effectiveTo
                 }
+                val legacyLabor = item.id in 147L..167L
                 val applied = dao.adoptReviewedWorkbookRule(
                     id = item.id,
                     actionName = seed.actionName,
-                    decision = item.decision,
+                    decision = if (legacyLabor) "NEEDS_REVIEW" else item.decision,
                     method = item.method,
                     reviewerNote = item.reviewerNote,
-                    source = item.sourceUrl,
-                    effectiveFrom = item.effectiveFrom,
+                    source = if (legacyLabor) "" else item.sourceUrl,
+                    effectiveFrom = if (legacyLabor) "" else item.effectiveFrom,
                     effectiveTo = expiry,
                     kind = item.normalizedKind,
-                    duration = item.correctedDuration,
+                    duration = if (legacyLabor) null else item.correctedDuration,
                     unit = if (item.method == "ساعات") "DAYS" else item.correctedUnit,
-                    correctedActionName = item.correctedActionName,
-                    correctedLawArticle = item.correctedLawArticle
+                    correctedActionName = if (legacyLabor) null else item.correctedActionName,
+                    correctedLawArticle = if (legacyLabor) null else item.correctedLawArticle
                 )
                 if (applied == 0) {
                     // Existing user edits or missing rows: never clobber custom

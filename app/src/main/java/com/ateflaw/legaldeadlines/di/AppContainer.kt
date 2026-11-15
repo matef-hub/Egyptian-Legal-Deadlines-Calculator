@@ -2,7 +2,6 @@ package com.ateflaw.legaldeadlines.di
 
 import android.content.Context
 import com.ateflaw.legaldeadlines.data.database.AppDatabase
-import com.ateflaw.legaldeadlines.data.remote.RetrofitClient
 import com.ateflaw.legaldeadlines.data.repository.DeadlineRepositoryImpl
 import com.ateflaw.legaldeadlines.data.repository.HolidayRepositoryImpl
 import com.ateflaw.legaldeadlines.data.repository.LegalRuleRepositoryImpl
@@ -30,13 +29,13 @@ class AppContainer(private val context: Context) {
 
     val holidayService: OfficialHolidayService by lazy {
         OfficialHolidayService(
-            holidayDao = database.holidayDao(),
-            apiService = { RetrofitClient.apiService }
+            context = context,
+            holidayDao = database.holidayDao()
         )
     }
 
     val legalRuleRepository: LegalRuleRepository by lazy {
-        LegalRuleRepositoryImpl(database)
+        LegalRuleRepositoryImpl(database) { database.prepareRuleCatalog(context) }
     }
 
     val holidayRepository: HolidayRepository by lazy {

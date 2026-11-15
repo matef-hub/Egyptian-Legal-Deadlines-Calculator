@@ -10,5 +10,9 @@ data class Holiday(
     val holidayDate: LocalDate,
     val name: String,
     val verificationStatus: String = "UNVERIFIED",
-    val sourceUrl: String = ""
-)
+    val sourceUrl: String = "",
+    val decision: String = ""
+) {
+    val isVerifiedOfficial: Boolean
+        get() = verificationStatus == "VERIFIED_OFFICIAL" && sourceUrl.startsWith("https://")
+}

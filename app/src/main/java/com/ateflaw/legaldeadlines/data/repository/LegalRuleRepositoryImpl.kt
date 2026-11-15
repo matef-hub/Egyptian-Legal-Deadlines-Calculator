@@ -10,25 +10,29 @@ import com.ateflaw.legaldeadlines.data.entity.LegalRuleEntity
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.repository.LegalRuleRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 
 class LegalRuleRepositoryImpl(
-    private val database: AppDatabase
+    private val database: AppDatabase,
+    private val prepareCatalog: suspend () -> Unit
 ) : LegalRuleRepository {
     private val legalRuleDao: LegalRuleDao get() = database.legalRuleDao()
 
-    override fun getAllRules(): Flow<List<LegalRule>> {
-        return legalRuleDao.getAll().map { list ->
-            list.map { it.toDomain() }
-        }
+    override fun getAllRules(): Flow<List<LegalRule>> = flow {
+        prepareCatalog()
+        emitAll(legalRuleDao.getAll().map { list -> list.map { it.toDomain() } })
     }
 
     override suspend fun getRuleById(id: Long): LegalRule? {
+        prepareCatalog()
         return legalRuleDao.getById(id)?.toDomain()
     }
 
     override suspend fun getRulesCount(): Int {
+        prepareCatalog()
         return legalRuleDao.count()
     }
 
@@ -37,6 +41,7 @@ class LegalRuleRepositoryImpl(
     }
 
     override suspend fun addDraft(draft: LegalRuleDraft): Long {
+        prepareCatalog()
         val input = draft.validate(isNew = true)
         // Explicit saving is the end of the user's review workflow. A final
         // record can still have a SPECIAL_UNSUPPORTED calculation algorithm.
@@ -66,6 +71,7 @@ class LegalRuleRepositoryImpl(
     }
 
     override suspend fun updateDraft(id: Long, expectedRevision: Int, draft: LegalRuleDraft) {
+        prepareCatalog()
         val input = draft.validate(isNew = false)
         database.withTransaction {
             val previous = legalRuleDao.getById(id)

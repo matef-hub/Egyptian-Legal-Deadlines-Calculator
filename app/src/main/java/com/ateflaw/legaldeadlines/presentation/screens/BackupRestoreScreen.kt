@@ -50,7 +50,7 @@ fun BackupRestoreScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val transfer = remember(context) {
-        BackupTransferService(AppDatabase.getInstance(context), context.contentResolver)
+        BackupTransferService(AppDatabase.getInstance(context), context.applicationContext)
     }
     var password by remember { mutableStateOf("") } // never persist passwords in saved UI state
     var busy by remember { mutableStateOf(false) }

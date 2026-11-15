@@ -430,7 +430,7 @@ fun CalculatorScreenContent(
 
                         if (uiState.selectedRule != null && uiState.selectedRule.startRule == StartRule.NEXT_DAY) {
                             Text(
-                                text = "إعمالاً للمادة 15 مرافعات: لا يُحسب هذا اليوم، ويبدأ سريان الميعاد من اليوم التالي.".toArabicDigits(),
+                                text = "يبدأ العد من اليوم التالي لتاريخ الواقعة المسجل.".toArabicDigits(),
                                 style = MaterialTheme.typography.bodySmall.copy(lineHeight = 20.sp),
                                 color = MaterialTheme.colorScheme.primary,
                                 fontSize = 12.sp

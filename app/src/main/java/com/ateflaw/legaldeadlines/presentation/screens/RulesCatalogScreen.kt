@@ -51,6 +51,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import com.ateflaw.legaldeadlines.utils.normalizedArabicSearchText
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -121,7 +122,7 @@ fun RulesCatalogScreen(
         state.rules.groupingBy { LegalRuleReviewCatalog.finding(it).level }.eachCount()
     }
     val filtered = remember(state.rules, query, selectedLaw, selectedReview) {
-        val search = query.trim()
+        val search = query.normalizedArabicSearchText()
         state.rules.filter { rule ->
             val law = rule.lawName.ifBlank { "قانون غير مصنف" }
             (selectedLaw == ALL_LAWS || law == selectedLaw) &&
@@ -130,7 +131,7 @@ fun RulesCatalogScreen(
                     (search.isBlank() || listOf(
                         rule.actionName, law, rule.lawArticle, rule.articleText, rule.notes,
                         LegalRuleReviewCatalog.finding(rule).note, rule.reviewerNote, rule.reviewMethod
-                    ).any { it.contains(search, ignoreCase = true) })
+                    ).any { it.normalizedArabicSearchText().contains(search) })
         }
     }
     val grouped = remember(filtered) {

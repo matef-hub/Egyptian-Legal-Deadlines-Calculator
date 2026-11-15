@@ -5,7 +5,7 @@ import com.ateflaw.legaldeadlines.domain.calculator.LegalRuleSafety
 import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
 import com.ateflaw.legaldeadlines.domain.model.DistanceType
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
-import com.ateflaw.legaldeadlines.domain.model.MilestoneType
+import com.ateflaw.legaldeadlines.domain.model.Holiday
 import com.ateflaw.legaldeadlines.domain.repository.HolidayRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,10 +37,7 @@ class CalculateDeadlineUseCase(
             holidayRepository.getAllHolidaysList()
         }
         // Bundled dates and third-party dates are NOT official published decisions.
-        val officialHolidays = holidaysList.filter {
-            it.verificationStatus == "VERIFIED_OFFICIAL" &&
-                it.sourceUrl.startsWith("https://")
-        }
+        val officialHolidays = holidaysList.filter(Holiday::isVerifiedOfficial)
         val holidayMap: Map<LocalDate, String> = officialHolidays.associate { it.holidayDate to it.name }
 
         val result = calculator.calculate(
@@ -55,41 +52,25 @@ class CalculateDeadlineUseCase(
             }
         )
 
-        // The holiday cache is not a substitute for published government decisions.
-        // Particularly for an empty year, the calculator must never suggest that
-        // no holidays existed merely because none were stored locally.
-        val coveredYears = officialHolidays.map { it.holidayDate.year }.toSet()
-        val yearRange = minOf(announcementDate.year, result.finalDeadline.year)..
-            maxOf(announcementDate.year, result.finalDeadline.year)
-        val missingYears = yearRange.filterNot { it in coveredYears }
-        val holidayWarnings = buildList {
-            if (missingYears.isNotEmpty()) {
-                add("تحذير: قاعدة العطلات المحلية لا تحتوي بيانات لسنوات ${missingYears.joinToString("، ")}؛ وقد يتغير الميعاد النهائي بعد التحقق من الإجازات الرسمية.")
+        // Published holiday dates do not establish the full calendar for each court.
+        val holidayWarnings = if (rule.extensionPolicy == "ARTICLE_18_COURTS") {
+            val recordedYears = officialHolidays.map { it.holidayDate.year }.toSet()
+            val missingYears = (announcementDate.year..result.finalDeadline.year)
+                .filterNot(recordedYears::contains)
+            buildList {
+                if (missingYears.isNotEmpty()) {
+                    add("لا توجد قرارات عطلات مسجلة لسنوات ${missingYears.joinToString("، ")}.")
+                }
+                add("راجع قرار العطلة والإغلاقات الخاصة بالجهة المختصة قبل الاعتماد على التاريخ.")
             }
-            add("تنبيه: اكتمال القرارات الرسمية للعطلات في جهة الإجراء غير مثبت حتى لو وجدت بعض التواريخ الموثقة. يجب مراجعة القرارات الفعلية قبل الاعتماد على النتيجة.")
+        } else {
+            listOf("يُعرض انتهاء المدة دون ترحيل تلقائي. راجع قواعد الجهة المختصة.")
         }
-        // A user-reviewed rule is finalized by the editor. An incomplete
-        // official-holiday year still makes the computed date provisional.
-        val isProvisional = rule.reviewStatus != "VERIFIED_ACCURATE" ||
-            missingYears.isNotEmpty()
-        val outputMilestones = if (isProvisional) result.milestones.map { item ->
-            if (item.type == MilestoneType.FINAL_DEADLINE) item.copy(
-                title = "تاريخ الحساب (يحتاج استكمال بيانات)",
-                description = "تاريخ ناتج من المدة المسجلة؛ تحقق من العطلات والإجراءات حسب المادة."
-            ) else item
-        } else result.milestones
 
         result.copy(
-            milestones = outputMilestones,
-            explanation = if (isProvisional) {
-                "تاريخ حسابي مع وجود بيانات تستلزم الاستكمال.\n" +
-                    result.explanation.replace(
-                        "الميعاد النهائي واجب الالتزام به",
-                        "تاريخ نهاية المدة الحسابية"
-                    )
-            } else result.explanation,
+            explanation = "تاريخ حسابي للمراجعة.\n" + result.explanation,
             warnings = (reviewWarnings + result.warnings + holidayWarnings).distinct(),
-            isProvisional = isProvisional
+            isProvisional = true
         )
     }
 

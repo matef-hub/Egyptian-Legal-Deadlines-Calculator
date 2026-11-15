@@ -38,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,6 +54,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -68,7 +70,6 @@ import com.ateflaw.legaldeadlines.presentation.viewmodel.HolidaysViewModel
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import kotlinx.coroutines.delay
-import java.time.DayOfWeek
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
@@ -163,7 +164,7 @@ fun HolidaysScreenContent(
                         when (selectedFilter) {
                             "UPCOMING" -> uiState.holidays.filter { it.holidayDate.isAfter(today) || it.holidayDate == today }
                             "PAST" -> uiState.holidays.filter { it.holidayDate.isBefore(today) }
-                            "THURSDAY" -> uiState.holidays.filter { it.holidayDate.dayOfWeek == DayOfWeek.THURSDAY }
+                            "VERIFIED" -> uiState.holidays.filter { it.isVerifiedOfficial }
                             else -> uiState.holidays
                         }
                     }
@@ -306,7 +307,7 @@ fun HolidaysScreenContent(
                                         "ALL" to "الكل",
                                         "UPCOMING" to "القادمة",
                                         "PAST" to "المنقضية",
-                                        "THURSDAY" to "المرحّلة (الخميس)"
+                                        "VERIFIED" to "الموثّقة"
                                     ).forEach { (key, label) ->
                                         val isSelected = selectedFilter == key
                                         Box(
@@ -383,7 +384,7 @@ private fun HolidayCard(
     val today = LocalDate.now()
     val isToday = holiday.holidayDate == today
     val isFuture = holiday.holidayDate.isAfter(today)
-    val isThursday = holiday.holidayDate.dayOfWeek == DayOfWeek.THURSDAY
+    val uriHandler = LocalUriHandler.current
 
     val dayName = DateFormatterUtils.getArabicDayName(holiday.holidayDate.dayOfWeek)
     val fullFormattedDate = DateFormatterUtils.formatArabicFullDate(holiday.holidayDate)
@@ -474,31 +475,22 @@ private fun HolidayCard(
                 )
             }
 
-            if (isThursday) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.tertiaryContainer.compositeOver(cardContainerColor)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(R.string.holiday_day_shifted),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
+            if (holiday.isVerifiedOfficial && holiday.decision.isNotBlank()) {
+                Text(
+                    text = holiday.decision,
+                    modifier = Modifier.padding(top = 8.dp),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                TextButton(onClick = { runCatching { uriHandler.openUri(holiday.sourceUrl) } }) {
+                    Text("فتح سند العطلة")
                 }
+            } else {
+                Text(
+                    text = "تاريخ قديم يحتاج توثيقًا",
+                    modifier = Modifier.padding(top = 8.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

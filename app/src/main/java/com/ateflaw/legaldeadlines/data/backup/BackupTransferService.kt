@@ -1,6 +1,6 @@
 package com.ateflaw.legaldeadlines.data.backup
 
-import android.content.ContentResolver
+import android.content.Context
 import android.content.ContentValues
 import android.net.Uri
 import androidx.room.withTransaction
@@ -23,8 +23,10 @@ import java.time.Instant
  */
 class BackupTransferService(
     private val database: AppDatabase,
-    private val resolver: ContentResolver
+    private val context: Context
 ) {
+    private val resolver get() = context.contentResolver
+
     data class Totals(
         val savedDeadlines: Int,
         val editedRules: Int,
@@ -35,6 +37,7 @@ class BackupTransferService(
     private val tables = listOf("legal_rules", "saved_deadlines", "holidays", "rule_edit_history")
 
     suspend fun exportTo(destination: Uri, password: CharArray): Totals = withContext(Dispatchers.IO) {
+        database.prepareRuleCatalog(context)
         val document = database.withTransaction {
             val db = database.openHelper.writableDatabase
             val tableObject = JSONObject()
@@ -44,7 +47,7 @@ class BackupTransferService(
             JSONObject()
                 .put("format", "meead-transfer")
                 .put("format_version", 1)
-                .put("source_database_version", 11)
+                .put("source_database_version", AppDatabase.VERSION)
                 .put("exported_at", Instant.now().toString())
                 .put("tables", tableObject)
         }
@@ -98,6 +101,7 @@ class BackupTransferService(
             "عدد السجلات في النسخة الاحتياطية يتجاوز الحد المسموح."
         }
 
+        database.prepareRuleCatalog(context)
         database.withTransaction {
             val db = database.openHelper.writableDatabase
             // A new install is seeded with 169 statutory rules; importing into an

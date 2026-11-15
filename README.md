@@ -38,7 +38,7 @@ The Android sources are in `app/`; the root [Gradle settings](settings.gradle.kt
 .\gradlew.bat :app:assembleDebug
 ```
 
-Do not commit signing keys, secrets or local configuration values. Google/API-related capabilities may require separate setup.
+Do not commit signing keys, secrets or local configuration values. Android loads the [official holiday calendar](docs/egypt-holiday-calendar.md) from this repository and keeps a copy for offline use.
 
 ## Important legal limitation
 

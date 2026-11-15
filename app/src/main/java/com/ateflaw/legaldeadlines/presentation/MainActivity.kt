@@ -62,8 +62,7 @@ class MainActivity : ComponentActivity() {
                 getLegalRulesUseCase = appContainer.getLegalRulesUseCase,
                 getHolidaysUseCase = appContainer.getHolidaysUseCase,
                 calculateDeadlineUseCase = appContainer.calculateDeadlineUseCase,
-                saveDeadlineUseCase = appContainer.saveDeadlineUseCase,
-                syncHolidaysUseCase = appContainer.syncHolidaysUseCase
+                saveDeadlineUseCase = appContainer.saveDeadlineUseCase
             )
         }
 
