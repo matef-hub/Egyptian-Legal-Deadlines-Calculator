@@ -77,8 +77,8 @@ fun MonthlyHolidayCalendar(
                     if (dayNum in 1..daysInMonth) {
                         val date = currentMonth.atDay(dayNum)
                         val isFriday = col == 6
-                        val verifiedHoliday = holidays.any { it.holidayDate == date && it.verificationStatus == "VERIFIED_OFFICIAL" }
-                        val candidateHoliday = holidays.any { it.holidayDate == date && it.verificationStatus != "VERIFIED_OFFICIAL" }
+                        val verifiedHoliday = holidays.any { it.holidayDate == date && it.isVerifiedOfficial }
+                        val candidateHoliday = holidays.any { it.holidayDate == date && !it.isVerifiedOfficial }
                         val textColor = when {
                             isFriday -> MaterialTheme.colorScheme.error
                             verifiedHoliday -> MaterialTheme.colorScheme.tertiary

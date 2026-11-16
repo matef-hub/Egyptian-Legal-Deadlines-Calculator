@@ -40,11 +40,11 @@ class OfficialHolidayService(
     }
 
     suspend fun isHoliday(date: LocalDate): Boolean = withContext(Dispatchers.IO) {
-        holidayDao.getHoliday(date.toString())?.let { it.verificationStatus == "VERIFIED_OFFICIAL" && it.sourceUrl.startsWith("https://") } ?: false
+        holidayDao.getHoliday(date.toString())?.toDomain()?.isVerifiedOfficial ?: false
     }
 
     suspend fun getHolidayName(date: LocalDate): String? = withContext(Dispatchers.IO) {
-        holidayDao.getHoliday(date.toString())?.takeIf { it.verificationStatus == "VERIFIED_OFFICIAL" && it.sourceUrl.startsWith("https://") }?.name
+        holidayDao.getHoliday(date.toString())?.toDomain()?.takeIf { it.isVerifiedOfficial }?.name
     }
 
     suspend fun insertHolidays(holidays: List<Holiday>) = withContext(Dispatchers.IO) {
@@ -109,7 +109,7 @@ class OfficialHolidayService(
                     // decision for the same date.
                     val candidates = parsedHolidays.filter { candidate ->
                         holidayDao.getHoliday(candidate.holidayDate.toString())
-                            ?.verificationStatus != "VERIFIED_OFFICIAL"
+                            ?.toDomain()?.isVerifiedOfficial != true
                     }
                     holidayDao.insertAll(candidates.map { HolidayEntity.fromDomain(it) })
                 }

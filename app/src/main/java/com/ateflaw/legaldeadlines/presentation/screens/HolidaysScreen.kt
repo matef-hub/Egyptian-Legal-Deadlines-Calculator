@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.EventAvailable
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
@@ -306,7 +305,7 @@ fun HolidaysScreenContent(
                                         "ALL" to "الكل",
                                         "UPCOMING" to "القادمة",
                                         "PAST" to "المنقضية",
-                                        "THURSDAY" to "المرحّلة (الخميس)"
+                                        "THURSDAY" to "الخميس"
                                     ).forEach { (key, label) ->
                                         val isSelected = selectedFilter == key
                                         Box(
@@ -383,7 +382,6 @@ private fun HolidayCard(
     val today = LocalDate.now()
     val isToday = holiday.holidayDate == today
     val isFuture = holiday.holidayDate.isAfter(today)
-    val isThursday = holiday.holidayDate.dayOfWeek == DayOfWeek.THURSDAY
 
     val dayName = DateFormatterUtils.getArabicDayName(holiday.holidayDate.dayOfWeek)
     val fullFormattedDate = DateFormatterUtils.formatArabicFullDate(holiday.holidayDate)
@@ -474,32 +472,14 @@ private fun HolidayCard(
                 )
             }
 
-            if (isThursday) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.tertiaryContainer.compositeOver(cardContainerColor)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(R.string.holiday_day_shifted),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = if (holiday.isVerifiedOfficial) "عطلة موثقة" else "عطلة مرشحة — تحتاج مراجعة",
+                style = MaterialTheme.typography.labelMedium,
+                color = if (holiday.isVerifiedOfficial) MaterialTheme.colorScheme.tertiary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

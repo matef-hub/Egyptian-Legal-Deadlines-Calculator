@@ -34,7 +34,6 @@
     <string name="holidays_syncing">جاري التحديث…</string>
     <string name="holidays_count_summary">العطلات الرسمية المسجلة (%1$d)</string>
     <string name="holidays_governance_note">وفقاً لقرارات مجلس الوزراء المعمول بها، يتم غالباً ترحيل العطلات الرسمية الواقعة في منتصف الأسبوع (مثل يوم الثلاثاء) إلى يوم الخميس التالي المباشرة لضم العطلات.</string>
-    <string name="holiday_day_shifted">عطلة رسمية (الخميس/مرحّلة)</string>
 
     <string name="form_title">بيانات احتساب الميعاد</string>
     <string name="legal_action_label">الإجراء القانوني</string>

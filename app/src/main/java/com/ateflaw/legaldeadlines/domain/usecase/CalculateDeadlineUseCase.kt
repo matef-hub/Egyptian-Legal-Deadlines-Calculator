@@ -36,11 +36,8 @@ class CalculateDeadlineUseCase(
         val holidaysList = withContext(Dispatchers.IO) {
             holidayRepository.getAllHolidaysList()
         }
-        // Bundled dates and third-party dates are NOT official published decisions.
-        val officialHolidays = holidaysList.filter {
-            it.verificationStatus == "VERIFIED_OFFICIAL" &&
-                it.sourceUrl.startsWith("https://")
-        }
+        // Only records with official verification and a source may extend a deadline.
+        val officialHolidays = holidaysList.filter { it.isVerifiedOfficial }
         val holidayMap: Map<LocalDate, String> = officialHolidays.associate { it.holidayDate to it.name }
 
         val result = calculator.calculate(
@@ -68,28 +65,24 @@ class CalculateDeadlineUseCase(
             }
             add("تنبيه: اكتمال القرارات الرسمية للعطلات في جهة الإجراء غير مثبت حتى لو وجدت بعض التواريخ الموثقة. يجب مراجعة القرارات الفعلية قبل الاعتماد على النتيجة.")
         }
-        // A user-reviewed rule is finalized by the editor. An incomplete
-        // official-holiday year still makes the computed date provisional.
-        val isProvisional = rule.reviewStatus != "VERIFIED_ACCURATE" ||
-            missingYears.isNotEmpty()
-        val outputMilestones = if (isProvisional) result.milestones.map { item ->
+        // One sourced holiday in a year does not prove the court calendar is complete.
+        // Until completeness can be established, every result needs review.
+        val outputMilestones = result.milestones.map { item ->
             if (item.type == MilestoneType.FINAL_DEADLINE) item.copy(
                 title = "تاريخ الحساب (يحتاج استكمال بيانات)",
                 description = "تاريخ ناتج من المدة المسجلة؛ تحقق من العطلات والإجراءات حسب المادة."
             ) else item
-        } else result.milestones
+        }
 
         result.copy(
             milestones = outputMilestones,
-            explanation = if (isProvisional) {
-                "تاريخ حسابي مع وجود بيانات تستلزم الاستكمال.\n" +
-                    result.explanation.replace(
-                        "الميعاد النهائي واجب الالتزام به",
-                        "تاريخ نهاية المدة الحسابية"
-                    )
-            } else result.explanation,
+            explanation = "تاريخ حسابي مع وجود بيانات تستلزم الاستكمال.\n" +
+                result.explanation.replace(
+                    "الميعاد النهائي واجب الالتزام به",
+                    "تاريخ نهاية المدة الحسابية"
+                ),
             warnings = (reviewWarnings + result.warnings + holidayWarnings).distinct(),
-            isProvisional = isProvisional
+            isProvisional = true
         )
     }
 

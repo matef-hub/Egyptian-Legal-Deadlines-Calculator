@@ -8,6 +8,40 @@ import com.ateflaw.legaldeadlines.data.entity.LegalRuleEntity
 import com.ateflaw.legaldeadlines.data.entity.RuleEditHistoryEntity
 import kotlinx.coroutines.flow.Flow
 
+// Shared with SQLite integration tests so the production import predicates are tested.
+internal const val ADOPT_REVIEWED_WORKBOOK_RULE_SQL = """
+        UPDATE legal_rules SET
+            workbook_decision = :decision,
+            review_method = :method,
+            reviewer_note = :reviewerNote,
+            review_version = 1,
+            review_status = :decision,
+            official_source_url = :source,
+            effective_from = :effectiveFrom,
+            effective_to = :effectiveTo,
+            calculation_kind = :kind,
+            duration = COALESCE(:duration, duration),
+            unit = COALESCE(:unit, unit),
+            action_name = COALESCE(:correctedActionName, action_name),
+            law_article = COALESCE(:correctedLawArticle, law_article),
+            last_reviewed_at = '2026-11-11',
+            revision = 2
+        WHERE id = :id AND revision <= 1 AND review_version = 0 AND action_name = :actionName
+    """
+
+internal const val BACKFILL_REVIEWED_WORKBOOK_TEXT_SQL = """
+    UPDATE legal_rules SET
+        notes = :correctedNotes,
+        summary = :correctedSummary,
+        review_version = 2,
+        revision = 3
+    WHERE id = :id AND revision = 2 AND review_version = 1
+      AND workbook_decision = :decision AND review_status = :decision
+      AND action_name = :actionName AND law_article = :lawArticle
+      AND duration = :duration AND unit = :unit
+      AND notes = :seedNotes AND summary = :seedSummary
+"""
+
 @Dao
 interface LegalRuleDao {
 
@@ -84,25 +118,7 @@ interface LegalRuleDao {
     ): Int
 
     /** Import only untouched built-in rows; never overwrite user edits. */
-    @Query("""
-        UPDATE legal_rules SET
-            workbook_decision = :decision,
-            review_method = :method,
-            reviewer_note = :reviewerNote,
-            review_version = 1,
-            review_status = :decision,
-            official_source_url = :source,
-            effective_from = :effectiveFrom,
-            effective_to = :effectiveTo,
-            calculation_kind = :kind,
-            duration = COALESCE(:duration, duration),
-            unit = COALESCE(:unit, unit),
-            action_name = COALESCE(:correctedActionName, action_name),
-            law_article = COALESCE(:correctedLawArticle, law_article),
-            last_reviewed_at = '2026-11-11',
-            revision = 2
-        WHERE id = :id AND revision <= 1 AND review_version = 0 AND action_name = :actionName
-    """)
+    @Query(ADOPT_REVIEWED_WORKBOOK_RULE_SQL)
     suspend fun adoptReviewedWorkbookRule(
         id: Long,
         actionName: String,
@@ -117,6 +133,25 @@ interface LegalRuleDao {
         unit: String?,
         correctedActionName: String?,
         correctedLawArticle: String?
+    ): Int
+
+    /**
+     * Complete version 1 imports only while the row still contains the exact
+     * bundled text. User edits advance revision and/or carry USER_APPROVED;
+     * even untracked historical annotations fail the text comparison.
+     */
+    @Query(BACKFILL_REVIEWED_WORKBOOK_TEXT_SQL)
+    suspend fun backfillReviewedWorkbookText(
+        id: Long,
+        decision: String,
+        actionName: String,
+        lawArticle: String,
+        duration: Long,
+        unit: String,
+        seedNotes: String,
+        seedSummary: String,
+        correctedNotes: String,
+        correctedSummary: String
     ): Int
 
     /** Preserve overrides while retaining reviewer observations separately. */

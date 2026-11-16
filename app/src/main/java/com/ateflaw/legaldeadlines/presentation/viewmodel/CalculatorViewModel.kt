@@ -99,14 +99,11 @@ class CalculatorViewModel(
             val today = LocalDate.now()
             val isHoliday = getHolidaysUseCase.isHoliday(today)
             val holidayName = if (isHoliday) getHolidaysUseCase.getHolidayName(today) else null
-            val count = getHolidaysUseCase.getCount()
-
             _uiState.update {
                 it.copy(
                     todayDate = today,
                     isTodayHoliday = isHoliday,
-                    todayHolidayName = holidayName,
-                    totalHolidaysCount = count
+                    todayHolidayName = holidayName
                 )
             }
 
@@ -117,9 +114,10 @@ class CalculatorViewModel(
                 previousHolidays = holidays
                 // Do not capture today's date once: sync can finish after midnight.
                 val currentDay = LocalDate.now()
-                val updatedCount = holidays.size
-                val updatedIsHoliday = holidays.any { it.holidayDate == currentDay }
-                val updatedName = holidays.firstOrNull { it.holidayDate == currentDay }?.name
+                val verifiedHolidays = holidays.filter { it.isVerifiedOfficial }
+                val updatedCount = verifiedHolidays.size
+                val updatedIsHoliday = verifiedHolidays.any { it.holidayDate == currentDay }
+                val updatedName = verifiedHolidays.firstOrNull { it.holidayDate == currentDay }?.name
                 _uiState.update {
                     val nextState = it.copy(
                         todayDate = currentDay,
@@ -146,7 +144,8 @@ class CalculatorViewModel(
             it.copy(
                 selectedRule = rule,
                 distanceType = if (forbidDistance) DistanceType.NONE else it.distanceType,
-                additionalDistanceDaysInput = if (forbidDistance) "0" else it.additionalDistanceDaysInput
+                additionalDistanceDaysInput = if (forbidDistance) "0" else it.additionalDistanceDaysInput,
+                judicialOrderInput = if (forbidDistance) "" else it.judicialOrderInput
             ).invalidateCalculation()
         }
     }
@@ -156,29 +155,39 @@ class CalculatorViewModel(
     }
 
     fun onDistanceTypeChanged(type: DistanceType) {
-        if (_uiState.value.selectedRule?.id == 10L) return
         _uiState.update {
+            val rule = it.selectedRule
+            val distanceForbidden = rule?.id == 10L ||
+                rule?.distancePolicy.equals("NOT_APPLICABLE", ignoreCase = true)
+            if (distanceForbidden && type != DistanceType.NONE) return@update it
             val defaultDays = when (type) {
-                DistanceType.NONE -> "0"
+                DistanceType.NONE, DistanceType.ABROAD_SERVED_IN_EGYPT -> "0"
                 DistanceType.LOCAL -> {
                     val current = it.additionalDistanceDaysInput.toIntOrNull()
-                    if (current == null || current !in 1..4) "1" else it.additionalDistanceDaysInput
+                    if (current == null || current !in 0..4) "1" else it.additionalDistanceDaysInput
                 }
                 DistanceType.BORDER_AREA -> "15"
                 DistanceType.ABROAD -> "60"
-                DistanceType.ABROAD_JUDICIAL_REDUCTION -> {
-                    val current = it.additionalDistanceDaysInput.toIntOrNull()
-                    if (current == null || current !in 1..59) "30" else it.additionalDistanceDaysInput
-                }
-                DistanceType.ABROAD_SERVED_IN_EGYPT -> "0"
+                // The days must come from the actual order, not a suggested reduction.
+                DistanceType.ABROAD_JUDICIAL_REDUCTION ->
+                    if (it.distanceType == type) it.additionalDistanceDaysInput else ""
             }
-            it.copy(distanceType = type, additionalDistanceDaysInput = defaultDays).invalidateCalculation()
+            it.copy(
+                distanceType = type,
+                additionalDistanceDaysInput = defaultDays,
+                judicialOrderInput = if (type == DistanceType.ABROAD_JUDICIAL_REDUCTION) it.judicialOrderInput else ""
+            ).invalidateCalculation()
         }
     }
 
     fun onAdditionalDistanceDaysChanged(input: String) {
         val filtered = input.filter { it.isDigit() }
-        _uiState.update { it.copy(additionalDistanceDaysInput = filtered).invalidateCalculation() }
+        _uiState.update {
+            if (it.distanceType != DistanceType.LOCAL &&
+                it.distanceType != DistanceType.ABROAD_JUDICIAL_REDUCTION
+            ) return@update it
+            it.copy(additionalDistanceDaysInput = filtered).invalidateCalculation()
+        }
     }
 
     fun onLocalDistanceKmChanged(kmStr: String) {

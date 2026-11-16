@@ -32,6 +32,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -63,6 +65,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -85,6 +88,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -96,6 +100,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
+import com.ateflaw.legaldeadlines.domain.model.DistanceType
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.domain.model.StartRule
@@ -127,6 +132,7 @@ fun CalculatorScreen(
         onAnnouncementDateChanged = viewModel::onAnnouncementDateChanged,
         onDistanceTypeChanged = viewModel::onDistanceTypeChanged,
         onAdditionalDistanceDaysChanged = viewModel::onAdditionalDistanceDaysChanged,
+        onJudicialOrderInputChanged = viewModel::onJudicialOrderInputChanged,
         onCaseNumberChanged = viewModel::onCaseNumberChanged,
         onClientNameChanged = viewModel::onClientNameChanged,
         onCalculateDeadline = viewModel::calculateDeadline,
@@ -144,7 +150,8 @@ fun CalculatorScreenContent(
     uiState: MainUiState,
     onRuleSelected: (LegalRule?) -> Unit,
     onAnnouncementDateChanged: (LocalDate) -> Unit,
-    onDistanceTypeChanged: (com.ateflaw.legaldeadlines.domain.model.DistanceType) -> Unit = {},
+    onDistanceTypeChanged: (DistanceType) -> Unit = {},
+    onJudicialOrderInputChanged: (String) -> Unit = {},
     onAdditionalDistanceDaysChanged: (String) -> Unit,
     onCaseNumberChanged: (String) -> Unit,
     onClientNameChanged: (String) -> Unit,
@@ -161,6 +168,8 @@ fun CalculatorScreenContent(
 
     // Form focus requesters for automatic validation navigation
     val distanceFocusRequester = remember { FocusRequester() }
+    val distanceAllowed = uiState.selectedRule?.id != 10L &&
+        uiState.selectedRule?.distancePolicy?.equals("NOT_APPLICABLE", ignoreCase = true) != true
 
     var isRuleError by remember { mutableStateOf(false) }
     var ruleErrorText by remember { mutableStateOf<String?>(null) }
@@ -397,8 +406,6 @@ fun CalculatorScreenContent(
                         }
                     }
 
-                    val statutoryDistance = uiState.selectedRule?.distanceDays ?: 15
-
                     // -------------------------------------------------------------
                     // FIELD 2: Trigger Event Date (تاريخ الواقعة المنشئة للميعاد)
                     // -------------------------------------------------------------
@@ -486,7 +493,8 @@ fun CalculatorScreenContent(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable(enabled = uiState.selectedRule?.id != 10L) {
+                                    .testTag("distance_section_toggle")
+                                    .clickable(enabled = distanceAllowed) {
                                         isAdditionalDistanceExpanded = !isAdditionalDistanceExpanded
                                     }
                                     .padding(14.dp),
@@ -513,9 +521,9 @@ fun CalculatorScreenContent(
                                         Text(
                                             text = if (uiState.selectedRule?.id == 10L) {
                                                 "لا تُضاف أيام مسافة تلقائيًا لتجديد الدعوى من الشطب"
-                                            } else if (isAdditionalDistanceExpanded) {
-                                                "المسافة القانونية المقررة بالقاعدة: $statutoryDistance يوم"
-                                            } else "إضافة أيام مسافة (محلية أو بالخارج)",
+                                            } else if (!distanceAllowed) {
+                                                "لا يطبق ميعاد المسافة على هذا الإجراء"
+                                            } else uiState.distanceType.arabicDisplayName.toArabicDigits(),
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -532,7 +540,7 @@ fun CalculatorScreenContent(
 
                             // Expanded Content
                             AnimatedVisibility(
-                                visible = isAdditionalDistanceExpanded && uiState.selectedRule?.id != 10L,
+                                visible = isAdditionalDistanceExpanded && distanceAllowed,
                                 enter = expandVertically(animationSpec = tween(200, easing = FastOutSlowInEasing)) + fadeIn(animationSpec = tween(200)),
                                 exit = shrinkVertically(animationSpec = tween(180, easing = FastOutSlowInEasing)) + fadeOut(animationSpec = tween(180))
                             ) {
@@ -549,155 +557,63 @@ fun CalculatorScreenContent(
                                         fontWeight = FontWeight.Medium
                                     )
 
-                                    // Category Type Selector: NONE vs LOCAL vs ABROAD
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    Column(
+                                        modifier = Modifier.selectableGroup(),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        listOf(
-                                            com.ateflaw.legaldeadlines.domain.model.DistanceType.NONE to "بدون مسافة",
-                                            com.ateflaw.legaldeadlines.domain.model.DistanceType.LOCAL to "محلية (م16)",
-                                            com.ateflaw.legaldeadlines.domain.model.DistanceType.ABROAD to "بالخارج (م17)"
-                                        ).forEach { (dType, dLabel) ->
-                                            val isTypeSelected = uiState.distanceType == dType
+                                        DistanceType.entries.forEach { type ->
+                                            val selected = uiState.distanceType == type
                                             Surface(
                                                 shape = RoundedCornerShape(8.dp),
-                                                color = if (isTypeSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                                                border = BorderStroke(1.dp, if (isTypeSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-                                                modifier = Modifier
-                                                    .weight(1f)
-                                                    .clickable {
-                                                        onDistanceTypeChanged(dType)
-                                                        isDistanceError = false
-                                                        distanceErrorText = null
-                                                    }
-                                            ) {
-                                                Text(
-                                                    text = dLabel,
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    fontWeight = if (isTypeSelected) FontWeight.Bold else FontWeight.Normal,
-                                                    color = if (isTypeSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                                                    textAlign = TextAlign.Center,
-                                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
+                                                color = if (selected) MaterialTheme.colorScheme.primaryContainer
+                                                    else MaterialTheme.colorScheme.surface,
+                                                border = BorderStroke(
+                                                    1.dp,
+                                                    if (selected) MaterialTheme.colorScheme.primary
+                                                    else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                                                 )
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .heightIn(min = 48.dp)
+                                                        .testTag("distance_type_${type.name}")
+                                                        .selectable(
+                                                            selected = selected,
+                                                            role = Role.RadioButton,
+                                                            onClick = {
+                                                                onDistanceTypeChanged(type)
+                                                                isDistanceError = false
+                                                                distanceErrorText = null
+                                                            }
+                                                        )
+                                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    RadioButton(selected = selected, onClick = null)
+                                                    Text(
+                                                        text = type.arabicDisplayName.toArabicDigits(),
+                                                        modifier = Modifier.weight(1f),
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                                                            else MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
                                             }
                                         }
                                     }
 
-                                    when (uiState.distanceType) {
-                                        com.ateflaw.legaldeadlines.domain.model.DistanceType.NONE -> {
-                                            Text(
-                                                text = "محل إقامة الخصم في نفس دائرة المحكمة، لا تضاف أيام مسافة إضافية.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.outline,
-                                                fontSize = 11.sp
-                                            )
-                                        }
-                                        com.ateflaw.legaldeadlines.domain.model.DistanceType.LOCAL -> {
-                                            Text(
-                                                text = "المادة 16 مرافعات: يوم لكل 50 كم بحد أقصى 4 أيام للمسافة المحلية.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.primary,
-                                                fontSize = 11.sp
-                                            )
-
-                                            // Presets for local (1 to 4 days)
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                            ) {
-                                                listOf(1 to "يوم (50 كم)", 2 to "يومان", 3 to "3 أيام", 4 to "4 أيام (أقصى)").forEach { (days, label) ->
-                                                    val isSelected = uiState.additionalDistanceDaysInput == days.toString()
-                                                    Surface(
-                                                        shape = RoundedCornerShape(8.dp),
-                                                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                                                        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-                                                        modifier = Modifier
-                                                            .weight(1f)
-                                                            .clickable {
-                                                                onAdditionalDistanceDaysChanged(days.toString())
-                                                                isDistanceError = false
-                                                                distanceErrorText = null
-                                                            }
-                                                    ) {
-                                                        Text(
-                                                            text = label,
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                                                            textAlign = TextAlign.Center,
-                                                            modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp)
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        com.ateflaw.legaldeadlines.domain.model.DistanceType.ABROAD -> {
-                                            Text(
-                                                text = "المادة 17 مرافعات: 60 يوماً كأصل عام لمن موطنه بالخارج، ويجوز حتى 90 يوماً.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.primary,
-                                                fontSize = 11.sp
-                                            )
-
-                                            // Presets for abroad
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                            ) {
-                                                listOf(30 to "30 يوماً (مخفض)", 60 to "60 يوماً (متوسط/أحمر)", 90 to "90 يوماً (دول أخرى)").forEach { (days, label) ->
-                                                    val isSelected = uiState.additionalDistanceDaysInput == days.toString()
-                                                    Surface(
-                                                        shape = RoundedCornerShape(8.dp),
-                                                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                                                        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-                                                        modifier = Modifier
-                                                            .weight(1f)
-                                                            .clickable {
-                                                                onAdditionalDistanceDaysChanged(days.toString())
-                                                                isDistanceError = false
-                                                                distanceErrorText = null
-                                                            }
-                                                    ) {
-                                                        Text(
-                                                            text = label,
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                                                            textAlign = TextAlign.Center,
-                                                            modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp)
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        com.ateflaw.legaldeadlines.domain.model.DistanceType.BORDER_AREA -> {
-                                            Text(
-                                                text = "المادة 16 فقرة 2 مرافعات: ميعاد المسافة 15 يوماً للمناطق الحدودية النائية.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.primary,
-                                                fontSize = 11.sp
-                                            )
-                                        }
-                                        com.ateflaw.legaldeadlines.domain.model.DistanceType.ABROAD_JUDICIAL_REDUCTION -> {
-                                            Text(
-                                                text = "المادة 17 فقرة 2 مرافعات: يجوز إنقاص ميعاد الستين يوماً بأمر على عريضة.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.primary,
-                                                fontSize = 11.sp
-                                            )
-                                        }
-                                        com.ateflaw.legaldeadlines.domain.model.DistanceType.ABROAD_SERVED_IN_EGYPT -> {
-                                            Text(
-                                                text = "المادة 17 فقرة 3 مرافعات: لا يسري ميعاد مسافة الخارج على من أُعلن لشخصه بمصر.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.outline,
-                                                fontSize = 11.sp
-                                            )
-                                        }
+                                    if (uiState.distanceType != DistanceType.NONE) {
+                                        Text(
+                                            text = uiState.distanceType.statutoryBasis.toArabicDigits(),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
 
-                                    if (uiState.distanceType != com.ateflaw.legaldeadlines.domain.model.DistanceType.NONE) {
+                                    val editableDistanceDays = uiState.distanceType == DistanceType.LOCAL ||
+                                        uiState.distanceType == DistanceType.ABROAD_JUDICIAL_REDUCTION
+                                    if (editableDistanceDays) {
                                         OutlinedTextField(
                                             value = uiState.additionalDistanceDaysInput,
                                             onValueChange = {
@@ -705,35 +621,51 @@ fun CalculatorScreenContent(
                                                 isDistanceError = false
                                                 distanceErrorText = null
                                             },
-                                            label = { Text("عدد الأيام الفعلي") },
-                                            suffix = { Text("يوم") },
-                                            leadingIcon = {
-                                                Icon(
-                                                    imageVector = Icons.Default.Straighten,
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.primary
+                                            label = {
+                                                Text(
+                                                    if (uiState.distanceType == DistanceType.LOCAL) "أيام المسافة المحلية"
+                                                    else "أيام المسافة المقررة بالأمر القضائي"
                                                 )
                                             },
+                                            suffix = { Text("يوم") },
                                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                             isError = isDistanceError,
                                             supportingText = {
-                                                if (isDistanceError) {
-                                                    Text(
-                                                        text = distanceErrorText ?: "أرقام صحيحة فقط",
-                                                        color = MaterialTheme.colorScheme.error,
-                                                        fontWeight = FontWeight.SemiBold
-                                                    )
-                                                }
+                                                Text(
+                                                    distanceErrorText ?: if (uiState.distanceType == DistanceType.LOCAL)
+                                                        "من ٠ إلى ٤ أيام وفق المسافة الفعلية."
+                                                    else "أدخل المدة الواردة بالأمر القضائي: من ١ إلى ٥٩ يومًا.",
+                                                    color = if (isDistanceError) MaterialTheme.colorScheme.error
+                                                        else MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
                                             },
                                             modifier = Modifier
                                                 .fillMaxWidth()
+                                                .testTag("distance_days_input")
                                                 .focusRequester(distanceFocusRequester),
                                             shape = RoundedCornerShape(10.dp),
-                                            singleLine = true,
-                                            colors = OutlinedTextFieldDefaults.colors(
-                                                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                                            )
+                                            singleLine = true
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "أيام المسافة المطبقة: ${uiState.distanceType.statutoryDays ?: 0} يوم".toArabicDigits(),
+                                            modifier = Modifier.testTag("fixed_distance_days"),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+
+                                    if (uiState.distanceType == DistanceType.ABROAD_JUDICIAL_REDUCTION) {
+                                        OutlinedTextField(
+                                            value = uiState.judicialOrderInput,
+                                            onValueChange = onJudicialOrderInputChanged,
+                                            label = { Text("رقم الأمر القضائي وبياناته *") },
+                                            supportingText = { Text("يلزم تسجيل بيانات الأمر الذي أنقص ميعاد المسافة.") },
+                                            modifier = Modifier.fillMaxWidth().testTag("judicial_order_input"),
+                                            shape = RoundedCornerShape(10.dp),
+                                            minLines = 2,
+                                            maxLines = 4
                                         )
                                     }
 
@@ -742,7 +674,7 @@ fun CalculatorScreenContent(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clickable {
-                                                onDistanceTypeChanged(com.ateflaw.legaldeadlines.domain.model.DistanceType.NONE)
+                                                onDistanceTypeChanged(DistanceType.NONE)
                                                 onAdditionalDistanceDaysChanged("0")
                                                 isAdditionalDistanceExpanded = false
                                             }
