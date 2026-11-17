@@ -1,6 +1,6 @@
 # Meead Android — owner-signed release and safe data transfer
 
-> **Current status:** Release signing workflow and encrypted transfer code are prepared; **not** an already-signed production APK. Android CI is a code/build check, not on-device migration or independent statutory accuracy certification.
+For local signing, open **Build → Generate Signed App Bundle or APK**. Select **Android App Bundle** for Google Play or **APK** for direct installation. Choose your existing keystore or **Create new** for your first production upload, then choose **release**. Keep the key and its passwords for future updates. GitHub secrets are optional when you sign on your own computer.
 
 ## Why the previously downloaded APK did not replace the old one
 

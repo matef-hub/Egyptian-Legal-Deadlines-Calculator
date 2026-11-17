@@ -83,7 +83,20 @@ jobs:
 
       - name: Verify production packaging and the exported Room schema
         run: |
-          ./gradlew :app:packageRelease :app:lintRelease --stacktrace
+          set -euo pipefail
+          KEY="$RUNNER_TEMP/android-signing-test.p12"
+          trap 'rm -f "$KEY"' EXIT
+          PASS=$(openssl rand -hex 24)
+          keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$KEY" -alias acceptance \
+            -storepass "$PASS" -keypass "$PASS" -keyalg RSA -keysize 2048 -validity 2 -dname "CN=CI acceptance"
+          ./gradlew :app:assembleRelease :app:bundleRelease :app:lintRelease \
+            "-Pandroid.injected.signing.store.file=$KEY" "-Pandroid.injected.signing.store.password=$PASS" \
+            "-Pandroid.injected.signing.key.alias=acceptance" "-Pandroid.injected.signing.key.password=$PASS"
+          APK="app/build/outputs/apk/release/app-release.apk"
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+          SIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
+          "$SIGNER" verify --verbose "$APK"
+          jarsigner -verify "$AAB" | grep -F 'jar verified.'
           git diff --exit-code -- app/schemas
 
       - name: Enable KVM for device acceptance
@@ -101,7 +114,15 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
-          script: ./gradlew :app:connectedDebugAndroidTest --stacktrace
+          script: |
+            adb install -r app/build/outputs/apk/release/app-release.apk
+            adb shell am start -W com.ateflaw.legaldeadlines/.presentation.MainActivity
+            for i in $(seq 1 12); do adb shell uiautomator dump /sdcard/meead-window.xml >/dev/null && adb shell cat /sdcard/meead-window.xml | grep -q 'المساعد الإجرائي' && break; sleep 2; done
+            adb shell cat /sdcard/meead-window.xml | grep -q 'المساعد الإجرائي'
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+            adb shell am instrument -w com.ateflaw.legaldeadlines.legalreview.test/androidx.test.runner.AndroidJUnitRunner | tee "$RUNNER_TEMP/meead-device-tests.txt"
+            grep -Eq '^OK [(][1-9][0-9]* tests?[)]' "$RUNNER_TEMP/meead-device-tests.txt"
 
       - name: Publish Android debug APK for device acceptance testing
         if: success()

@@ -12,6 +12,15 @@ kotlin {
     }
 }
 
+// A signed release must use a stable, OWNER-HELD key. Debug CI builds never load it.
+// Do not place the keystore or credentials in Git or in a public artifact.
+val keystorePath = System.getenv("MEEAD_KEYSTORE_PATH")
+val storePasswordSecret = System.getenv("MEEAD_STORE_PASSWORD")
+val keyAliasSecret = System.getenv("MEEAD_KEY_ALIAS")
+val keyPasswordSecret = System.getenv("MEEAD_KEY_PASSWORD")
+val hasReleaseKey = listOf(keystorePath, storePasswordSecret, keyAliasSecret, keyPasswordSecret)
+    .all { !it.isNullOrBlank() } && file(keystorePath ?: "").isFile
+
 android {
     namespace = "com.ateflaw.legaldeadlines"
     compileSdk = 37
@@ -35,15 +44,6 @@ android {
     ksp {
         arg("room.schemaLocation", "$projectDir/schemas")
     }
-
-    // A signed release must use a stable, OWNER-HELD key. Debug CI builds never load it.
-    // Do not place the keystore or credentials in Git or in a public artifact.
-    val keystorePath = System.getenv("MEEAD_KEYSTORE_PATH")
-    val storePasswordSecret = System.getenv("MEEAD_STORE_PASSWORD")
-    val keyAliasSecret = System.getenv("MEEAD_KEY_ALIAS")
-    val keyPasswordSecret = System.getenv("MEEAD_KEY_PASSWORD")
-    val hasReleaseKey = listOf(keystorePath, storePasswordSecret, keyAliasSecret, keyPasswordSecret)
-        .all { !it.isNullOrBlank() } && file(keystorePath ?: "").isFile
 
     signingConfigs {
         if (hasReleaseKey) {
@@ -102,18 +102,18 @@ android {
     }
 }
 
-// Fail closed for local/manual release tasks too: never accept an unsigned APK as a release.
+// Android Studio passes the owner's keystore to AGP through its signing wizard.
+val studioStore = providers.gradleProperty("android.injected.signing.store.file").orNull
+val hasStudioKey = studioStore?.let { it.isNotBlank() && file(it).isFile } == true &&
+    listOf("store.password", "key.alias", "key.password").all {
+        !providers.gradleProperty("android.injected.signing.$it").orNull.isNullOrBlank()
+    }
+val signingReady = hasReleaseKey || hasStudioKey
 tasks.configureEach {
     if (name == "assembleRelease" || name == "bundleRelease") {
         doFirst {
-            val path = System.getenv("MEEAD_KEYSTORE_PATH")
-            val credentials = listOf(
-                System.getenv("MEEAD_STORE_PASSWORD"),
-                System.getenv("MEEAD_KEY_ALIAS"),
-                System.getenv("MEEAD_KEY_PASSWORD")
-            )
-            check(!path.isNullOrBlank() && file(path).isFile && credentials.all { !it.isNullOrBlank() }) {
-                "Missing owner-held release signing credentials (MEEAD_*). No unsigned release is permitted."
+            check(signingReady) {
+                "Use Android Studio's Generate Signed App Bundle or APK wizard, or configure the MEEAD_* signing credentials."
             }
         }
     }
