@@ -1,6 +1,7 @@
 package com.ateflaw.legaldeadlines.data.review
 
 import android.content.Context
+import com.ateflaw.legaldeadlines.domain.model.LegalRule
 import com.ateflaw.legaldeadlines.data.entity.LegalRuleEntity
 import androidx.room.withTransaction
 import com.ateflaw.legaldeadlines.data.database.AppDatabase
@@ -8,6 +9,20 @@ import com.ateflaw.legaldeadlines.data.seed.LegalRuleSeedData
 
 /** Idempotent and revision-safe adoption of the user's signed-off checklist. */
 object ReviewedWorkbookImporter {
+    // Early versions could store notes without recording an edit-history row.
+    // Apply an edition only when the installed text matches a known bundled version.
+    fun hasBundledEditionText(row: LegalRuleEntity, seed: LegalRule?, edition: LegalRule): Boolean {
+        val review = ReviewedWorkbookRecord(row.id, row.workbookDecision, row.reviewMethod,
+            row.officialSourceUrl, row.effectiveFrom, row.reviewerNote)
+        return row.notes in listOfNotNull(seed?.notes, edition.notes, review.correctedNotes) &&
+            row.summary in listOfNotNull(seed?.summary, edition.summary, review.correctedSummary) &&
+            row.articleText in listOfNotNull(seed?.articleText, edition.articleText) &&
+            row.actionName in listOfNotNull(seed?.actionName, edition.actionName, review.correctedActionName) &&
+            row.lawArticle in listOfNotNull(seed?.lawArticle, edition.lawArticle, review.correctedLawArticle) &&
+            row.duration in listOfNotNull(seed?.duration, edition.duration, review.correctedDuration) &&
+            row.unit in listOfNotNull(seed?.unit?.name, edition.unit.name, review.correctedUnit)
+    }
+
     fun isBundledLaborBackfill(row: LegalRuleEntity): Boolean {
         if (row.id !in setOf(159L, 160L, 161L) || row.revision != 3 || row.reviewVersion != 2) return false
         val review = ReviewedWorkbookRecord(row.id, row.workbookDecision, row.reviewMethod,

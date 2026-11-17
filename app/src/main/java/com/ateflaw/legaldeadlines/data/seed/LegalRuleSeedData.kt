@@ -118,8 +118,6 @@ object LegalRuleSeedData {
             LegalRule(
                 id = 10,
                 triggerEventType = "CASE_STRUCK_OUT",
-                triggerEventLabel = "تاريخ قرار شطب الدعوى",
-                distancePolicy = "NOT_APPLICABLE",
                 actionName = "تجديد الدعوى من الشطب وإعلان صحيفة التجديد",
                 duration = 60,
                 unit = DurationUnit.DAYS,

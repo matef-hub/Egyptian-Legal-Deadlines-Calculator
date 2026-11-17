@@ -131,6 +131,7 @@ class BackupTransferService(
                 db.execSQL("DELETE FROM `$table`")
             }
             database.loadBuiltInCatalog(context)
+            val seedById = com.ateflaw.legaldeadlines.data.seed.LegalRuleSeedData.getSeedRules().associateBy { it.id }
             val historicallyEditedIds = records.getValue("rule_edit_history")
                 .mapNotNull { it.getAsLong("rule_id") }
                 .toSet()
@@ -152,6 +153,27 @@ class BackupTransferService(
                     com.ateflaw.legaldeadlines.domain.model.StartRule.valueOf(row.getAsString("start_rule"))
                     db.insert("legal_rules", android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE, row)
                     importedRules++
+                } else {
+                    // Preserve untracked annotations from old installs without reinstating obsolete
+                    // bundled rule text over a current statutory edition.
+                    val seed = seedById[id]
+                    val installed = database.legalRuleDao().getById(id)
+                    if (seed != null && installed != null) {
+                        val workbook = com.ateflaw.legaldeadlines.data.review.ReviewedWorkbookRecord(id,
+                            decision, "", "", "", "")
+                        val notes = row.getAsString("notes")
+                        val article = row.getAsString("article_text")
+                        val summary = row.getAsString("summary")
+                        val annotated = installed.copy(
+                            notes = notes?.takeUnless { it == seed.notes || it == workbook.correctedNotes } ?: installed.notes,
+                            summary = summary?.takeUnless { it == seed.summary || it == workbook.correctedSummary } ?: installed.summary,
+                            articleText = article?.takeUnless { it.isBlank() || it == seed.articleText } ?: installed.articleText
+                        )
+                        if (annotated != installed) {
+                            database.legalRuleDao().updateBuiltIn(annotated)
+                            importedRules++
+                        }
+                    }
                 }
             }
             for (row in records.getValue("rule_edit_history")) {

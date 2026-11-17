@@ -5,7 +5,7 @@ import android.content.Intent
 import android.provider.CalendarContract
 import androidx.core.net.toUri
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 internal fun openAllDayCalendarEvent(
@@ -16,13 +16,12 @@ internal fun openAllDayCalendarEvent(
     webTitle: String = "تاريخ قانوني للمراجعة"
 ): Boolean {
     val endDate = date.plusDays(1)
-    val zone = ZoneId.systemDefault()
     val event = Intent(Intent.ACTION_INSERT, CalendarContract.Events.CONTENT_URI).apply {
         putExtra(CalendarContract.Events.TITLE, title)
         putExtra(CalendarContract.Events.DESCRIPTION, description)
         putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
-        putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, date.atStartOfDay(zone).toInstant().toEpochMilli())
-        putExtra(CalendarContract.EXTRA_EVENT_END_TIME, endDate.atStartOfDay(zone).toInstant().toEpochMilli())
+        putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
+        putExtra(CalendarContract.EXTRA_EVENT_END_TIME, endDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
     }
     if (runCatching { context.startActivity(event) }.isSuccess) return true
 

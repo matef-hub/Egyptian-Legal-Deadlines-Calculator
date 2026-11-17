@@ -1,6 +1,8 @@
 package com.ateflaw.legaldeadlines.data
 
 import android.net.Uri
+import org.json.JSONObject
+import com.ateflaw.legaldeadlines.data.backup.EncryptedBackupCodec
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -52,6 +54,17 @@ class BackupAndReminderTest {
                 service.importFrom(uri, "wrong-password-for-test".toCharArray(), RestoreMode.REPLACE_ALL)
             }.isFailure)
             assertEquals(2, dao.observeByDeadline().first().size)
+            // A wrong password fails before writing. A duplicate ID fails after the
+            // transaction has started replacing rows and must roll those changes back.
+            val original = backup.readBytes()
+            val document = JSONObject(EncryptedBackupCodec.decrypt(original, password).toString(Charsets.UTF_8))
+            val rows = document.getJSONObject("tables").getJSONArray("saved_deadlines")
+            rows.put(rows.getJSONObject(0))
+            backup.writeBytes(EncryptedBackupCodec.encrypt(document.toString().toByteArray(), password))
+            assertTrue(runCatching { service.importFrom(uri, password, RestoreMode.REPLACE_ALL) }.isFailure)
+            assertEquals(2, dao.observeByDeadline().first().size)
+            assertTrue(dao.dueReminders("2027-01-18").isEmpty())
+            backup.writeBytes(original)
             service.importFrom(uri, password, RestoreMode.REPLACE_ALL)
             assertEquals("ميعاد أ", dao.observeByDeadline().first().single().actionName)
             assertEquals(1, dao.dueReminders("2027-01-17").size)

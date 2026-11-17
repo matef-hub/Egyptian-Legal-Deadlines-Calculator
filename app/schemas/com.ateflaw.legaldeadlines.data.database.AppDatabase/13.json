@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 13,
-    "identityHash": "cfd51d151018558a67385a628ae60594",
+    "identityHash": "c32c4c3c1f3caba28b155c3d819cc224",
     "entities": [
       {
         "tableName": "legal_rules",
@@ -376,8 +376,7 @@
           {
             "fieldPath": "reminderSentFor",
             "columnName": "reminder_sent_for",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -502,7 +501,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'cfd51d151018558a67385a628ae60594')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c32c4c3c1f3caba28b155c3d819cc224')"
     ]
   }
 }

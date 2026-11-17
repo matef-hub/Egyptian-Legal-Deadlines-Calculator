@@ -60,13 +60,15 @@ abstract class AppDatabase : RoomDatabase() {
         ReviewedWorkbookImporter.apply(context.applicationContext, this)
         dao.clearUnrelatedCriminalCodeExpiry(catalog.single { it.id == 128L }.lawArticle)
 
+        val seedById = catalog.associateBy { it.id }
         for (rule in ReleaseRuleCatalog.editions(catalog)) {
             val previous = dao.getById(rule.id)
             if (previous != null && (
                     previous.reviewVersion >= 3 ||
                         (previous.revision >= 3 && !ReviewedWorkbookImporter.isBundledLaborBackfill(previous)) ||
                         previous.workbookDecision in setOf("USER_APPROVED", "EDITED_PENDING") ||
-                        dao.hasEditHistory(rule.id)
+                        dao.hasEditHistory(rule.id) ||
+                        !ReviewedWorkbookImporter.hasBundledEditionText(previous, seedById[rule.id], rule)
                     )) continue
             val builtIn = LegalRuleEntity.fromDomain(rule.copy(
                 revision = maxOf(2, previous?.revision ?: 0),
@@ -369,18 +371,22 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        internal val migrations = arrayOf(
+            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5,
+            MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
+            MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
+            MIGRATION_1_4, MIGRATION_2_4
+        )
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
+                INSTANCE?.let { return@synchronized it }
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "egyptian_legal_deadlines.db"
                 )
-                    .addMigrations(
-                        MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5,
-                        MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-                        MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_1_4, MIGRATION_2_4
-                    )
+                    .addMigrations(*migrations)
                     .build()
                 INSTANCE = instance
                 instance

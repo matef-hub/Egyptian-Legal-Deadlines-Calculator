@@ -80,6 +80,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    sourceSets.getByName("androidTest").assets.srcDir(file("schemas/com.ateflaw.legaldeadlines.data.database.AppDatabase"))
     sourceSets.getByName("main").assets.srcDir(rootProject.file("calendar"))
 
     buildFeatures {
