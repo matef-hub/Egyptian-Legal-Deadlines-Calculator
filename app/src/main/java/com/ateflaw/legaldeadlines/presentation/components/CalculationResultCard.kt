@@ -85,13 +85,20 @@ fun CalculationResultCard(
     var calendarError by remember { mutableStateOf<String?>(null) }
     var proactiveReminderDays by remember(initialReminderDays) { mutableIntStateOf(initialReminderDays ?: 0) }
     var isTimelineExpanded by rememberSaveable(result.finalDeadline.toString()) { mutableStateOf(false) }
+    val reviewDetails = buildString {
+        if (result.warnings.isNotEmpty()) {
+            append("\n\nتنبيهات للمراجعة:\n")
+            append(result.warnings.joinToString("\n") { "• $it" })
+        }
+        if (result.notes.isNotBlank()) append("\n\nملاحظات القاعدة:\n").append(result.notes)
+    }
 
     // 1. Add FINAL DEADLINE to Calendar (Target Date = finalDeadline)
     val onAddFinalDeadlineToCalendar = {
         val title = "⚠️ تاريخ قانوني للمراجعة: ${result.actionSummary.ifBlank { result.lawArticle }}".toArabicDigits()
         val description = "تاريخ محسوب استرشادياً ويجب مراجعة العطلات والسند القانوني: $dayNameArabic، $finalDateFormatted\n" +
             "السند التشريعي: ${result.lawArticle.toArabicDigits()}\n\n" +
-            result.explanation
+            result.explanation + reviewDetails
 
         if (!openAllDayCalendarEvent(context, result.finalDeadline, title, description)) {
             calendarError = "تعذر فتح التقويم أو المتصفح."
@@ -111,7 +118,7 @@ fun CalculationResultCard(
             "التاريخ المحسوب للمراجعة: $dayNameArabic، $finalDateFormatted.\n" +
             "السند: ${result.lawArticle.toArabicDigits()}\n\n" +
             "الإجراء المطلوب: تجهيز صحيفة الطعن أو الدعوى ومستنداتها وإيداعها بقلم الكتاب مبكراً.\n\n" +
-            result.explanation
+            result.explanation + reviewDetails
 
         if (!openAllDayCalendarEvent(context, proactiveDate, title, description, webTitle = "تنبيه لمراجعة تاريخ قانوني")) {
             calendarError = "تعذر فتح التقويم أو المتصفح."
@@ -196,6 +203,46 @@ fun CalculationResultCard(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
                     )
+                }
+            }
+
+            if (result.warnings.isNotEmpty() || result.notes.isNotBlank()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "تنبيهات وملاحظات للمراجعة",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        result.warnings.distinct().forEach { warning ->
+                            Text(
+                                text = warning,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                        if (result.notes.isNotBlank()) {
+                            Text(
+                                text = "ملاحظات القاعدة",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Text(
+                                text = result.notes,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
                 }
             }
 
@@ -564,8 +611,10 @@ fun CalculationResultCardPreview() {
         finalDeadline = LocalDate.of(2026, 11, 10),
         explanation = "شرح تفصيلي للميعاد الإجرائي",
         lawArticle = "المادة 227 من قانون المرافعات المدنية والتجارية",
-        notes = "ملاحظات القاعدة",
-        actionSummary = "استئناف مدني وتجاري"
+        notes = "يجب مراجعة النص والواقعة المنشئة للميعاد.",
+        actionSummary = "استئناف مدني وتجاري",
+        warnings = listOf("اكتمال قرارات العطلات غير مؤكد؛ راجع القرارات الفعلية قبل الاعتماد على النتيجة."),
+        isProvisional = true
     )
 
     EgyptianLegalDeadlinesTheme {

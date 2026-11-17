@@ -36,7 +36,7 @@ class CalculateDeadlineUseCase(
         val holidaysList = withContext(Dispatchers.IO) {
             holidayRepository.getAllHolidaysList()
         }
-        // Bundled dates and third-party dates are NOT official published decisions.
+        // Only sourced, verified decisions participate in court-day extensions.
         val officialHolidays = holidaysList.filter(Holiday::isVerifiedOfficial)
         val holidayMap: Map<LocalDate, String> = officialHolidays.associate { it.holidayDate to it.name }
 
@@ -61,7 +61,7 @@ class CalculateDeadlineUseCase(
                 if (missingYears.isNotEmpty()) {
                     add("لا توجد قرارات عطلات مسجلة لسنوات ${missingYears.joinToString("، ")}.")
                 }
-                add("راجع قرار العطلة والإغلاقات الخاصة بالجهة المختصة قبل الاعتماد على التاريخ.")
+                add("تحقّق من اكتمال قرارات العطلات والإغلاقات الخاصة بالجهة المختصة قبل الاعتماد على التاريخ.")
             }
         } else {
             listOf("يُعرض انتهاء المدة دون ترحيل تلقائي. راجع قواعد الجهة المختصة.")

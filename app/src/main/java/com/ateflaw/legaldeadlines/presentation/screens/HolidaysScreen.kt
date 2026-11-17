@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.EventAvailable
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
@@ -486,7 +485,7 @@ private fun HolidayCard(
                 }
             } else {
                 Text(
-                    text = "تاريخ قديم يحتاج توثيقًا",
+                    text = "عطلة مرشحة — تحتاج مراجعة",
                     modifier = Modifier.padding(top = 8.dp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant

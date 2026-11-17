@@ -40,6 +40,25 @@ object ReviewedWorkbookImporter {
                     // text, duration, review status or article references.
                     dao.attachWorkbookMemo(item.id, item.decision, item.method, item.reviewerNote)
                 }
+                // Runs for both a fresh import and already-installed version 1
+                // imports. The DAO compares the original text and imported
+                // values before changing anything, preserving user overrides.
+                val correctedNotes = item.correctedNotes
+                val correctedSummary = item.correctedSummary
+                if (correctedNotes != null && correctedSummary != null) {
+                    dao.backfillReviewedWorkbookText(
+                        id = item.id,
+                        decision = item.decision,
+                        actionName = item.correctedActionName ?: seed.actionName,
+                        lawArticle = item.correctedLawArticle ?: seed.lawArticle,
+                        duration = item.correctedDuration ?: seed.duration,
+                        unit = item.correctedUnit ?: seed.unit.name,
+                        seedNotes = seed.notes,
+                        seedSummary = seed.summary,
+                        correctedNotes = correctedNotes,
+                        correctedSummary = correctedSummary
+                    )
+                }
             }
         }
     }

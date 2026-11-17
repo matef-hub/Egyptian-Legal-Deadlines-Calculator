@@ -59,11 +59,13 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -108,12 +110,19 @@ fun RulesCatalogScreen(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
-    var query by remember { mutableStateOf("") }
-    var selectedLaw by remember { mutableStateOf(ALL_LAWS) }
-    var selectedReview by remember { mutableStateOf("ALL") }
-    var editingRule by remember { mutableStateOf<LegalRule?>(null) }
-    var showEditor by remember { mutableStateOf(false) }
-    var openedAtToken by remember { mutableLongStateOf(0L) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var selectedLaw by rememberSaveable { mutableStateOf(ALL_LAWS) }
+    var selectedReview by rememberSaveable { mutableStateOf("ALL") }
+    var editingRuleId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var editingRevision by rememberSaveable { mutableStateOf<Int?>(null) }
+    var showEditor by rememberSaveable { mutableStateOf(false) }
+    var openedAtToken by rememberSaveable { mutableLongStateOf(0L) }
+    // Retain the revision opened by the user so a concurrent edit cannot be overwritten.
+    val editingRule = editingRuleId?.let { id ->
+        state.rules.firstOrNull { it.id == id }?.let { rule ->
+            rule.copy(revision = editingRevision ?: rule.revision)
+        }
+    }
 
     val laws = remember(state.rules) {
         state.rules.map { it.lawName.ifBlank { "قانون غير مصنف" } }.distinct().sorted()
@@ -139,9 +148,12 @@ fun RulesCatalogScreen(
     }
 
     LaunchedEffect(state.savedToken) {
-        if (showEditor && state.savedToken > openedAtToken) {
+        if (showEditor && state.savedToken < openedAtToken) {
+            openedAtToken = state.savedToken
+        } else if (showEditor && state.savedToken > openedAtToken) {
             showEditor = false
-            editingRule = null
+            editingRuleId = null
+            editingRevision = null
         }
     }
 
@@ -171,7 +183,8 @@ fun RulesCatalogScreen(
             Button(
                 onClick = {
                     onDismissMessage()
-                    editingRule = null
+                    editingRuleId = null
+                    editingRevision = null
                     openedAtToken = state.savedToken
                     showEditor = true
                 },
@@ -290,7 +303,8 @@ fun RulesCatalogScreen(
                             rule = rule,
                             onEdit = {
                                 onDismissMessage()
-                                editingRule = rule
+                                editingRuleId = rule.id
+                                editingRevision = rule.revision
                                 openedAtToken = state.savedToken
                                 showEditor = true
                             }
@@ -307,12 +321,18 @@ fun RulesCatalogScreen(
         onDismiss = onDismissMessage
     )
 
-    if (showEditor) {
+    if (showEditor && (editingRuleId == null || editingRule != null)) {
         RuleEditorDialog(
             rule = editingRule,
             selectedLaw = if (selectedLaw == ALL_LAWS) "" else selectedLaw,
             isSaving = state.saving,
-            onDismiss = { if (!state.saving) { showEditor = false; editingRule = null } },
+            onDismiss = {
+                if (!state.saving) {
+                    showEditor = false
+                    editingRuleId = null
+                    editingRevision = null
+                }
+            },
             onSave = { draft -> onSaveRule(editingRule, draft) }
         )
     }
@@ -554,14 +574,14 @@ private fun RuleEditorDialog(
             articleText = "", durationText = "", unit = DurationUnit.DAYS
         )
     }
-    var action by remember(initial) { mutableStateOf(initial.actionName) }
-    var law by remember(initial) { mutableStateOf(initial.lawName) }
-    var article by remember(initial) { mutableStateOf(initial.lawArticle) }
-    var articleText by remember(initial) { mutableStateOf(initial.articleText) }
-    var duration by remember(initial) { mutableStateOf(initial.durationText) }
-    var unit by remember(initial) { mutableStateOf(initial.unit) }
-    var notes by remember(initial) { mutableStateOf(initial.notes) }
-    var sourceUrl by remember(initial) { mutableStateOf(initial.officialSourceUrl) }
+    var action by rememberSaveable(initial) { mutableStateOf(initial.actionName) }
+    var law by rememberSaveable(initial) { mutableStateOf(initial.lawName) }
+    var article by rememberSaveable(initial) { mutableStateOf(initial.lawArticle) }
+    var articleText by rememberSaveable(initial) { mutableStateOf(initial.articleText) }
+    var duration by rememberSaveable(initial) { mutableStateOf(initial.durationText) }
+    var unit by rememberSaveable(initial) { mutableStateOf(initial.unit) }
+    var notes by rememberSaveable(initial) { mutableStateOf(initial.notes) }
+    var sourceUrl by rememberSaveable(initial) { mutableStateOf(initial.officialSourceUrl) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -638,7 +658,7 @@ private fun RuleEditorDialog(
                             maxLines = 3,
                             textStyle = MaterialTheme.typography.bodyMedium,
                             shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth().testTag("rule_editor_action")
                         )
                         OutlinedTextField(
                             value = article,
@@ -657,7 +677,7 @@ private fun RuleEditorDialog(
                             maxLines = 9,
                             textStyle = MaterialTheme.typography.bodyMedium,
                             shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth().testTag("rule_editor_article_text")
                         )
                         OutlinedTextField(
                             value = duration,
@@ -667,7 +687,7 @@ private fun RuleEditorDialog(
                             singleLine = true,
                             textStyle = MaterialTheme.typography.bodyMedium,
                             shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth().testTag("rule_editor_duration")
                         )
                         Text(
                             "وحدة المدة (أقل وحدة: يوم واحد)",

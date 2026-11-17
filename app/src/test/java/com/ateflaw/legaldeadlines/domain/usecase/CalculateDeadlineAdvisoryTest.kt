@@ -139,6 +139,26 @@ class CalculateDeadlineAdvisoryTest {
         })
     }
 
+    @Test fun verifiedRuleRemainsAdvisoryWhenHolidayCoverageIsNotConfirmedComplete() = runBlocking {
+        val calculate = calculator(listOf(
+                Holiday(
+                    holidayDate = LocalDate.of(2026, 1, 7),
+                    name = "عطلة موثقة",
+                    verificationStatus = "VERIFIED_OFFICIAL",
+                    sourceUrl = "https://example.gov.eg"
+                )
+        ))
+        val rule = LegalRule(
+            id = 2, actionName = "إجراء", duration = 15, unit = DurationUnit.DAYS,
+            reviewStatus = "VERIFIED_ACCURATE"
+        )
+        val result = calculate(
+            LocalDate.of(2026, 11, 1), rule
+        )
+        assertTrue(result.warnings.any { it.contains("اكتمال") })
+        assertTrue(result.isProvisional)
+    }
+
     @Test fun obsoleteLaborRuleIsNotPreviewedAsCurrentLaw() {
         assertThrows(IllegalArgumentException::class.java) {
             runBlocking {
