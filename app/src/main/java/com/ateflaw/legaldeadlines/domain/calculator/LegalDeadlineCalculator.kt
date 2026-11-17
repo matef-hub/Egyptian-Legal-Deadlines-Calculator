@@ -88,9 +88,6 @@ class LegalDeadlineCalculator {
                 (!rule.isShatbRenewal && distanceType == DistanceType.ABROAD_SERVED_IN_EGYPT))) {
                 "هذا الإجراء القانوني (${rule.actionName}) لا يقبل تطبيق مواعيد المسافة وفقاً للقواعد الإجرائية المقررة."
             }
-            require(additionalDistanceDays == 0) {
-                "لا يجوز إضافة ميعاد مسافة لهذا الإجراء (${rule.actionName}) لأن ميعاد المسافة غير منطبق عليه قانوناً."
-            }
         }
 
         // 3. Distance Days Statutory Validation

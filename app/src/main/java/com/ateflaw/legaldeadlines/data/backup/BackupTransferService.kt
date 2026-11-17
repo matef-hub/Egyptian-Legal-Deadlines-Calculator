@@ -90,9 +90,11 @@ class BackupTransferService(
             clear.fill(0)
             encrypted.fill(0)
         }
+        // The original desktop transfer tool used -1 for an unknown Room version.
+        val sourceVersion = document.getInt("source_database_version")
         require(document.optString("format") == "meead-transfer" &&
             document.optInt("format_version") == 1 &&
-            document.optInt("source_database_version") in 1..AppDatabase.VERSION) {
+            (sourceVersion == -1 || sourceVersion in 1..AppDatabase.VERSION)) {
             "إصدار النسخة الاحتياطية غير مدعوم."
         }
         val rows = document.getJSONObject("tables")

@@ -1,6 +1,16 @@
 package com.ateflaw.legaldeadlines.data
 
+import android.Manifest
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
 import android.net.Uri
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import com.ateflaw.legaldeadlines.data.worker.DeadlineReminderWorker
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
 import com.ateflaw.legaldeadlines.data.backup.EncryptedBackupCodec
 import androidx.room.Room
@@ -24,6 +34,37 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class BackupAndReminderTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+    @Test fun workerPostsARealNotificationForASavedReminder() = runBlocking {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        if (Build.VERSION.SDK_INT >= 33) {
+            instrumentation.uiAutomation.grantRuntimePermission(context.packageName, Manifest.permission.POST_NOTIFICATIONS)
+        }
+        val today = LocalDate.now()
+        val dao = AppDatabase.getInstance(context).savedDeadlineDao()
+        val id = dao.insert(SavedDeadlineEntity.fromDomain(SavedDeadline(
+            caseNumber = "بيانات اختبار خاصة", actionName = "اختبار التذكير", announcementDate = today,
+            duration = 1, unit = DurationUnit.DAYS, distanceDays = 0, finalDeadline = today.plusDays(1),
+            lawArticle = "", calculationExplanation = "", proactiveReminderDays = 1
+        )))
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        try {
+            val request = OneTimeWorkRequestBuilder<DeadlineReminderWorker>().build()
+            val work = WorkManager.getInstance(context)
+            work.enqueue(request).result.get()
+            withTimeout(60_000L) {
+                while (work.getWorkInfoById(request.id).get()?.state?.isFinished != true) delay(200)
+            }
+            assertEquals(WorkInfo.State.SUCCEEDED, work.getWorkInfoById(request.id).get()?.state)
+            val posted = manager.activeNotifications.single { it.tag == "deadline-$id" }
+            assertTrue(posted.notification.contentIntent != null)
+            assertTrue(!posted.notification.extras.getCharSequence("android.text").toString().contains("بيانات اختبار خاصة"))
+            assertTrue(dao.dueReminders(today.toString()).none { it.id == id })
+        } finally {
+            manager.cancel("deadline-$id", 1)
+            dao.deleteById(id)
+        }
+    }
 
     @Test fun encryptedMergeAndReplacePreserveDeadlinesAndWorkAfterIdCollisions() = runBlocking {
         val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
@@ -64,7 +105,9 @@ class BackupAndReminderTest {
             assertTrue(runCatching { service.importFrom(uri, password, RestoreMode.REPLACE_ALL) }.isFailure)
             assertEquals(2, dao.observeByDeadline().first().size)
             assertTrue(dao.dueReminders("2027-01-18").isEmpty())
-            backup.writeBytes(original)
+            rows.remove(rows.length() - 1)
+            document.put("source_database_version", -1)
+            backup.writeBytes(EncryptedBackupCodec.encrypt(document.toString().toByteArray(), password))
             service.importFrom(uri, password, RestoreMode.REPLACE_ALL)
             assertEquals("ميعاد أ", dao.observeByDeadline().first().single().actionName)
             assertEquals(1, dao.dueReminders("2027-01-17").size)
@@ -72,7 +115,7 @@ class BackupAndReminderTest {
         } finally {
             db.close()
             backup.delete()
-            password.fill('•')
+            password.fill(0.toChar())
         }
     }
 }
