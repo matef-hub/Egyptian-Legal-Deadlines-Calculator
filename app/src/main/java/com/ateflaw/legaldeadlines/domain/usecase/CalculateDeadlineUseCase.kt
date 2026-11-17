@@ -27,12 +27,6 @@ class CalculateDeadlineUseCase(
         judicialOrderDetails: String? = null
     ): DeadlineResult = withContext(Dispatchers.Default) {
         val reviewWarnings = LegalRuleSafety.previewWarnings(rule, announcementDate)
-        // No unverified route-distance extension for the article 82 shatb preview.
-        if (rule.id == 10L) {
-            require(distanceType == DistanceType.NONE && additionalDistanceDays == 0) {
-                "لا تُضاف أيام مسافة آليًا لتجديد الدعوى من الشطب؛ راجع أحكام الإعلان."
-            }
-        }
         val holidaysList = withContext(Dispatchers.IO) {
             holidayRepository.getAllHolidaysList()
         }
@@ -42,7 +36,7 @@ class CalculateDeadlineUseCase(
 
         val result = calculator.calculate(
             announcementDate = announcementDate,
-            rule = if (rule.id == 10L) rule.copy(triggerEventLabel = "تاريخ قرار شطب الدعوى") else rule,
+            rule = rule,
             distanceType = distanceType,
             additionalDistanceDays = additionalDistanceDays,
             judicialOrderDetails = judicialOrderDetails,

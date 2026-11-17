@@ -172,6 +172,14 @@ interface LegalRuleDao {
     """)
     suspend fun attachWorkbookMemo(id: Long, decision: String, method: String, reviewerNote: String): Int
 
+    @Query("""
+        UPDATE legal_rules SET effective_to = NULL WHERE id = 128
+        AND effective_to = '2027-09-30' AND law_article = :article
+        AND workbook_decision NOT IN ('USER_APPROVED','EDITED_PENDING')
+        AND NOT EXISTS (SELECT 1 FROM rule_edit_history WHERE rule_id = 128)
+    """)
+    suspend fun clearUnrelatedCriminalCodeExpiry(article: String)
+
     @Query("DELETE FROM legal_rules")
     suspend fun clear()
 }

@@ -2,7 +2,6 @@ package com.ateflaw.legaldeadlines.presentation.screens
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -19,7 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material3.CircularProgressIndicator
@@ -29,7 +28,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,7 +36,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -55,9 +52,7 @@ import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListUiState
 import com.ateflaw.legaldeadlines.presentation.viewmodel.DeadlineListViewModel
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import com.ateflaw.legaldeadlines.utils.normalizedArabicSearchText
-import kotlinx.coroutines.delay
 import java.time.LocalDate
-import kotlin.time.Duration.Companion.milliseconds
 
 private enum class DeadlineDateFilter(val label: String) {
     ALL("الكل"),
@@ -115,13 +110,13 @@ fun SavedDeadlinesScreenContent(
     }
     Box(modifier = modifier.fillMaxSize()) {
         AnimatedContent(
-            targetState = Triple(uiState.isLoading, uiState.deadlines.isEmpty(), uiState.deadlines.size),
+            targetState = uiState.isLoading to uiState.deadlines.isEmpty(),
             transitionSpec = {
                 fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing))
                     .togetherWith(fadeOut(animationSpec = tween(180, easing = FastOutSlowInEasing)))
             },
             label = "SavedDeadlinesContentState"
-        ) { (isLoading, isEmpty, _) ->
+        ) { (isLoading, isEmpty) ->
             when {
                 isLoading -> {
                     Box(modifier = Modifier.fillMaxSize()) {
@@ -200,37 +195,12 @@ fun SavedDeadlinesScreenContent(
                         if (filtered.isEmpty()) {
                             item { Text("لا توجد مواعيد مطابقة.", style = MaterialTheme.typography.bodyMedium) }
                         }
-                        itemsIndexed(
-                            items = filtered,
-                            key = { _, savedDeadline -> savedDeadline.id }
-                        ) { index, savedDeadline ->
-                            var itemVisible by remember { mutableStateOf(false) }
-                            LaunchedEffect(savedDeadline.id) {
-                                delay(((index * 35).coerceAtMost(180)).milliseconds)
-                                itemVisible = true
-                            }
-                            val itemAlpha by animateFloatAsState(
-                                targetValue = if (itemVisible) 1f else 0f,
-                                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-                                label = "ListItemAlpha"
+                        items(filtered, key = { it.id }) { savedDeadline ->
+                            SavedDeadlineItem(
+                                deadline = savedDeadline,
+                                onDeleteClick = { onDeleteClick(savedDeadline) },
+                                modifier = Modifier.animateItem()
                             )
-                            val itemTranslateY by animateFloatAsState(
-                                targetValue = if (itemVisible) 0f else 16f,
-                                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-                                label = "ListItemTranslateY"
-                            )
-
-                            Box(
-                                modifier = Modifier.graphicsLayer {
-                                    alpha = itemAlpha
-                                    translationY = itemTranslateY
-                                }
-                            ) {
-                                SavedDeadlineItem(
-                                    deadline = savedDeadline,
-                                    onDeleteClick = { onDeleteClick(savedDeadline) }
-                                )
-                            }
                         }
                     }
                 }

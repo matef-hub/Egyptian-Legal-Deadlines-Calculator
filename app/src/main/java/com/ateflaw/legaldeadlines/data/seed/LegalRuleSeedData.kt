@@ -117,6 +117,9 @@ object LegalRuleSeedData {
             ),
             LegalRule(
                 id = 10,
+                triggerEventType = "CASE_STRUCK_OUT",
+                triggerEventLabel = "تاريخ قرار شطب الدعوى",
+                distancePolicy = "NOT_APPLICABLE",
                 actionName = "تجديد الدعوى من الشطب وإعلان صحيفة التجديد",
                 duration = 60,
                 unit = DurationUnit.DAYS,
@@ -1933,7 +1936,7 @@ object LegalRuleSeedData {
                     calculationKind = kind,
                     lawName = correctedLawName
                 )
-                in 92L..128L -> rule.copy(
+                in 92L..127L -> rule.copy(
                     effectiveFrom = "",
                     effectiveTo = "2027-09-30",
                     reviewStatus = "NEEDS_REVIEW",

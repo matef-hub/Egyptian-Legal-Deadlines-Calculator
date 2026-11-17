@@ -81,6 +81,28 @@ jobs:
       - name: Run Android unit tests, compile Compose UI tests, assemble debug and lint
         run: ./gradlew testDebugUnitTest assembleDebugAndroidTest assembleDebug lint --stacktrace
 
+      - name: Verify production packaging and the exported Room schema
+        run: |
+          ./gradlew :app:packageRelease :app:lintRelease --stacktrace
+          git diff --exit-code -- app/schemas
+
+      - name: Enable KVM for device acceptance
+        if: github.event_name == 'pull_request'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Android device acceptance tests
+        if: github.event_name == 'pull_request'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: ./gradlew :app:connectedDebugAndroidTest --stacktrace
+
       - name: Publish Android debug APK for device acceptance testing
         if: success()
         uses: actions/upload-artifact@v4

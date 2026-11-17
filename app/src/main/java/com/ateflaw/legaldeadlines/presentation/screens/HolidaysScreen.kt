@@ -159,7 +159,7 @@ fun HolidaysScreenContent(
                     val today = LocalDate.now()
                     var selectedFilter by remember { mutableStateOf("ALL") }
 
-                    val filteredHolidays = remember(uiState.holidays, selectedFilter) {
+                    val filteredHolidays = remember(uiState.holidays, selectedFilter, today) {
                         when (selectedFilter) {
                             "UPCOMING" -> uiState.holidays.filter { it.holidayDate.isAfter(today) || it.holidayDate == today }
                             "PAST" -> uiState.holidays.filter { it.holidayDate.isBefore(today) }
@@ -176,6 +176,10 @@ fun HolidaysScreenContent(
                         item(key = "calendar-overview") {
                             var selectedMonth by remember { mutableStateOf(YearMonth.now()) }
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                if (uiState.holidays.none { it.isVerifiedOfficial && it.holidayDate.year == selectedMonth.year }) {
+                                    Text("لم تُسجّل قرارات عطلات لهذه السنة. حدّث التقويم وراجع قرارات الجهة المختصة.",
+                                        color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                                }
                                 MonthlyHolidayCalendar(
                                     currentMonth = selectedMonth,
                                     onPreviousMonth = { selectedMonth = selectedMonth.minusMonths(1) },

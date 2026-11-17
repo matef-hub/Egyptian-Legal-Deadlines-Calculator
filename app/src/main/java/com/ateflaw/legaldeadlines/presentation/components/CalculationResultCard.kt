@@ -1,5 +1,12 @@
 package com.ateflaw.legaldeadlines.presentation.components
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -82,6 +89,12 @@ fun CalculationResultCard(
     val startDateFormatted = DateFormatterUtils.formatArabicFullDate(result.startDate)
     val dayNameArabic = DateFormatterUtils.getArabicDayName(result.finalDeadline.dayOfWeek)
     val context = LocalContext.current
+    var notificationsAllowed by remember {
+        mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled())
+    }
+    val requestNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        notificationsAllowed = it
+    }
     var calendarError by remember { mutableStateOf<String?>(null) }
     var proactiveReminderDays by remember(initialReminderDays) { mutableIntStateOf(initialReminderDays ?: 0) }
     var isTimelineExpanded by rememberSaveable(result.finalDeadline.toString()) { mutableStateOf(false) }
@@ -342,13 +355,16 @@ fun CalculationResultCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = "التنبيه الاستباقي للتقويم",
+                    text = "التذكير قبل الميعاد",
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 if (proactiveReminderDays > 0) {
                     val proactiveDate = result.finalDeadline.minusDays(proactiveReminderDays.toLong())
+                    Text(if (notificationsAllowed) "بعد حفظ الميعاد يصلك إشعار خلال يوم التذكير."
+                        else "إشعارات ميعاد مغلقة. يمكنك تفعيلها من إعدادات الهاتف أو إضافة التذكير للتقويم.",
+                        style = MaterialTheme.typography.bodySmall)
                     Text(
                         text = "بتاريخ ${DateFormatterUtils.formatArabicFullDate(proactiveDate)} (قبل ${proactiveReminderDays.toString().toArabicDigits()} أيام)",
                         style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
@@ -377,6 +393,11 @@ fun CalculationResultCard(
                                     .widthIn(min = 52.dp)
                                     .heightIn(min = 48.dp)
                                     .clickable {
+                                        if (days > 0 && Build.VERSION.SDK_INT >= 33 &&
+                                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                                            PackageManager.PERMISSION_GRANTED) {
+                                            requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        }
                                         proactiveReminderDays = days
                                         onReminderDaysChanged(if (days == 0) null else days)
                                     },

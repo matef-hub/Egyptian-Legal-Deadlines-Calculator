@@ -53,7 +53,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import com.ateflaw.legaldeadlines.utils.normalizedArabicSearchText
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -92,7 +92,7 @@ fun RulesCatalogScreen(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     RulesCatalogScreen(
         state = state,
         onDismissMessage = viewModel::dismissMessage,
@@ -127,20 +127,23 @@ fun RulesCatalogScreen(
     val laws = remember(state.rules) {
         state.rules.map { it.lawName.ifBlank { "قانون غير مصنف" } }.distinct().sorted()
     }
-    val auditCounts = remember(state.rules) {
-        state.rules.groupingBy { LegalRuleReviewCatalog.finding(it).level }.eachCount()
+    val searchRows = remember(state.rules) {
+        state.rules.map { rule ->
+            val finding = LegalRuleReviewCatalog.finding(rule)
+            val fields = listOf(rule.actionName, rule.lawName, rule.lawArticle, rule.articleText,
+                rule.notes, finding.note, rule.reviewerNote, rule.reviewMethod)
+            Triple(rule, finding.level, fields.map { it.normalizedArabicSearchText() })
+        }
     }
-    val filtered = remember(state.rules, query, selectedLaw, selectedReview) {
-        val search = query.normalizedArabicSearchText()
-        state.rules.filter { rule ->
-            val law = rule.lawName.ifBlank { "قانون غير مصنف" }
-            (selectedLaw == ALL_LAWS || law == selectedLaw) &&
-                    (selectedReview == "ALL" ||
-                            LegalRuleReviewCatalog.finding(rule).level.name == selectedReview) &&
-                    (search.isBlank() || listOf(
-                        rule.actionName, law, rule.lawArticle, rule.articleText, rule.notes,
-                        LegalRuleReviewCatalog.finding(rule).note, rule.reviewerNote, rule.reviewMethod
-                    ).any { it.normalizedArabicSearchText().contains(search) })
+    val auditCounts = remember(searchRows) { searchRows.groupingBy { it.second }.eachCount() }
+    val filtered = remember(searchRows, query, selectedLaw, selectedReview) {
+        val term = query.normalizedArabicSearchText()
+        searchRows.mapNotNull { (rule, level, fields) ->
+            rule.takeIf {
+                (selectedLaw == ALL_LAWS || selectedLaw == rule.lawName.ifBlank { "قانون غير مصنف" }) &&
+                    (selectedReview == "ALL" || level.name == selectedReview) &&
+                    (term.isBlank() || fields.any { it.contains(term) })
+            }
         }
     }
     val grouped = remember(filtered) {

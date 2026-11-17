@@ -34,7 +34,8 @@ class LegalRuleSeedDataTest {
     @Test fun legacyWorkAndCriminalRulesHaveExplicitExpiryBoundaries() {
         val rules = LegalRuleSeedData.getSeedRules().associateBy { it.id }
         for (id in 147L..167L) assertEquals("2025-08-31", rules.getValue(id).effectiveTo)
-        for (id in 92L..128L) assertEquals("2027-09-30", rules.getValue(id).effectiveTo)
+        assertEquals(null, rules.getValue(128).effectiveTo)
+        for (id in 92L..127L) assertEquals("2027-09-30", rules.getValue(id).effectiveTo)
     }
 
     @Test fun dangerousRuleFamiliesAreNotDeclaredAsForward() {

@@ -33,4 +33,15 @@ data class LegalRule(
     val reviewMethod: String = "",
     val reviewerNote: String = "",
     val reviewVersion: Int = 0
-)
+) {
+    val isShatbRenewal: Boolean
+        get() = (triggerEventType == "CASE_STRUCK_OUT" || id == 10L) &&
+            unit == DurationUnit.DAYS && duration == 60L && startRule == StartRule.NEXT_DAY &&
+            (lawArticle.contains("82") || lawArticle.contains("٨٢")) && lawName.contains("المرافعات")
+
+    val allowsDistance: Boolean
+        get() = !isShatbRenewal && !distancePolicy.equals("NOT_APPLICABLE", ignoreCase = true)
+
+    val eventLabel: String
+        get() = if (isShatbRenewal) "تاريخ قرار شطب الدعوى" else triggerEventLabel
+}

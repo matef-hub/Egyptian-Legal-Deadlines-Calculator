@@ -42,41 +42,46 @@ abstract class AppDatabase : RoomDatabase() {
 
     suspend fun prepareRuleCatalog(context: Context) = catalogLock.withLock {
         if (catalogReady) return@withLock
-        val catalog = LegalRuleSeedData.getSeedRules()
-        withTransaction {
-            val dao = legalRuleDao()
-            if (dao.count() == 0) {
-                dao.insertAll(catalog.map(LegalRuleEntity::fromDomain))
-            } else {
-                for (rule in catalog) {
-                    dao.adoptSeedMetadata(rule.id, rule.actionName, rule.effectiveTo, rule.revision, rule.calculationKind)
-                }
-            }
-            ReviewedWorkbookImporter.apply(context.applicationContext, this)
-
-            for (rule in ReleaseRuleCatalog.editions(catalog)) {
-                val previous = dao.getById(rule.id)
-                if (previous != null && (
-                        previous.reviewVersion >= 2 || previous.revision >= 3 ||
-                            previous.workbookDecision in setOf("USER_APPROVED", "EDITED_PENDING") ||
-                            dao.hasEditHistory(rule.id)
-                        )) continue
-                val builtIn = LegalRuleEntity.fromDomain(rule.copy(
-                    revision = 2,
-                    reviewVersion = 2,
-                    workbookDecision = rule.reviewStatus,
-                    reviewMethod = previous?.reviewMethod.orEmpty(),
-                    reviewerNote = previous?.reviewerNote.orEmpty(),
-                    lastReviewedAt = "2026-11-15"
-                ))
-                if (previous == null) dao.insertDraft(builtIn) else dao.updateBuiltIn(builtIn)
-            }
-        }
+        withTransaction { loadBuiltInCatalog(context) }
         catalogReady = true
     }
 
+    // Caller owns the transaction, including restores that repopulate all built-ins.
+    internal suspend fun loadBuiltInCatalog(context: Context) {
+        val catalog = LegalRuleSeedData.getSeedRules()
+        val dao = legalRuleDao()
+        if (dao.count() == 0) {
+            dao.insertAll(catalog.map(LegalRuleEntity::fromDomain))
+        } else {
+            for (rule in catalog) {
+                dao.adoptSeedMetadata(rule.id, rule.actionName, rule.effectiveTo, rule.revision, rule.calculationKind)
+            }
+        }
+        ReviewedWorkbookImporter.apply(context.applicationContext, this)
+        dao.clearUnrelatedCriminalCodeExpiry(catalog.single { it.id == 128L }.lawArticle)
+
+        for (rule in ReleaseRuleCatalog.editions(catalog)) {
+            val previous = dao.getById(rule.id)
+            if (previous != null && (
+                    previous.reviewVersion >= 3 ||
+                        (previous.revision >= 3 && !ReviewedWorkbookImporter.isBundledLaborBackfill(previous)) ||
+                        previous.workbookDecision in setOf("USER_APPROVED", "EDITED_PENDING") ||
+                        dao.hasEditHistory(rule.id)
+                    )) continue
+            val builtIn = LegalRuleEntity.fromDomain(rule.copy(
+                revision = maxOf(2, previous?.revision ?: 0),
+                reviewVersion = 3,
+                workbookDecision = rule.reviewStatus,
+                reviewMethod = previous?.reviewMethod.orEmpty(),
+                reviewerNote = previous?.reviewerNote.orEmpty(),
+                lastReviewedAt = "2026-11-15"
+            ))
+            if (previous == null) dao.insertDraft(builtIn) else dao.updateBuiltIn(builtIn)
+        }
+    }
+
     companion object {
-        const val VERSION = 12
+        const val VERSION = 13
 
         @Volatile
         private var INSTANCE: AppDatabase? = null
@@ -357,6 +362,13 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_saved_deadlines_final_deadline ON saved_deadlines(final_deadline)")
+                db.execSQL("ALTER TABLE saved_deadlines ADD COLUMN reminder_sent_for TEXT")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -367,7 +379,7 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(
                         MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5,
                         MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-                        MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_1_4, MIGRATION_2_4
+                        MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_1_4, MIGRATION_2_4
                     )
                     .build()
                 INSTANCE = instance

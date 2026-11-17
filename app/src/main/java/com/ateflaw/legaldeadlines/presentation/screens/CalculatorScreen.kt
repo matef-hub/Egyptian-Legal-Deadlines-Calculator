@@ -1,5 +1,6 @@
 package com.ateflaw.legaldeadlines.presentation.screens
 
+import com.ateflaw.legaldeadlines.domain.calculator.LegalRuleSafety
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
@@ -168,8 +169,7 @@ fun CalculatorScreenContent(
 
     // Form focus requesters for automatic validation navigation
     val distanceFocusRequester = remember { FocusRequester() }
-    val distanceAllowed = uiState.selectedRule?.id != 10L &&
-        uiState.selectedRule?.distancePolicy?.equals("NOT_APPLICABLE", ignoreCase = true) != true
+    val distanceAllowed = uiState.selectedRule?.allowsDistance != false
 
     var isRuleError by remember { mutableStateOf(false) }
     var ruleErrorText by remember { mutableStateOf<String?>(null) }
@@ -409,12 +409,8 @@ fun CalculatorScreenContent(
                     // -------------------------------------------------------------
                     // FIELD 2: Trigger Event Date (تاريخ الواقعة المنشئة للميعاد)
                     // -------------------------------------------------------------
-                    val triggerLabel = if (uiState.selectedRule?.id == 10L) {
-                        "تاريخ قرار شطب الدعوى"
-                    } else {
-                        uiState.selectedRule?.triggerEventLabel?.ifBlank { null }
-                            ?: "تاريخ الواقعة المنشئة للميعاد"
-                    }
+                    val triggerLabel = uiState.selectedRule?.eventLabel?.ifBlank { null }
+                        ?: "تاريخ الواقعة المنشئة للميعاد"
 
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
@@ -519,7 +515,7 @@ fun CalculatorScreenContent(
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                         Text(
-                                            text = if (uiState.selectedRule?.id == 10L) {
+                                            text = if (uiState.selectedRule?.isShatbRenewal == true) {
                                                 "لا تُضاف أيام مسافة تلقائيًا لتجديد الدعوى من الشطب"
                                             } else if (!distanceAllowed) {
                                                 "لا يطبق ميعاد المسافة على هذا الإجراء"
@@ -967,10 +963,11 @@ fun CalculatorScreenContent(
                             }
                         } else {
                             items(filteredRules, key = { it.id }) { rule ->
+                                val needsTime = LegalRuleSafety.kind(rule) == LegalRuleSafety.CalculationKind.EXACT_HOURS
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable {
+                                        .clickable(enabled = !needsTime) {
                                             onRuleSelected(rule)
                                             isRuleError = false
                                             ruleErrorText = null
@@ -987,7 +984,8 @@ fun CalculatorScreenContent(
                                         fontWeight = FontWeight.SemiBold
                                     )
                                     Text(
-                                        text = "المدة: ${rule.duration.toString().toArabicDigits()} ${rule.unit.arabicDisplayName} — ${rule.lawArticle.toArabicDigits()}",
+                                        text = if (needsTime) "يتطلب ساعة الواقعة. راجع ${rule.lawArticle.toArabicDigits()}."
+                                            else "المدة: ${rule.duration.toString().toArabicDigits()} ${rule.unit.arabicDisplayName} — ${rule.lawArticle.toArabicDigits()}",
                                         style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )

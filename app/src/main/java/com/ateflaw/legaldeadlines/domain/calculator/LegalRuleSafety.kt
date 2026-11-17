@@ -70,14 +70,8 @@ object LegalRuleSafety {
     fun previewWarnings(rule: LegalRule, eventDate: LocalDate): List<String> {
         require(rule.duration > 0) { "هذا الإجراء ليس ميعادًا عدديًا قابلًا للحساب." }
         checkHistoricalApplicability(rule, eventDate)
-        val isShatb60 = rule.id == 10L &&
-            rule.unit == DurationUnit.DAYS &&
-            rule.duration == 60L &&
-            rule.startRule == com.ateflaw.legaldeadlines.domain.model.StartRule.NEXT_DAY &&
-            rule.lawArticle.contains("82") &&
-            rule.lawName.contains("المرافعات")
         val type = kind(rule)
-        require(type == CalculationKind.FORWARD || isShatb60) {
+        require(type == CalculationKind.FORWARD || rule.isShatbRenewal) {
             when (type) {
                 CalculationKind.BACKWARD_FROM_EVENT -> "هذا الميعاد يُحسب قبل الجلسة أو الواقعة، وليس بعدها."
                 CalculationKind.EXACT_HOURS -> "هذا الإجراء يتطلب توقيت الواقعة بالساعات والدقائق."
@@ -92,7 +86,7 @@ object LegalRuleSafety {
         }
         return buildList {
             add("تاريخ محسوب استرشاديًا فقط، وليس ميعادًا قانونيًا معتمدًا. راجع النص النافذ وظروف الدعوى قبل اتخاذ الإجراء.")
-            if (isShatb60) add(
+            if (rule.isShatbRenewal) add(
                 "المادة 82 مرافعات: الستون يومًا لا تغني عن اتخاذ إجراءات تجديد السير وتحديد جلسة وإعلان الخصم؛ وقد تؤثر ظروف الإعلان والاستثناءات القضائية."
             )
             if (rule.reviewStatus != "VERIFIED_ACCURATE") add(

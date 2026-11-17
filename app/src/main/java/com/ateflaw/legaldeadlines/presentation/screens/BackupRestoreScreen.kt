@@ -54,7 +54,8 @@ fun BackupRestoreScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     }
     var password by remember { mutableStateOf("") } // never persist passwords in saved UI state
     var busy by remember { mutableStateOf(false) }
-    var confirmation by remember { mutableStateOf(false) }
+    var restoreFile by remember { mutableStateOf<android.net.Uri?>(null) }
+    var confirmReplace by remember { mutableStateOf(false) }
     var notice by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -64,7 +65,7 @@ fun BackupRestoreScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         return false
     }
 
-    fun launchTransfer(uri: android.net.Uri, restoring: Boolean) {
+    fun launchTransfer(uri: android.net.Uri, mode: BackupTransferService.RestoreMode?) {
         if (busy || !validatePassword()) return
         val secret = password.toCharArray()
         password = ""
@@ -73,8 +74,10 @@ fun BackupRestoreScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         error = null
         scope.launch {
             try {
-                val result = if (restoring) transfer.importFrom(uri, secret) else transfer.exportTo(uri, secret)
-                notice = if (restoring) {
+                val result = if (mode != null) transfer.importFrom(uri, secret, mode) else transfer.exportTo(uri, secret)
+                notice = if (mode == BackupTransferService.RestoreMode.MERGE_DEADLINES) {
+                    "أُضيف ${result.savedDeadlines} موعد جديد. احتفظنا بالمواعيد الموجودة والقواعد المحلية."
+                } else if (mode != null) {
                     "تمت الاستعادة: ${result.savedDeadlines} موعد محفوظ، " +
                         "${result.editedRules} قاعدة معدلة، و${result.historyEntries} سجل مراجعة. " +
                         "أعد فتح الحاسبة والدليل لتحديث العرض."
@@ -94,12 +97,13 @@ fun BackupRestoreScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val exportPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri ->
-        if (uri != null) launchTransfer(uri, restoring = false)
+        if (uri != null) launchTransfer(uri, mode = null)
     }
     val importPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
-        if (uri != null) launchTransfer(uri, restoring = true)
+        restoreFile = uri
+        confirmReplace = false
     }
 
     Column(
@@ -143,7 +147,7 @@ fun BackupRestoreScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             Text("تصدير نسخة احتياطية مشفرة")
         }
         OutlinedButton(
-            onClick = { if (validatePassword()) confirmation = true },
+            onClick = { if (validatePassword()) importPicker.launch(arrayOf("*/*")) },
             enabled = !busy,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -152,10 +156,7 @@ fun BackupRestoreScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             Text("استعادة من ملف سابق")
         }
         Text(
-            "الاستعادة مخصصة لتثبيت جديد بلا بيانات شخصية. إذا كان هذا التطبيق يحتوي بالفعل " +
-                "على مواعيد أو تعديلات، سيتم رفض الاستعادة بدلًا من استبدالها. " +
-                "نسخ Debug القديمة لا يمكن قراءتها مباشرة بسبب عزل تطبيقات Android؛ " +
-                "يلزم تصديرها أولًا بالطريقة الموثقة.",
+            "يمكنك إضافة مواعيد النسخة إلى مواعيدك، أو استعادة جميع بيانات النسخة مكان البيانات الحالية.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodySmall
         )
@@ -166,24 +167,27 @@ fun BackupRestoreScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         TextButton(onClick = onBack, enabled = !busy) { Text(stringResource(R.string.btn_back)) }
     }
 
-    if (confirmation) {
+    restoreFile?.let { file ->
         AlertDialog(
-            onDismissRequest = { confirmation = false },
-            title = { Text("تأكيد استعادة البيانات") },
+            onDismissRequest = { restoreFile = null },
+            title = { Text(if (confirmReplace) "استبدال جميع البيانات؟" else "استعادة النسخة الاحتياطية") },
             text = {
-                Text(
-                    "لن تتم الاستعادة إلا إذا كان التطبيق الجديد خاليًا من بيانات المستخدم. " +
-                        "يجب أن تكون النسخة من مصدر تثق به. لن نحذف أي سجلات محلية تلقائيًا."
-                )
+                Text(if (confirmReplace)
+                    "ستُحذف المواعيد والقواعد المعدّلة وسجلات المراجعة الحالية ويحل محتوى الملف محلها. صدّر نسخة من بياناتك أولًا إذا كنت تحتاجها."
+                else "دمج المواعيد يضيف المواعيد الناقصة فقط ويحفظ قواعدك الحالية. الاستعادة الكاملة تشمل أيضًا القواعد المعدلة وسجل المراجعة.")
             },
             confirmButton = {
                 Button(onClick = {
-                    confirmation = false
-                    importPicker.launch(arrayOf("*/*"))
-                }) { Text("اختيار ملف النسخة") }
+                    restoreFile = null
+                    launchTransfer(file, if (confirmReplace) BackupTransferService.RestoreMode.REPLACE_ALL
+                        else BackupTransferService.RestoreMode.MERGE_DEADLINES)
+                }) { Text(if (confirmReplace) "تأكيد الاستبدال" else "دمج المواعيد") }
             },
             dismissButton = {
-                TextButton(onClick = { confirmation = false }) { Text("إلغاء") }
+                Column {
+                    if (!confirmReplace) TextButton(onClick = { confirmReplace = true }) { Text("استعادة كاملة") }
+                    TextButton(onClick = { restoreFile = null }) { Text("إلغاء") }
+                }
             }
         )
     }

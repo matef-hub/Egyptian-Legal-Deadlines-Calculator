@@ -1,12 +1,23 @@
 package com.ateflaw.legaldeadlines.data.review
 
 import android.content.Context
+import com.ateflaw.legaldeadlines.data.entity.LegalRuleEntity
 import androidx.room.withTransaction
 import com.ateflaw.legaldeadlines.data.database.AppDatabase
 import com.ateflaw.legaldeadlines.data.seed.LegalRuleSeedData
 
 /** Idempotent and revision-safe adoption of the user's signed-off checklist. */
 object ReviewedWorkbookImporter {
+    fun isBundledLaborBackfill(row: LegalRuleEntity): Boolean {
+        if (row.id !in setOf(159L, 160L, 161L) || row.revision != 3 || row.reviewVersion != 2) return false
+        val review = ReviewedWorkbookRecord(row.id, row.workbookDecision, row.reviewMethod,
+            row.officialSourceUrl, row.effectiveFrom, row.reviewerNote)
+        return row.reviewStatus == row.workbookDecision && row.notes == review.correctedNotes &&
+            row.summary == review.correctedSummary && row.lawArticle == review.correctedLawArticle &&
+            (review.correctedUnit == null || row.unit == review.correctedUnit) &&
+            (review.correctedDuration == null || row.duration == review.correctedDuration)
+    }
+
     suspend fun apply(context: Context, database: AppDatabase) {
         val records = ReviewedWorkbook.load(context)
         val builtin = LegalRuleSeedData.getSeedRules().associateBy { it.id }
@@ -45,7 +56,7 @@ object ReviewedWorkbookImporter {
                 // values before changing anything, preserving user overrides.
                 val correctedNotes = item.correctedNotes
                 val correctedSummary = item.correctedSummary
-                if (correctedNotes != null && correctedSummary != null) {
+                if (!legacyLabor && correctedNotes != null && correctedSummary != null) {
                     dao.backfillReviewedWorkbookText(
                         id = item.id,
                         decision = item.decision,

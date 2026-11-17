@@ -34,11 +34,12 @@ fun AppNavHost(
     holidaysViewModel: () -> HolidaysViewModel,
     ruleCatalogViewModel: () -> RuleCatalogViewModel,
     modifier: Modifier = Modifier,
-    innerPadding: PaddingValues = PaddingValues(0.dp)
+    innerPadding: PaddingValues = PaddingValues(0.dp),
+    startDestination: String = Screen.Landing.route
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Landing.route,
+        startDestination = startDestination,
         modifier = modifier,
         enterTransition = {
             fadeIn(animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)) +
