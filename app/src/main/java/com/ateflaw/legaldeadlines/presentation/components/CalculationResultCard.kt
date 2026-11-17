@@ -1,8 +1,12 @@
 package com.ateflaw.legaldeadlines.presentation.components
 
-import android.content.Intent
-import android.net.Uri
-import android.provider.CalendarContract
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -63,14 +67,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.presentation.ui.theme.EgyptianLegalDeadlinesTheme
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import java.time.LocalDate
-import java.time.ZoneId
 
 @Composable
 fun CalculationResultCard(
@@ -87,6 +89,13 @@ fun CalculationResultCard(
     val startDateFormatted = DateFormatterUtils.formatArabicFullDate(result.startDate)
     val dayNameArabic = DateFormatterUtils.getArabicDayName(result.finalDeadline.dayOfWeek)
     val context = LocalContext.current
+    var notificationsAllowed by remember {
+        mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled())
+    }
+    val requestNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        notificationsAllowed = it
+    }
+    var calendarError by remember { mutableStateOf<String?>(null) }
     var proactiveReminderDays by remember(initialReminderDays) { mutableIntStateOf(initialReminderDays ?: 0) }
     var isTimelineExpanded by rememberSaveable(result.finalDeadline.toString()) { mutableStateOf(false) }
     val reviewDetails = buildString {
@@ -104,25 +113,8 @@ fun CalculationResultCard(
             "السند التشريعي: ${result.lawArticle.toArabicDigits()}\n\n" +
             result.explanation + reviewDetails
 
-        try {
-            val intent = Intent(Intent.ACTION_INSERT).apply {
-                data = CalendarContract.Events.CONTENT_URI
-                putExtra(CalendarContract.Events.TITLE, title)
-                putExtra(CalendarContract.Events.DESCRIPTION, description)
-                putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
-                val epochMillis = result.finalDeadline.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, epochMillis)
-                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, result.finalDeadline.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
-            }
-            context.startActivity(intent)
-        } catch (_: Exception) {
-            val cleanStart = result.finalDeadline.toString().replace("-", "")
-            val nextDay = result.finalDeadline.plusDays(1).toString().replace("-", "")
-            val webUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" +
-                Uri.encode(title) +
-                "&dates=$cleanStart/$nextDay&details=" +
-                Uri.encode(description)
-            context.startActivity(Intent(Intent.ACTION_VIEW, webUrl.toUri()))
+        if (!openAllDayCalendarEvent(context, result.finalDeadline, title, description)) {
+            calendarError = "تعذر فتح التقويم أو المتصفح."
         }
     }
 
@@ -141,28 +133,16 @@ fun CalculationResultCard(
             "الإجراء المطلوب: تجهيز صحيفة الطعن أو الدعوى ومستنداتها وإيداعها بقلم الكتاب مبكراً.\n\n" +
             result.explanation + reviewDetails
 
-        try {
-            val intent = Intent(Intent.ACTION_INSERT).apply {
-                data = CalendarContract.Events.CONTENT_URI
-                putExtra(CalendarContract.Events.TITLE, title)
-                putExtra(CalendarContract.Events.DESCRIPTION, description)
-                putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
-                // Use ACTUAL PROACTIVE DATE epoch!
-                val epochMillis = proactiveDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, epochMillis)
-                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, proactiveDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
-            }
-            context.startActivity(intent)
-        } catch (_: Exception) {
-            val cleanStart = proactiveDate.toString().replace("-", "")
-            val nextDay = proactiveDate.plusDays(1).toString().replace("-", "")
-            val webUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" +
-                Uri.encode(title) +
-                "&dates=$cleanStart/$nextDay&details=" +
-                Uri.encode(description)
-            context.startActivity(Intent(Intent.ACTION_VIEW, webUrl.toUri()))
+        if (!openAllDayCalendarEvent(context, proactiveDate, title, description, webTitle = "تنبيه لمراجعة تاريخ قانوني")) {
+            calendarError = "تعذر فتح التقويم أو المتصفح."
         }
     }
+
+    SweetAlertNotice(
+        message = calendarError,
+        kind = NoticeKind.ERROR,
+        onDismiss = { calendarError = null }
+    )
 
     // A single layout grid: no oversized green parent card wrapped around
     // smaller cards. Every section now shares the same horizontal edges.
@@ -375,13 +355,16 @@ fun CalculationResultCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = "التنبيه الاستباقي للتقويم",
+                    text = "التذكير قبل الميعاد",
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 if (proactiveReminderDays > 0) {
                     val proactiveDate = result.finalDeadline.minusDays(proactiveReminderDays.toLong())
+                    Text(if (notificationsAllowed) "بعد حفظ الميعاد يصلك إشعار خلال يوم التذكير."
+                        else "إشعارات ميعاد مغلقة. يمكنك تفعيلها من إعدادات الهاتف أو إضافة التذكير للتقويم.",
+                        style = MaterialTheme.typography.bodySmall)
                     Text(
                         text = "بتاريخ ${DateFormatterUtils.formatArabicFullDate(proactiveDate)} (قبل ${proactiveReminderDays.toString().toArabicDigits()} أيام)",
                         style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
@@ -410,6 +393,11 @@ fun CalculationResultCard(
                                     .widthIn(min = 52.dp)
                                     .heightIn(min = 48.dp)
                                     .clickable {
+                                        if (days > 0 && Build.VERSION.SDK_INT >= 33 &&
+                                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                                            PackageManager.PERMISSION_GRANTED) {
+                                            requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        }
                                         proactiveReminderDays = days
                                         onReminderDaysChanged(if (days == 0) null else days)
                                     },
@@ -513,7 +501,7 @@ fun CalculationResultCard(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "تنبيه استباقي",
+                                text = "إضافة تنبيه للتقويم",
                                 style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis

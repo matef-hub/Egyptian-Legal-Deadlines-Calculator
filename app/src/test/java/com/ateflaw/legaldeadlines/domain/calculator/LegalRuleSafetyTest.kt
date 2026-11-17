@@ -13,8 +13,8 @@ class LegalRuleSafetyTest {
 
     @Test fun backwardsAndHoursAreNeverTreatedAsForwardDeadlines() {
         assertEquals(LegalRuleSafety.CalculationKind.BACKWARD_FROM_EVENT, LegalRuleSafety.kind(seeded(4)))
-        assertEquals(LegalRuleSafety.CalculationKind.FORWARD, LegalRuleSafety.kind(seeded(7, 1)))
-        assertEquals(LegalRuleSafety.CalculationKind.FORWARD, LegalRuleSafety.kind(seeded(96, 1)))
+        assertEquals(LegalRuleSafety.CalculationKind.EXACT_HOURS, LegalRuleSafety.kind(seeded(7, 1)))
+        assertEquals(LegalRuleSafety.CalculationKind.EXACT_HOURS, LegalRuleSafety.kind(seeded(96, 1)))
         assertEquals(LegalRuleSafety.CalculationKind.SPECIAL_UNSUPPORTED, LegalRuleSafety.kind(seeded(103, 8)))
         assertEquals(LegalRuleSafety.CalculationKind.SPECIAL_UNSUPPORTED, LegalRuleSafety.kind(seeded(104, 4)))
         assertEquals(LegalRuleSafety.CalculationKind.AGE_THRESHOLD, LegalRuleSafety.kind(seeded(134, 15, DurationUnit.YEARS)))
@@ -23,9 +23,9 @@ class LegalRuleSafetyTest {
 
     @Test fun oldLaborRulesBlockedAfterNewLawEffectiveDate() {
         val error = assertThrows(IllegalArgumentException::class.java) {
-            LegalRuleSafety.validate(seeded(159), LocalDate.of(2026, 11, 10))
+            LegalRuleSafety.validate(seeded(159).copy(reviewVersion = 1), LocalDate.of(2026, 11, 10))
         }
-        assert(error.message!!.contains("2025"))
+        assert(error.message!!.contains("٢٠٢٥"))
     }
 
     @Test fun oldCriminalRulesBlockedAfterNewLawEffectiveDate() {
@@ -39,8 +39,10 @@ class LegalRuleSafetyTest {
             reviewStatus = "NEEDS_REVIEW",
             calculationKind = "EXACT_HOURS"
         )
-        val warnings = LegalRuleSafety.previewWarnings(source, LocalDate.of(2026, 11, 10))
-        assert(warnings.any { it.contains("24 ساعة") })
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            LegalRuleSafety.previewWarnings(source, LocalDate.of(2026, 11, 10))
+        }
+        assert(error.message!!.contains("الساعات والدقائق"))
     }
 
     @Test fun unreviewedForwardRuleIsBlocked() {

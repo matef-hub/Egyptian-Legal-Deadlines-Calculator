@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: "Type SIGN to build a privately signed release APK from main."
+        description: "Type SIGN to build a privately signed APK and Play bundle from main."
         required: true
         type: string
 
@@ -51,7 +51,7 @@ jobs:
           MEEAD_KEY_PASSWORD: ${{ secrets.MEEAD_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew testDebugUnitTest lint assembleRelease --stacktrace
+          ./gradlew testDebugUnitTest lint assembleRelease bundleRelease --stacktrace
       - name: Verify release certificate and package signature
         run: |
           set -euo pipefail
@@ -60,13 +60,18 @@ jobs:
           SIGNER="$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -type f -name apksigner | sort -V | tail -n 1)"
           test -x "$SIGNER"
           "$SIGNER" verify --verbose --print-certs "$APK"
-          sha256sum "$APK" > app/build/outputs/apk/release/sha256.txt
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+          test -s "$AAB"
+          jarsigner -verify "$AAB" | tee "$RUNNER_TEMP/aab-signature.txt"
+          grep -Fq 'jar verified.' "$RUNNER_TEMP/aab-signature.txt"
+          sha256sum "$APK" "$AAB" > app/build/outputs/apk/release/sha256.txt
       - name: Upload owner-signed APK (not an automatic public release)
         uses: actions/upload-artifact@v4
         with:
           name: meead-owner-signed-release-${{ github.sha }}
           path: |
             app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/bundle/release/app-release.aab
             app/build/outputs/apk/release/sha256.txt
           if-no-files-found: error
           retention-days: 30

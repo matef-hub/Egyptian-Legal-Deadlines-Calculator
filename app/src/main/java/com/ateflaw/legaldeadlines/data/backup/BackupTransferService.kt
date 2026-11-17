@@ -1,6 +1,6 @@
 package com.ateflaw.legaldeadlines.data.backup
 
-import android.content.ContentResolver
+import android.content.Context
 import android.content.ContentValues
 import android.net.Uri
 import androidx.room.withTransaction
@@ -18,13 +18,16 @@ import java.time.Instant
  * Offline import/export through user-selected Storage Access Framework documents.
  * No broad storage permission, no automatic cloud backup and no raw SQLite/WAL file export.
  *
- * Import is intentionally restricted to a fresh destination profile. It never silently
- * overwrites any local deadlines, owner-approved rules or rule edit history.
+ * Merge imports only missing appointments. Full replacement is explicitly selected in the UI.
  */
 class BackupTransferService(
     private val database: AppDatabase,
-    private val resolver: ContentResolver
+    private val context: Context
 ) {
+    private val resolver get() = context.contentResolver
+
+    enum class RestoreMode { MERGE_DEADLINES, REPLACE_ALL }
+
     data class Totals(
         val savedDeadlines: Int,
         val editedRules: Int,
@@ -35,6 +38,7 @@ class BackupTransferService(
     private val tables = listOf("legal_rules", "saved_deadlines", "holidays", "rule_edit_history")
 
     suspend fun exportTo(destination: Uri, password: CharArray): Totals = withContext(Dispatchers.IO) {
+        database.prepareRuleCatalog(context)
         val document = database.withTransaction {
             val db = database.openHelper.writableDatabase
             val tableObject = JSONObject()
@@ -44,7 +48,7 @@ class BackupTransferService(
             JSONObject()
                 .put("format", "meead-transfer")
                 .put("format_version", 1)
-                .put("source_database_version", 11)
+                .put("source_database_version", AppDatabase.VERSION)
                 .put("exported_at", Instant.now().toString())
                 .put("tables", tableObject)
         }
@@ -65,7 +69,7 @@ class BackupTransferService(
         }
     }
 
-    suspend fun importFrom(source: Uri, password: CharArray): Totals = withContext(Dispatchers.IO) {
+    suspend fun importFrom(source: Uri, password: CharArray, mode: RestoreMode): Totals = withContext(Dispatchers.IO) {
         val encrypted = resolver.openInputStream(source)?.use { input ->
             val buffer = ByteArrayOutputStream()
             val chunk = ByteArray(8192)
@@ -86,8 +90,11 @@ class BackupTransferService(
             clear.fill(0)
             encrypted.fill(0)
         }
+        // The original desktop transfer tool used -1 for an unknown Room version.
+        val sourceVersion = document.getInt("source_database_version")
         require(document.optString("format") == "meead-transfer" &&
-            document.optInt("format_version") == 1) {
+            document.optInt("format_version") == 1 &&
+            (sourceVersion == -1 || sourceVersion in 1..AppDatabase.VERSION)) {
             "إصدار النسخة الاحتياطية غير مدعوم."
         }
         val rows = document.getJSONObject("tables")
@@ -98,19 +105,9 @@ class BackupTransferService(
             "عدد السجلات في النسخة الاحتياطية يتجاوز الحد المسموح."
         }
 
+        database.prepareRuleCatalog(context)
         database.withTransaction {
             val db = database.openHelper.writableDatabase
-            // A new install is seeded with 169 statutory rules; importing into an
-            // already-used profile risks irreconcilable ID collisions.
-            check(count(db, "SELECT COUNT(*) FROM legal_rules") >= 169) {
-                "لم تكتمل تهيئة القواعد الافتراضية بعد؛ افتح الدليل ثم أعد المحاولة."
-            }
-            check(count(db, "SELECT COUNT(*) FROM saved_deadlines") == 0L &&
-                count(db, "SELECT COUNT(*) FROM rule_edit_history") == 0L &&
-                count(db, "SELECT COUNT(*) FROM legal_rules WHERE id > 169 OR workbook_decision = 'USER_APPROVED'") == 0L) {
-                "قاعدة الجهاز الجديد تحتوي بيانات مستخدم. لن نستبدلها؛ صدّر بيانات هذا الجهاز أولًا."
-            }
-
             val columns = tables.associateWith { tableColumns(db, it) }
             // Prevalidate every row before the first write, including column names/types.
             val records = tables.associateWith { table ->
@@ -120,6 +117,23 @@ class BackupTransferService(
                 }
             }
 
+            val appointments = records.getValue("saved_deadlines")
+            for (row in appointments) {
+                java.time.LocalDate.parse(row.getAsString("final_deadline"))
+                java.time.LocalDate.parse(row.getAsString("announcement_date"))
+                com.ateflaw.legaldeadlines.domain.model.DurationUnit.valueOf(row.getAsString("unit"))
+            }
+            if (mode == RestoreMode.MERGE_DEADLINES) {
+                val inserted = appointments.count { insertMissingDeadline(db, it) }
+                return@withTransaction Totals(inserted, 0, 0, 0)
+            }
+
+            // Any malformed row rolls back the entire replacement, including the deletes.
+            for (table in listOf("rule_edit_history", "saved_deadlines", "holidays", "legal_rules")) {
+                db.execSQL("DELETE FROM `$table`")
+            }
+            database.loadBuiltInCatalog(context)
+            val seedById = com.ateflaw.legaldeadlines.data.seed.LegalRuleSeedData.getSeedRules().associateBy { it.id }
             val historicallyEditedIds = records.getValue("rule_edit_history")
                 .mapNotNull { it.getAsLong("rule_id") }
                 .toSet()
@@ -137,14 +151,40 @@ class BackupTransferService(
                         row.put("review_status", "VERIFIED_ACCURATE")
                         row.put("review_version", maxOf(1, row.getAsInteger("review_version") ?: 0))
                     }
+                    com.ateflaw.legaldeadlines.domain.model.DurationUnit.valueOf(row.getAsString("unit"))
+                    com.ateflaw.legaldeadlines.domain.model.StartRule.valueOf(row.getAsString("start_rule"))
                     db.insert("legal_rules", android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE, row)
                     importedRules++
+                } else {
+                    // Preserve untracked annotations from old installs without reinstating obsolete
+                    // bundled rule text over a current statutory edition.
+                    val seed = seedById[id]
+                    val installed = database.legalRuleDao().getById(id)
+                    if (seed != null && installed != null) {
+                        val workbook = com.ateflaw.legaldeadlines.data.review.ReviewedWorkbookRecord(id,
+                            decision, "", "", "", "")
+                        val notes = row.getAsString("notes")
+                        val article = row.getAsString("article_text")
+                        val summary = row.getAsString("summary")
+                        val annotated = installed.copy(
+                            notes = notes?.takeUnless { it == seed.notes || it == workbook.correctedNotes } ?: installed.notes,
+                            summary = summary?.takeUnless { it == seed.summary || it == workbook.correctedSummary } ?: installed.summary,
+                            articleText = article?.takeUnless { it.isBlank() || it == seed.articleText } ?: installed.articleText
+                        )
+                        if (annotated != installed) {
+                            database.legalRuleDao().updateBuiltIn(annotated)
+                            importedRules++
+                        }
+                    }
                 }
             }
             for (row in records.getValue("rule_edit_history")) {
+                val parent = row.getAsLong("rule_id") ?: error("مراجعة بلا قاعدة.")
+                require(database.legalRuleDao().getById(parent) != null) { "مراجعة لقاعدة غير موجودة." }
                 db.insert("rule_edit_history", android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT, row)
             }
-            for (row in records.getValue("saved_deadlines")) {
+            for (row in appointments) {
+                row.remove("reminder_sent_for")
                 db.insert("saved_deadlines", android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT, row)
             }
             var importedHolidays = 0
@@ -165,6 +205,7 @@ class BackupTransferService(
                 db.insert("holidays", android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE, row)
                 importedHolidays++
             }
+            database.loadBuiltInCatalog(context)
             Totals(
                 savedDeadlines = records.getValue("saved_deadlines").size,
                 editedRules = importedRules,
@@ -172,6 +213,22 @@ class BackupTransferService(
                 holidays = importedHolidays
             )
         }
+    }
+
+    private fun insertMissingDeadline(db: SupportSQLiteDatabase, source: ContentValues): Boolean {
+        val row = ContentValues(source)
+        row.remove("id")
+        row.remove("reminder_sent_for")
+        if (!row.containsKey("is_provisional")) row.put("is_provisional", 1)
+        val keys = row.keySet().sorted()
+        // Column names were checked against the Room schema before entering this method.
+        val predicate = keys.joinToString(" AND ") { "`$it` IS ?" }
+        val args = keys.map { row.get(it) }.toTypedArray()
+        val exists = db.query("SELECT 1 FROM saved_deadlines WHERE $predicate LIMIT 1", args)
+            .use { it.moveToFirst() }
+        if (exists) return false
+        db.insert("saved_deadlines", android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT, row)
+        return true
     }
 
     private fun exportRows(db: SupportSQLiteDatabase, table: String): JSONArray {
@@ -227,10 +284,4 @@ class BackupTransferService(
         }
         return values
     }
-
-    private fun count(db: SupportSQLiteDatabase, sql: String): Long =
-        db.query(sql).use { cursor ->
-            check(cursor.moveToFirst()) { "تعذر قراءة عدد السجلات." }
-            cursor.getLong(0)
-        }
 }

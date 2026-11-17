@@ -5,7 +5,7 @@ import com.ateflaw.legaldeadlines.domain.calculator.LegalRuleSafety
 import com.ateflaw.legaldeadlines.domain.model.DeadlineResult
 import com.ateflaw.legaldeadlines.domain.model.DistanceType
 import com.ateflaw.legaldeadlines.domain.model.LegalRule
-import com.ateflaw.legaldeadlines.domain.model.MilestoneType
+import com.ateflaw.legaldeadlines.domain.model.Holiday
 import com.ateflaw.legaldeadlines.domain.repository.HolidayRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -27,22 +27,16 @@ class CalculateDeadlineUseCase(
         judicialOrderDetails: String? = null
     ): DeadlineResult = withContext(Dispatchers.Default) {
         val reviewWarnings = LegalRuleSafety.previewWarnings(rule, announcementDate)
-        // No unverified route-distance extension for the article 82 shatb preview.
-        if (rule.id == 10L) {
-            require(distanceType == DistanceType.NONE && additionalDistanceDays == 0) {
-                "لا تُضاف أيام مسافة آليًا لتجديد الدعوى من الشطب؛ راجع أحكام الإعلان."
-            }
-        }
         val holidaysList = withContext(Dispatchers.IO) {
             holidayRepository.getAllHolidaysList()
         }
-        // Only records with official verification and a source may extend a deadline.
-        val officialHolidays = holidaysList.filter { it.isVerifiedOfficial }
+        // Only sourced, verified decisions participate in court-day extensions.
+        val officialHolidays = holidaysList.filter(Holiday::isVerifiedOfficial)
         val holidayMap: Map<LocalDate, String> = officialHolidays.associate { it.holidayDate to it.name }
 
         val result = calculator.calculate(
             announcementDate = announcementDate,
-            rule = if (rule.id == 10L) rule.copy(triggerEventLabel = "تاريخ قرار شطب الدعوى") else rule,
+            rule = rule,
             distanceType = distanceType,
             additionalDistanceDays = additionalDistanceDays,
             judicialOrderDetails = judicialOrderDetails,
@@ -52,35 +46,23 @@ class CalculateDeadlineUseCase(
             }
         )
 
-        // The holiday cache is not a substitute for published government decisions.
-        // Particularly for an empty year, the calculator must never suggest that
-        // no holidays existed merely because none were stored locally.
-        val coveredYears = officialHolidays.map { it.holidayDate.year }.toSet()
-        val yearRange = minOf(announcementDate.year, result.finalDeadline.year)..
-            maxOf(announcementDate.year, result.finalDeadline.year)
-        val missingYears = yearRange.filterNot { it in coveredYears }
-        val holidayWarnings = buildList {
-            if (missingYears.isNotEmpty()) {
-                add("تحذير: قاعدة العطلات المحلية لا تحتوي بيانات لسنوات ${missingYears.joinToString("، ")}؛ وقد يتغير الميعاد النهائي بعد التحقق من الإجازات الرسمية.")
+        // Published holiday dates do not establish the full calendar for each court.
+        val holidayWarnings = if (rule.extensionPolicy == "ARTICLE_18_COURTS") {
+            val recordedYears = officialHolidays.map { it.holidayDate.year }.toSet()
+            val missingYears = (announcementDate.year..result.finalDeadline.year)
+                .filterNot(recordedYears::contains)
+            buildList {
+                if (missingYears.isNotEmpty()) {
+                    add("لا توجد قرارات عطلات مسجلة لسنوات ${missingYears.joinToString("، ")}.")
+                }
+                add("تحقّق من اكتمال قرارات العطلات والإغلاقات الخاصة بالجهة المختصة قبل الاعتماد على التاريخ.")
             }
-            add("تنبيه: اكتمال القرارات الرسمية للعطلات في جهة الإجراء غير مثبت حتى لو وجدت بعض التواريخ الموثقة. يجب مراجعة القرارات الفعلية قبل الاعتماد على النتيجة.")
-        }
-        // One sourced holiday in a year does not prove the court calendar is complete.
-        // Until completeness can be established, every result needs review.
-        val outputMilestones = result.milestones.map { item ->
-            if (item.type == MilestoneType.FINAL_DEADLINE) item.copy(
-                title = "تاريخ الحساب (يحتاج استكمال بيانات)",
-                description = "تاريخ ناتج من المدة المسجلة؛ تحقق من العطلات والإجراءات حسب المادة."
-            ) else item
+        } else {
+            listOf("يُعرض انتهاء المدة دون ترحيل تلقائي. راجع قواعد الجهة المختصة.")
         }
 
         result.copy(
-            milestones = outputMilestones,
-            explanation = "تاريخ حسابي مع وجود بيانات تستلزم الاستكمال.\n" +
-                result.explanation.replace(
-                    "الميعاد النهائي واجب الالتزام به",
-                    "تاريخ نهاية المدة الحسابية"
-                ),
+            explanation = "تاريخ حسابي للمراجعة.\n" + result.explanation,
             warnings = (reviewWarnings + result.warnings + holidayWarnings).distinct(),
             isProvisional = true
         )

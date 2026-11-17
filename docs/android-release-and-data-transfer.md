@@ -1,6 +1,6 @@
 # Meead Android — owner-signed release and safe data transfer
 
-> **Current status:** Release signing workflow and encrypted transfer code are prepared; **not** an already-signed production APK. Android CI is a code/build check, not on-device migration or independent statutory accuracy certification.
+For local signing, open **Build → Generate Signed App Bundle or APK**. Select **Android App Bundle** for Google Play or **APK** for direct installation. Choose your existing keystore or **Create new** for your first production upload, then choose **release**. Keep the key and its passwords for future updates. GitHub secrets are optional when you sign on your own computer.
 
 ## Why the previously downloaded APK did not replace the old one
 
@@ -36,7 +36,7 @@ For PowerShell, you can obtain the Base64 string locally with:
 
 Never paste that string into a public issue, logs, repository or this chat. GitHub Secrets encrypt and restrict these values; storing them in Base64 without Secrets does **not** protect them.
 
-After merging and validating the release branch, open GitHub → Actions → **Android signed release (manual, owner-key only)** → Run workflow → select **main** and enter `SIGN`. The workflow fails if secrets are absent, verifies the APK certificate, and uploads a signed APK and SHA-256 to the run's artifacts. It does **not** publish a public GitHub Release automatically.
+After merging and validating the release branch, open GitHub → Actions → **Android signed release (manual, owner-key only)** → Run workflow → select **main** and enter `SIGN`. The workflow fails if secrets are absent, verifies the APK and App Bundle signatures, then uploads both files and their SHA-256 checksums to the run artifacts. It does **not** publish a public GitHub Release automatically.
 
 **Before distribution:** Test this APK on an additional Android device; test local Room migration, Arabic UI, source status, warnings, calendar entries, backup/restore, and upgrades using the **same key**. An APK with a different certificate cannot replace an installed package with the same ID.
 
@@ -44,7 +44,7 @@ After merging and validating the release branch, open GitHub → Actions → **A
 
 Open **دليل المواعيد → نسخ احتياطي**, select a long password (at least 12 characters), and **تصدير نسخة احتياطية مشفرة**. A system file picker chooses where you save the `.meead` file. The backup encrypts the local legal-rule catalog, review history, saved deadlines and holiday-source data with AES-256-GCM. The file does not contain the password and is not automatically uploaded. Store the backup and password **separately**. Do not share backups containing client details.
 
-In the fresh signed app, open the same page and select **استعادة من ملف سابق**. The import rejects files with the wrong password, unsupported schema, tampering, or non-empty destination user data. Database writes are transactional. Confirm saved deadlines and adjusted legal rules **before** retiring the old installation.
+In the signed app, choose **استعادة من ملف سابق**. Choose **دمج المواعيد** to add missing appointments while keeping local rules and records. To recover rules, edit history and appointments together, choose **استعادة كاملة**, then **تأكيد الاستبدال**. This replaces existing records. An incorrect password or invalid record cancels the restore. Confirm your appointments and rule edits before retiring the old installation.
 
 ## 3. For your existing old debug app: local ADB bridge
 
@@ -68,7 +68,7 @@ python tools/export_legacy_debug_backup.py --package com.ateflaw.legaldeadlines.
 python tools/export_legacy_debug_backup.py --package com.ateflaw.legaldeadlines.legalreview --output ".\meead-from-legalreview.meead"
 ```
 
-The tool stops the source app to reduce SQLite write races; it extracts the database with WAL/SHM into a temporary PC folder, runs SQLite integrity checks, and emits only the encrypted `.meead` backup as its durable output. It never uninstalls anything. Do not run two imports into a single already-used destination: the import policy refuses data overwrites. When both debug apps contain different records, export both and reconcile them **locally** before importing.
+The tool stops the source app to reduce SQLite write races; it extracts the database with WAL/SHM into a temporary PC folder, runs SQLite integrity checks, and emits only the encrypted `.meead` backup as its durable output. It never uninstalls anything. When both debug apps contain records, restore the primary backup first. Use **دمج المواعيد** for the second file to add its missing appointments to the same installation.
 
 Move the encrypted `.meead` backup to the phone or a trusted provider chosen by you, open the signed app → **نسخ احتياطي → استعادة**, enter the same password, and verify the number of saved deadlines and at least a few original case entries.
 

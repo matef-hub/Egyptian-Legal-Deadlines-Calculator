@@ -38,12 +38,8 @@ class CalculatorDistanceAndHolidayTest {
     private val holidayRepository = object : HolidayRepository {
         override fun getAllHolidays(): Flow<List<Holiday>> = holidays
         override suspend fun getAllHolidaysList() = holidays.value
-        override suspend fun getHolidaysCount() = 1
         override suspend fun getHolidayByDate(date: LocalDate) = holidays.value.firstOrNull { it.holidayDate == date }
-        override suspend fun isHoliday(date: LocalDate) = holidays.value.any { it.holidayDate == date && it.isVerifiedOfficial }
-        override suspend fun getHolidayName(date: LocalDate) = holidays.value.firstOrNull { it.holidayDate == date && it.isVerifiedOfficial }?.name
-        override suspend fun insertHolidays(holidays: List<Holiday>) {}
-        override suspend fun syncHolidays(year: Int, forceRefresh: Boolean) = Result.success(0)
+        override suspend fun syncHolidays() = Result.success(0)
     }
     private val deadlineRepository = object : DeadlineRepository {
         override fun getAllSavedDeadlines(): Flow<List<SavedDeadline>> = MutableStateFlow(emptyList())
@@ -60,7 +56,7 @@ class CalculatorDistanceAndHolidayTest {
     private fun viewModel() = CalculatorViewModel(
         GetLegalRulesUseCase(ruleRepository), GetHolidaysUseCase(holidayRepository),
         CalculateDeadlineUseCase(holidayRepository = holidayRepository),
-        SaveDeadlineUseCase(deadlineRepository), SyncHolidaysUseCase(holidayRepository)
+        SaveDeadlineUseCase(deadlineRepository)
     ).also { it.onRuleSelected(rule) }
 
     @Test fun abroadCannotSilentlyUseAnEditedThirtyDays() = runBlocking {

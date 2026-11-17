@@ -1,6 +1,8 @@
 package com.ateflaw.legaldeadlines.domain.usecase
 
 import com.ateflaw.legaldeadlines.domain.calculator.LegalDeadlineCalculator
+import com.ateflaw.legaldeadlines.data.seed.LegalRuleSeedData
+import com.ateflaw.legaldeadlines.data.seed.ReleaseRuleCatalog
 import com.ateflaw.legaldeadlines.domain.model.DistanceType
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.Holiday
@@ -20,18 +22,15 @@ import java.time.LocalDate
 
 /** Regression tests for the error users saw selecting rule #10. */
 class CalculateDeadlineAdvisoryTest {
-    private val source = object : HolidayRepository {
-        override fun getAllHolidays(): Flow<List<Holiday>> = flowOf(emptyList())
-        override suspend fun getAllHolidaysList(): List<Holiday> = emptyList()
-        override suspend fun getHolidaysCount(): Int = 0
-        override suspend fun getHolidayByDate(date: LocalDate): Holiday? = null
-        override suspend fun isHoliday(date: LocalDate): Boolean = false
-        override suspend fun getHolidayName(date: LocalDate): String? = null
-        override suspend fun insertHolidays(holidays: List<Holiday>) {}
-        override suspend fun syncHolidays(year: Int, forceRefresh: Boolean): Result<Int> = Result.success(0)
-    }
+    private fun calculator(holidays: List<Holiday> = emptyList()) =
+        CalculateDeadlineUseCase(LegalDeadlineCalculator(), object : HolidayRepository {
+            override fun getAllHolidays(): Flow<List<Holiday>> = flowOf(holidays)
+            override suspend fun getAllHolidaysList() = holidays
+            override suspend fun getHolidayByDate(date: LocalDate) = holidays.firstOrNull { it.holidayDate == date }
+            override suspend fun syncHolidays() = Result.success(holidays.size)
+        })
 
-    private val useCase = CalculateDeadlineUseCase(LegalDeadlineCalculator(), source)
+    private val useCase = calculator()
 
     private fun shatb() = LegalRule(
         id = 10,
@@ -55,7 +54,7 @@ class CalculateDeadlineAdvisoryTest {
         assertTrue(result.warnings.any { it.contains("المادة 82") && it.contains("إعلان") })
         assertTrue(result.warnings.any { it.contains("استرشادي") })
         assertTrue(result.milestones.any {
-            it.type == MilestoneType.FINAL_DEADLINE && it.title.contains("يحتاج استكمال بيانات")
+            it.type == MilestoneType.FINAL_DEADLINE && it.title.contains("نهاية المدة المحسوبة")
         })
         assertFalse(result.explanation.contains("الميعاد النهائي واجب الالتزام به"))
     }
@@ -93,36 +92,67 @@ class CalculateDeadlineAdvisoryTest {
         }
     }
 
-    @Test fun a24HourSeedIsDisplayedAsOneDayWithTimePrecisionWarning() = runBlocking {
+    @Test fun oneDayDisplayDoesNotRoundClockSensitiveDeadlineIntoSaturday() {
         val rule = LegalRule(
-            id = 7,
-            actionName = "ميعاد حضور مستعجل",
+            id = 96,
+            actionName = "إرسال المقبوض عليه إلى النيابة",
             duration = 1,
             unit = DurationUnit.DAYS,
-            calculationKind = "EXACT_HOURS"
+            calculationKind = "FORWARD"
         )
-        val result = useCase(LocalDate.of(2026, 11, 10), rule)
+        assertThrows(IllegalArgumentException::class.java) {
+            runBlocking { useCase(LocalDate.of(2026, 11, 12), rule) }
+        }
+    }
+
+    @Test fun cabinetHolidayAndFridayAreAppliedWithoutPromisingCompleteCourtCoverage() = runBlocking {
+        val holiday = Holiday(
+            holidayDate = LocalDate.parse("2026-10-08"),
+            name = "عيد القوات المسلحة",
+            verificationStatus = "VERIFIED_OFFICIAL",
+            sourceUrl = "https://www.cabinet.gov.eg/News/Details/86219"
+        )
+        val candidate = holiday.copy(
+            holidayDate = LocalDate.parse("2026-10-10"),
+            verificationStatus = "UNVERIFIED"
+        )
+        val seed = LegalRuleSeedData.getSeedRules().single { it.id == 33L }
+        val rule = seed.copy(reviewStatus = "VERIFIED_ACCURATE", effectiveFrom = "1968-11-10",
+            officialSourceUrl = "https://www.alamiria.com/")
+        val result = calculator(listOf(holiday, candidate))(LocalDate.parse("2026-08-29"), rule)
+        assertEquals(LocalDate.parse("2026-10-10"), result.finalDeadline)
         assertTrue(result.isProvisional)
-        assertEquals(DurationUnit.DAYS, result.unit)
-        assertTrue(result.warnings.any { it.contains("24 ساعة") })
+    }
+
+    @Test fun settlementUsesVerifiedEditionsOnBothSidesOfThe2025Transition() = runBlocking {
+        val editions = ReleaseRuleCatalog.editions(LegalRuleSeedData.getSeedRules()).associateBy { it.id }
+        val modern = editions.getValue(ReleaseRuleCatalog.SETTLEMENT_CURRENT_ID)
+        val legacy = editions.getValue(156L)
+        val original = editions.getValue(ReleaseRuleCatalog.SETTLEMENT_PRE_2008_ID)
+        val result = useCase(LocalDate.parse("2026-11-15"), modern)
+        assertEquals(LocalDate.parse("2026-11-25"), result.finalDeadline)
+        assertTrue(result.lawArticle.contains("149"))
+        assertEquals(LocalDate.parse("2025-08-30"), useCase(LocalDate.parse("2025-08-20"), legacy).finalDeadline)
+        assertEquals(LocalDate.parse("2008-06-27"), useCase(LocalDate.parse("2008-06-20"), original).finalDeadline)
+        assertEquals(listOf(40L, 60L), listOf(125L, ReleaseRuleCatalog.PROSECUTOR_APPEAL_ID).map {
+            editions.getValue(it).duration
+        })
     }
 
     @Test fun verifiedRuleRemainsAdvisoryWhenHolidayCoverageIsNotConfirmedComplete() = runBlocking {
-        val repository = object : HolidayRepository by source {
-            override suspend fun getAllHolidaysList() = listOf(
+        val calculate = calculator(listOf(
                 Holiday(
                     holidayDate = LocalDate.of(2026, 1, 7),
                     name = "عطلة موثقة",
                     verificationStatus = "VERIFIED_OFFICIAL",
                     sourceUrl = "https://example.gov.eg"
                 )
-            )
-        }
+        ))
         val rule = LegalRule(
             id = 2, actionName = "إجراء", duration = 15, unit = DurationUnit.DAYS,
             reviewStatus = "VERIFIED_ACCURATE"
         )
-        val result = CalculateDeadlineUseCase(holidayRepository = repository)(
+        val result = calculate(
             LocalDate.of(2026, 11, 1), rule
         )
         assertTrue(result.warnings.any { it.contains("اكتمال") })

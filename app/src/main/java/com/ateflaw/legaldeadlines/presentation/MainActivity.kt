@@ -1,6 +1,7 @@
 package com.ateflaw.legaldeadlines.presentation
 
 import android.app.Activity
+import com.ateflaw.legaldeadlines.data.worker.DeadlineReminderWorker
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -62,8 +63,7 @@ class MainActivity : ComponentActivity() {
                 getLegalRulesUseCase = appContainer.getLegalRulesUseCase,
                 getHolidaysUseCase = appContainer.getHolidaysUseCase,
                 calculateDeadlineUseCase = appContainer.calculateDeadlineUseCase,
-                saveDeadlineUseCase = appContainer.saveDeadlineUseCase,
-                syncHolidaysUseCase = appContainer.syncHolidaysUseCase
+                saveDeadlineUseCase = appContainer.saveDeadlineUseCase
             )
         }
 
@@ -198,6 +198,8 @@ class MainActivity : ComponentActivity() {
                     ) {
                         AppNavHost(
                             navController = navController,
+                            startDestination = if (intent.action == DeadlineReminderWorker.OPEN_SAVED)
+                                Screen.SavedDeadlines.route else Screen.Landing.route,
                             mainViewModel = calculatorViewModel,
                             deadlineListViewModel = { deadlineListViewModel },
                             holidaysViewModel = { holidaysViewModel },

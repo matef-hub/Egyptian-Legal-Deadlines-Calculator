@@ -9,9 +9,9 @@ import com.ateflaw.legaldeadlines.domain.usecase.SyncHolidaysUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 data class HolidaysUiState(
     val holidays: List<Holiday> = emptyList(),
@@ -34,7 +34,9 @@ class HolidaysViewModel(
 
     private fun observeHolidays() {
         viewModelScope.launch {
-            getHolidaysUseCase().collect { holidayList ->
+            getHolidaysUseCase().catch {
+                _uiState.update { it.copy(isLoading = false, syncMessage = "تعذر قراءة تقويم العطلات.") }
+            }.collect { holidayList ->
                 _uiState.update { currentState ->
                     currentState.copy(
                         holidays = holidayList,
@@ -45,25 +47,24 @@ class HolidaysViewModel(
         }
     }
 
-    fun syncHolidays(forceRefresh: Boolean = true) {
+    fun syncHolidays() {
+        if (_uiState.value.isSyncing) return
         viewModelScope.launch {
             _uiState.update { it.copy(isSyncing = true, syncMessage = null) }
-            val currentYear = LocalDate.now().year
-            val result = syncHolidaysUseCase(currentYear, forceRefresh)
+            val result = syncHolidaysUseCase()
             if (result.isSuccess) {
                 val count = result.getOrDefault(0)
                 _uiState.update {
                     it.copy(
                         isSyncing = false,
-                        syncMessage = "تم استقبال $count عطلة مرشحة من المصدر الخارجي. لا تعتبر قرارات رسمية دون التحقق من سندها."
+                        syncMessage = "تمت مراجعة التقويم المركزي. يوجد $count تاريخ عطلة موثّق."
                     )
                 }
             } else {
-                val msg = result.exceptionOrNull()?.message ?: "تعذر تحديث البيانات المرشحة. راجع تواريخ العطلات المنشورة رسميًا."
                 _uiState.update {
                     it.copy(
                         isSyncing = false,
-                        syncMessage = msg
+                        syncMessage = "تعذر تنزيل التقويم المركزي. آخر نسخة صالحة متاحة للعمل دون اتصال."
                     )
                 }
             }

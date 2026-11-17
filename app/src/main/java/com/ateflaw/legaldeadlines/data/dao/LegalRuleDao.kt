@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.ateflaw.legaldeadlines.data.entity.LegalRuleEntity
 import com.ateflaw.legaldeadlines.data.entity.RuleEditHistoryEntity
 import kotlinx.coroutines.flow.Flow
@@ -81,6 +82,12 @@ interface LegalRuleDao {
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertDraft(rule: LegalRuleEntity): Long
+
+    @Update
+    suspend fun updateBuiltIn(rule: LegalRuleEntity)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM rule_edit_history WHERE rule_id = :id)")
+    suspend fun hasEditHistory(id: Long): Boolean
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertEditHistory(revision: RuleEditHistoryEntity): Long
@@ -164,6 +171,14 @@ interface LegalRuleDao {
         WHERE id = :id AND review_version = 0
     """)
     suspend fun attachWorkbookMemo(id: Long, decision: String, method: String, reviewerNote: String): Int
+
+    @Query("""
+        UPDATE legal_rules SET effective_to = NULL WHERE id = 128
+        AND effective_to = '2027-09-30' AND law_article = :article
+        AND workbook_decision NOT IN ('USER_APPROVED','EDITED_PENDING')
+        AND NOT EXISTS (SELECT 1 FROM rule_edit_history WHERE rule_id = 128)
+    """)
+    suspend fun clearUnrelatedCriminalCodeExpiry(article: String)
 
     @Query("DELETE FROM legal_rules")
     suspend fun clear()

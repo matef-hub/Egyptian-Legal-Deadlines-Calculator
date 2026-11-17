@@ -58,13 +58,14 @@ class LegalDeadlineCalculator {
         require(rule.duration > 0) {
             "هذا الإجراء مرتبط بشرط أو واقعة قانونية وليس بميعاد عددي قابل للحساب تلقائياً. راجع نص القاعدة."
         }
-        require(rule.unit != DurationUnit.HOURS) {
+        require(LegalRuleSafety.kind(rule) != LegalRuleSafety.CalculationKind.EXACT_HOURS) {
             "مواعيد الساعات تتطلب وقت الواقعة بالساعة والدقيقة، ولا يمكن حسابها من تاريخ يوم فقط."
         }
         require(rule.distanceDays >= 0 && additionalDistanceDays >= 0) {
             "لا يجوز أن يكون ميعاد المسافة قيمة سالبة."
         }
-        require(rule.extensionPolicy == "ARTICLE_18_COURTS") {
+        val applyCourtExtensions = rule.extensionPolicy == "ARTICLE_18_COURTS"
+        require(applyCourtExtensions || rule.extensionPolicy == "NO_AUTOMATIC_EXTENSION") {
             "سياسة امتداد هذا الإجراء غير مدعومة بالمحرك الحالي، ويجب مراجعة كيفية حساب العطلات قبل اعتماد النتيجة."
         }
 
@@ -82,12 +83,10 @@ class LegalDeadlineCalculator {
         }
 
         // 2. Distance Policy Check
-        if (rule.distancePolicy.equals("NOT_APPLICABLE", ignoreCase = true)) {
-            require(distanceType == DistanceType.NONE || distanceType == DistanceType.ABROAD_SERVED_IN_EGYPT) {
+        if (!rule.allowsDistance) {
+            require(additionalDistanceDays == 0 && (distanceType == DistanceType.NONE ||
+                (!rule.isShatbRenewal && distanceType == DistanceType.ABROAD_SERVED_IN_EGYPT))) {
                 "هذا الإجراء القانوني (${rule.actionName}) لا يقبل تطبيق مواعيد المسافة وفقاً للقواعد الإجرائية المقررة."
-            }
-            require(additionalDistanceDays == 0) {
-                "لا يجوز إضافة ميعاد مسافة لهذا الإجراء (${rule.actionName}) لأن ميعاد المسافة غير منطبق عليه قانوناً."
             }
         }
 
@@ -150,7 +149,7 @@ class LegalDeadlineCalculator {
         var currentDate = provisionalDate
         val excludedDays = mutableListOf<ExcludedDay>()
 
-        while (true) {
+        while (applyCourtExtensions) {
             val dayOfWeek = currentDate.dayOfWeek
             val (isOfficialHoliday, holidayName) = isHolidayProvider(currentDate)
             val dayStatus = CourtDayClassifier.classify(currentDate, isOfficialHoliday)
@@ -176,7 +175,7 @@ class LegalDeadlineCalculator {
         // 8. Milestones
         val milestones = mutableListOf<CalculationMilestone>()
 
-        val triggerTitle = rule.triggerEventLabel.ifBlank { "الواقعة المنشئة للميعاد" }
+        val triggerTitle = rule.eventLabel.ifBlank { "الواقعة المنشئة للميعاد" }
         milestones.add(
             CalculationMilestone(
                 type = MilestoneType.TRIGGER_EVENT,
@@ -193,11 +192,11 @@ class LegalDeadlineCalculator {
                 date = startDate,
                 title = "بدء سريان الميعاد الإجرائي",
                 description = if (rule.startRule == StartRule.NEXT_DAY) {
-                    "يبدأ احتساب الميعاد من اليوم التالي للواقعة (${startDate.format(dateFormatter).toArabicDigits()}) ولا يُحسب يوم الواقعة نفسه إعمالاً للمادة ١٥ مرافعات."
+                    "يبدأ احتساب الميعاد من اليوم التالي للواقعة (${startDate.format(dateFormatter).toArabicDigits()}) ويُستبعد يوم الواقعة من العد."
                 } else {
                     "يبدأ احتساب الميعاد من نفس يوم الواقعة (${startDate.format(dateFormatter).toArabicDigits()}) وفقاً للقاعدة المقررة."
                 },
-                legalBasis = "المادة ١٥ من قانون المرافعات المدنية والتجارية"
+                legalBasis = if (applyCourtExtensions) "المادة ١٥ من قانون المرافعات المدنية والتجارية" else rule.lawArticle
             )
         )
 
@@ -247,10 +246,9 @@ class LegalDeadlineCalculator {
             CalculationMilestone(
                 type = MilestoneType.FINAL_DEADLINE,
                 date = finalDeadline,
-                title = "الميعاد النهائي واجب الالتزام به",
-                description = "آخر يوم عمل لإيداع صحيفة الطعن أو اتخاذ الإجراء بقلم الكتاب (${finalDeadline.format(dateFormatter).toArabicDigits()}) (${getArabicDayName(finalDeadline.dayOfWeek)})" +
-                    if (finalDeadline.dayOfWeek == DayOfWeek.SATURDAY) " [يوم السبت يوم عمل رسمي بالمحاكم المصرية]." else " [يوم عمل رسمي].",
-                legalBasis = "المادتان ١٥ و ١٨ من قانون المرافعات"
+                title = "تاريخ نهاية المدة المحسوبة",
+                description = "${finalDeadline.format(dateFormatter).toArabicDigits()} (${getArabicDayName(finalDeadline.dayOfWeek)})",
+                legalBasis = rule.lawArticle.ifBlank { rule.lawName }
             )
         )
 
@@ -348,8 +346,7 @@ class LegalDeadlineCalculator {
                 }
             }
             DurationUnit.HOURS -> {
-                val equivalentDays = ((rule.duration + 23) / 24).coerceAtLeast(1)
-                startDate.plusDays(equivalentDays - 1)
+                throw IllegalArgumentException("يلزم توقيت الواقعة لحساب ميعاد بالساعات.")
             }
         }
     }
@@ -368,7 +365,7 @@ class LegalDeadlineCalculator {
     ): String {
         val sb = StringBuilder()
 
-        val triggerLabel = rule.triggerEventLabel.ifBlank { "تاريخ الإعلان / الإجراء" }
+        val triggerLabel = rule.eventLabel.ifBlank { "تاريخ الإعلان / الإجراء" }
         sb.append("١. ").append(triggerLabel).append(": ")
             .append(announcementDate.format(dateFormatter).toArabicDigits())
             .append(" (").append(getArabicDayName(announcementDate.dayOfWeek)).append(")\n")
@@ -392,9 +389,13 @@ class LegalDeadlineCalculator {
             .append(rule.unit.arabicDisplayName)
             .append("\n")
 
+        if (rule.unit == DurationUnit.MONTHS && rule.startRule == StartRule.NEXT_DAY) {
+            sb.append("تُستبعد الواقعة من العد وتنتهي المدة في اليوم المقابل لتاريخها من شهر الانتهاء، أو آخر يوم من الشهر إذا لم يوجد يوم مقابل.\n")
+        }
+
         sb.append("٥. ميعاد المسافة: ")
         if (distanceType == DistanceType.NONE && totalDistanceDays == 0) {
-            sb.append("لا يوجد ميعاد مسافة (محل النزاع بنفس الدائرة القضائية).\n")
+            sb.append("لم تُضف أيام مسافة.\n")
         } else if (distanceType == DistanceType.ABROAD_SERVED_IN_EGYPT) {
             sb.append("لا يسري ميعاد المسافة لمن أعلن لشخصه أثناء وجوده في مصر (المادة 17 فقرة 3 مرافعات).\n")
         } else {
@@ -419,16 +420,12 @@ class LegalDeadlineCalculator {
                     .append("\n")
             }
         } else {
-            sb.append("٧. الأيام المستبعدة: لا يوجد أيام مستبعدة (صادف الميعاد المبدئي يوم عمل رسمي مباشرة).\n")
+            sb.append("٧. لم يُطبّق امتداد للعطلات في هذا الحساب.\n")
         }
 
-        sb.append("٨. الميعاد النهائي واجب الالتزام به: ")
+        sb.append("٨. تاريخ نهاية المدة المحسوبة: ")
             .append(finalDeadline.format(dateFormatter).toArabicDigits())
             .append(" (").append(getArabicDayName(finalDeadline.dayOfWeek)).append(")")
-
-        if (finalDeadline.dayOfWeek == DayOfWeek.SATURDAY) {
-            sb.append(" [ملاحظة قانونية: يوم السبت يُعد يوم عمل كامل في المحاكم المصرية وفقاً للقانون].")
-        }
 
         return sb.toString()
     }

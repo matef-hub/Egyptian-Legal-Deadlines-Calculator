@@ -1,5 +1,4 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -13,16 +12,14 @@ kotlin {
     }
 }
 
-val localProperties = Properties().apply {
-    val localPropertiesFile = rootProject.file("local.properties")
-    if (localPropertiesFile.exists()) {
-        localPropertiesFile.inputStream().use { load(it) }
-    }
-}
-
-val calendarificApiKey: String = (localProperties.getProperty("CALENDARIFIC_API_KEY")
-    ?: (project.findProperty("CALENDARIFIC_API_KEY") as? String)
-    ?: "YOUR_API_KEY").trim('"')
+// A signed release must use a stable, OWNER-HELD key. Debug CI builds never load it.
+// Do not place the keystore or credentials in Git or in a public artifact.
+val keystorePath = System.getenv("MEEAD_KEYSTORE_PATH")
+val storePasswordSecret = System.getenv("MEEAD_STORE_PASSWORD")
+val keyAliasSecret = System.getenv("MEEAD_KEY_ALIAS")
+val keyPasswordSecret = System.getenv("MEEAD_KEY_PASSWORD")
+val hasReleaseKey = listOf(keystorePath, storePasswordSecret, keyAliasSecret, keyPasswordSecret)
+    .all { !it.isNullOrBlank() } && file(keystorePath ?: "").isFile
 
 android {
     namespace = "com.ateflaw.legaldeadlines"
@@ -32,13 +29,10 @@ android {
         applicationId = "com.ateflaw.legaldeadlines"
         minSdk = 24
         targetSdk = 37
-        versionCode = 15
-        versionName = "1.1.3"
+        versionCode = 16
+        versionName = "1.1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        // No third-party API credential is packaged into a production APK/AAB.
-        buildConfigField("String", "CALENDARIFIC_API_KEY", "\"YOUR_API_KEY\"")
 
         javaCompileOptions {
             annotationProcessorOptions {
@@ -50,15 +44,6 @@ android {
     ksp {
         arg("room.schemaLocation", "$projectDir/schemas")
     }
-
-    // A signed release must use a stable, OWNER-HELD key. Debug CI builds never load it.
-    // Do not place the keystore or credentials in Git or in a public artifact.
-    val keystorePath = System.getenv("MEEAD_KEYSTORE_PATH")
-    val storePasswordSecret = System.getenv("MEEAD_STORE_PASSWORD")
-    val keyAliasSecret = System.getenv("MEEAD_KEY_ALIAS")
-    val keyPasswordSecret = System.getenv("MEEAD_KEY_PASSWORD")
-    val hasReleaseKey = listOf(keystorePath, storePasswordSecret, keyAliasSecret, keyPasswordSecret)
-        .all { !it.isNullOrBlank() } && file(keystorePath ?: "").isFile
 
     signingConfigs {
         if (hasReleaseKey) {
@@ -82,8 +67,7 @@ android {
             if (hasReleaseKey) signingConfig = signingConfigs.getByName("release")
         }
         debug {
-            buildConfigField("String", "CALENDARIFIC_API_KEY", "\"$calendarificApiKey\"")
-            isMinifyEnabled = false
+                isMinifyEnabled = false
             // A distinct package protects existing user records when CI runner debug keys rotate.
             applicationIdSuffix = ".legalreview" 
             versionNameSuffix = "-legalreview" 
@@ -95,6 +79,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    sourceSets.getByName("androidTest").assets.srcDir(file("schemas/com.ateflaw.legaldeadlines.data.database.AppDatabase"))
+    sourceSets.getByName("main").assets.srcDir(rootProject.file("calendar"))
 
     buildFeatures {
         compose = true
@@ -115,18 +102,18 @@ android {
     }
 }
 
-// Fail closed for local/manual release tasks too: never accept an unsigned APK as a release.
+// Android Studio passes the owner's keystore to AGP through its signing wizard.
+val studioStore = providers.gradleProperty("android.injected.signing.store.file").orNull
+val hasStudioKey = studioStore?.let { it.isNotBlank() && file(it).isFile } == true &&
+    listOf("store.password", "key.alias", "key.password").all {
+        !providers.gradleProperty("android.injected.signing.$it").orNull.isNullOrBlank()
+    }
+val signingReady = hasReleaseKey || hasStudioKey
 tasks.configureEach {
     if (name == "assembleRelease" || name == "bundleRelease") {
         doFirst {
-            val path = System.getenv("MEEAD_KEYSTORE_PATH")
-            val credentials = listOf(
-                System.getenv("MEEAD_STORE_PASSWORD"),
-                System.getenv("MEEAD_KEY_ALIAS"),
-                System.getenv("MEEAD_KEY_PASSWORD")
-            )
-            check(!path.isNullOrBlank() && file(path).isFile && credentials.all { !it.isNullOrBlank() }) {
-                "Missing owner-held release signing credentials (MEEAD_*). No unsigned release is permitted."
+            check(signingReady) {
+                "Use Android Studio's Generate Signed App Bundle or APK wizard, or configure the MEEAD_* signing credentials."
             }
         }
     }
@@ -159,10 +146,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     // Networking
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp)
-    implementation(libs.okhttp.logging.interceptor)
 
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
@@ -172,6 +156,7 @@ dependencies {
 
     // Testing
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20240303")
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.room.testing)
     // Required by the JVM-only Room migration test fixture (DriverManager jdbc:sqlite:).

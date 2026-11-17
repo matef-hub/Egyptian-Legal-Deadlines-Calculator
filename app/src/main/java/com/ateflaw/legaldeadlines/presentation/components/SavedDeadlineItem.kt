@@ -1,8 +1,5 @@
 package com.ateflaw.legaldeadlines.presentation.components
 
-import android.content.Intent
-import android.net.Uri
-import android.provider.CalendarContract
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -58,8 +55,6 @@ import androidx.compose.ui.unit.sp
 import com.ateflaw.legaldeadlines.domain.model.SavedDeadline
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
-import java.time.ZoneId
-import androidx.core.net.toUri
 
 @Composable
 fun SavedDeadlineItem(
@@ -71,6 +66,10 @@ fun SavedDeadlineItem(
     val finalDateFormatted = DateFormatterUtils.formatArabicFullDate(deadline.finalDeadline)
     val dayNameArabic = DateFormatterUtils.getArabicDayName(deadline.finalDeadline.dayOfWeek)
     val context = LocalContext.current
+    var calendarError by remember { mutableStateOf<String?>(null) }
+    val explanation = if (deadline.isProvisional) {
+        deadline.calculationExplanation.replace("الميعاد النهائي واجب الالتزام به", "تاريخ نهاية المدة المحسوبة")
+    } else deadline.calculationExplanation
 
     val onAddFinalDeadlineToCalendar = {
         val title = if (deadline.caseNumber.isNotBlank()) {
@@ -80,32 +79,15 @@ fun SavedDeadlineItem(
         }
         val descriptionText = "موعد محفوظ للمراجعة وليس ضماناً بصحة حساب الميعاد: $dayNameArabic، $finalDateFormatted\n" +
             "السند التشريعي: ${deadline.lawArticle.toArabicDigits()}\n\n" +
-            deadline.calculationExplanation
+            explanation
 
-        try {
-            val intent = Intent(Intent.ACTION_INSERT).apply {
-                data = CalendarContract.Events.CONTENT_URI
-                putExtra(CalendarContract.Events.TITLE, title)
-                putExtra(CalendarContract.Events.DESCRIPTION, descriptionText)
-                putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
-                val epochMillis = deadline.finalDeadline.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, epochMillis)
-                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, deadline.finalDeadline.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
-            }
-            context.startActivity(intent)
-        } catch (_: Exception) {
-            val cleanStart = deadline.finalDeadline.toString().replace("-", "")
-            val nextDay = deadline.finalDeadline.plusDays(1).toString().replace("-", "")
-            val webUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" +
-                Uri.encode(title) +
-                "&dates=$cleanStart/$nextDay&details=" +
-                Uri.encode(descriptionText)
-            context.startActivity(Intent(Intent.ACTION_VIEW, webUrl.toUri()))
+        if (!openAllDayCalendarEvent(context, deadline.finalDeadline, title, descriptionText)) {
+            calendarError = "تعذر فتح التقويم أو المتصفح."
         }
     }
 
     val onAddProactiveAlertToCalendar = {
-        val proactiveDays = deadline.proactiveReminderDays ?: 3
+        val proactiveDays = checkNotNull(deadline.proactiveReminderDays)
         val proactiveDate = deadline.finalDeadline.minusDays(proactiveDays.toLong())
         val proactiveFormatted = DateFormatterUtils.formatArabicFullDate(proactiveDate)
         val proactiveDayName = DateFormatterUtils.getArabicDayName(proactiveDate.dayOfWeek)
@@ -121,31 +103,19 @@ fun SavedDeadlineItem(
             "الموعد المسجل للمراجعة: $dayNameArabic، $finalDateFormatted.\n" +
             "السند: ${deadline.lawArticle.toArabicDigits()}\n\n" +
             "الإجراء المطلوب: سرعة قيد الطعن وإيداع الصحيفة بقلم الكتاب.\n\n" +
-            deadline.calculationExplanation
+            explanation
 
-        try {
-            val intent = Intent(Intent.ACTION_INSERT).apply {
-                data = CalendarContract.Events.CONTENT_URI
-                putExtra(CalendarContract.Events.TITLE, title)
-                putExtra(CalendarContract.Events.DESCRIPTION, descriptionText)
-                putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
-                // Epoch starts on the ACTUAL PROACTIVE DATE!
-                val epochMillis = proactiveDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, epochMillis)
-                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, proactiveDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
-            }
-            context.startActivity(intent)
-        } catch (_: Exception) {
-            val cleanStart = proactiveDate.toString().replace("-", "")
-            val nextDay = proactiveDate.plusDays(1).toString().replace("-", "")
-            val webUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" +
-                Uri.encode(title) +
-                "&dates=$cleanStart/$nextDay&details=" +
-                Uri.encode(descriptionText)
-            context.startActivity(Intent(Intent.ACTION_VIEW, webUrl.toUri()))
+        if (!openAllDayCalendarEvent(context, proactiveDate, title, descriptionText, webTitle = "تنبيه لمراجعة تاريخ قانوني")) {
+            calendarError = "تعذر فتح التقويم أو المتصفح."
         }
     }
 
+
+    SweetAlertNotice(
+        message = calendarError,
+        kind = NoticeKind.ERROR,
+        onDismiss = { calendarError = null }
+    )
 
     val cardInteractionSource = remember { MutableInteractionSource() }
     val isCardPressed by cardInteractionSource.collectIsPressedAsState()
@@ -329,7 +299,7 @@ fun SavedDeadlineItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "الميعاد النهائي:",
+                        text = if (deadline.isProvisional) "تاريخ حسابي للمراجعة" else "الميعاد النهائي",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary
@@ -362,7 +332,7 @@ fun SavedDeadlineItem(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "تنبيه استباقي: قبل الميعاد بـ ${deadline.proactiveReminderDays.toString().toArabicDigits()} أيام",
+                            text = "التنبيه في التقويم قبل الميعاد بـ ${deadline.proactiveReminderDays.toString().toArabicDigits()} أيام",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.tertiary,
                             fontWeight = FontWeight.Medium
@@ -436,7 +406,7 @@ fun SavedDeadlineItem(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = deadline.calculationExplanation,
+                        text = explanation,
                         style = MaterialTheme.typography.bodySmall,
                         lineHeight = 20.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant

@@ -47,7 +47,7 @@ fun HolidayStatusBar(
     val statusLabel = when (dayType) {
         CourtDayType.WEEKLY_REST -> "عطلة أسبوعية"
         CourtDayType.OFFICIAL_HOLIDAY -> "عطلة رسمية"
-        CourtDayType.WORKING_DAY -> "يوم عمل"
+        CourtDayType.WORKING_DAY -> "يوم عمل حسب التقويم"
     }
     val statusBackground = if (isWorkingDay) {
         MaterialTheme.colorScheme.tertiaryContainer

@@ -12,7 +12,7 @@ class DeadlineRepositoryImpl(
 ) : DeadlineRepository {
 
     override fun getAllSavedDeadlines(): Flow<List<SavedDeadline>> {
-        return savedDeadlineDao.getAllSortedByCreatedAt().map { list ->
+        return savedDeadlineDao.observeByDeadline().map { list ->
             list.map { it.toDomain() }
         }
     }

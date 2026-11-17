@@ -8,47 +8,18 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.ateflaw.legaldeadlines.BuildConfig
-import com.ateflaw.legaldeadlines.data.database.AppDatabase
-import com.ateflaw.legaldeadlines.data.remote.RetrofitClient
-import com.ateflaw.legaldeadlines.data.service.OfficialHolidayService
-import java.time.LocalDate
+import com.ateflaw.legaldeadlines.LegalDeadlinesApplication
 import java.util.concurrent.TimeUnit
 
-/**
- * WorkManager CoroutineWorker for periodic and non-blocking background synchronization
- * of official Egyptian holidays from Calendarific API to local Room database.
- */
 class HolidaySyncWorker(
     appContext: Context,
     params: WorkerParameters
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
-        // A missing key is a configuration issue, not a transient network
-        // failure. Otherwise WorkManager would retry forever.
-        if (BuildConfig.CALENDARIFIC_API_KEY.isBlank() ||
-            BuildConfig.CALENDARIFIC_API_KEY == "YOUR_API_KEY") {
-            return Result.success()
-        }
-        val database = AppDatabase.getInstance(applicationContext)
-        val holidayService = OfficialHolidayService(
-            holidayDao = database.holidayDao(),
-            apiService = { RetrofitClient.apiService }
-        )
-
-        val currentYear = LocalDate.now().year
-
-        // Sync for current year and next year
-        val syncCurrent = holidayService.syncHolidays(currentYear)
-        val syncNext = holidayService.syncHolidays(currentYear + 1)
-
-        return if (syncCurrent.isSuccess || syncNext.isSuccess) {
-            Result.success()
-        } else {
-            // Transient failure: retry with exponential backoff without crashing the app
-            Result.retry()
-        }
+        val application = applicationContext as LegalDeadlinesApplication
+        val synced = application.container.syncHolidaysUseCase()
+        return if (synced.isSuccess || runAttemptCount >= 2) Result.success() else Result.retry()
     }
 
     companion object {
@@ -57,18 +28,14 @@ class HolidaySyncWorker(
         fun schedule(context: Context) {
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
-                .setRequiresBatteryNotLow(true)
                 .build()
-
-            // Synchronize once every 7 days (efficient and avoids unnecessary API calls)
-            val syncRequest = PeriodicWorkRequestBuilder<HolidaySyncWorker>(7, TimeUnit.DAYS)
+            val request = PeriodicWorkRequestBuilder<HolidaySyncWorker>(1, TimeUnit.DAYS)
                 .setConstraints(constraints)
                 .build()
-
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 WORK_NAME,
-                ExistingPeriodicWorkPolicy.KEEP,
-                syncRequest
+                ExistingPeriodicWorkPolicy.UPDATE,
+                request
             )
         }
     }

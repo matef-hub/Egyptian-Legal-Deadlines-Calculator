@@ -2,12 +2,13 @@ package com.ateflaw.legaldeadlines.data.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.ateflaw.legaldeadlines.domain.model.DurationUnit
 import com.ateflaw.legaldeadlines.domain.model.SavedDeadline
 import java.time.LocalDate
 
-@Entity(tableName = "saved_deadlines")
+@Entity(tableName = "saved_deadlines", indices = [Index("final_deadline")])
 data class SavedDeadlineEntity(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
@@ -56,7 +57,13 @@ data class SavedDeadlineEntity(
     val ruleSnapshot: String = "",
 
     @ColumnInfo(name = "distance_type", defaultValue = "NONE")
-    val distanceType: String = "NONE"
+    val distanceType: String = "NONE",
+
+    @ColumnInfo(name = "is_provisional", defaultValue = "1")
+    val isProvisional: Boolean = true,
+
+    @ColumnInfo(name = "reminder_sent_for")
+    val reminderSentFor: String? = null
 ) {
     fun toDomain(): SavedDeadline = SavedDeadline(
         id = id,
@@ -74,7 +81,8 @@ data class SavedDeadlineEntity(
         proactiveReminderDays = proactiveReminderDays,
         createdAt = createdAt,
         ruleSnapshot = ruleSnapshot,
-        distanceType = distanceType
+        distanceType = distanceType,
+        isProvisional = isProvisional
     )
 
     companion object {
@@ -94,7 +102,8 @@ data class SavedDeadlineEntity(
             proactiveReminderDays = domain.proactiveReminderDays,
             createdAt = domain.createdAt,
             ruleSnapshot = domain.ruleSnapshot,
-            distanceType = domain.distanceType
+            distanceType = domain.distanceType,
+            isProvisional = domain.isProvisional
         )
     }
 }

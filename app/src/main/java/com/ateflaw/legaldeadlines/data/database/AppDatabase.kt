@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.withTransaction
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ateflaw.legaldeadlines.data.dao.HolidayDao
@@ -14,11 +15,11 @@ import com.ateflaw.legaldeadlines.data.entity.LegalRuleEntity
 import com.ateflaw.legaldeadlines.data.entity.RuleEditHistoryEntity
 import com.ateflaw.legaldeadlines.data.entity.SavedDeadlineEntity
 import com.ateflaw.legaldeadlines.data.seed.LegalRuleSeedData
+import com.ateflaw.legaldeadlines.data.seed.ReleaseRuleCatalog
 import com.ateflaw.legaldeadlines.data.review.ReviewedWorkbookImporter
 import com.ateflaw.legaldeadlines.domain.review.LegalRuleReviewCatalog
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 @Database(
     entities = [
@@ -27,7 +28,7 @@ import kotlinx.coroutines.launch
         SavedDeadlineEntity::class,
         RuleEditHistoryEntity::class
     ],
-    version = 11,
+    version = AppDatabase.VERSION,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -36,7 +37,54 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun holidayDao(): HolidayDao
     abstract fun savedDeadlineDao(): SavedDeadlineDao
 
+    private val catalogLock = Mutex()
+    private var catalogReady = false
+
+    suspend fun prepareRuleCatalog(context: Context) = catalogLock.withLock {
+        if (catalogReady) return@withLock
+        withTransaction { loadBuiltInCatalog(context) }
+        catalogReady = true
+    }
+
+    // Caller owns the transaction, including restores that repopulate all built-ins.
+    internal suspend fun loadBuiltInCatalog(context: Context) {
+        val catalog = LegalRuleSeedData.getSeedRules()
+        val dao = legalRuleDao()
+        if (dao.count() == 0) {
+            dao.insertAll(catalog.map(LegalRuleEntity::fromDomain))
+        } else {
+            for (rule in catalog) {
+                dao.adoptSeedMetadata(rule.id, rule.actionName, rule.effectiveTo, rule.revision, rule.calculationKind)
+            }
+        }
+        ReviewedWorkbookImporter.apply(context.applicationContext, this)
+        dao.clearUnrelatedCriminalCodeExpiry(catalog.single { it.id == 128L }.lawArticle)
+
+        val seedById = catalog.associateBy { it.id }
+        for (rule in ReleaseRuleCatalog.editions(catalog)) {
+            val previous = dao.getById(rule.id)
+            if (previous != null && (
+                    previous.reviewVersion >= 3 ||
+                        (previous.revision >= 3 && !ReviewedWorkbookImporter.isBundledLaborBackfill(previous)) ||
+                        previous.workbookDecision in setOf("USER_APPROVED", "EDITED_PENDING") ||
+                        dao.hasEditHistory(rule.id) ||
+                        !ReviewedWorkbookImporter.hasBundledEditionText(previous, seedById[rule.id], rule)
+                    )) continue
+            val builtIn = LegalRuleEntity.fromDomain(rule.copy(
+                revision = maxOf(2, previous?.revision ?: 0),
+                reviewVersion = 3,
+                workbookDecision = rule.reviewStatus,
+                reviewMethod = previous?.reviewMethod.orEmpty(),
+                reviewerNote = previous?.reviewerNote.orEmpty(),
+                lastReviewedAt = "2026-11-15"
+            ))
+            if (previous == null) dao.insertDraft(builtIn) else dao.updateBuiltIn(builtIn)
+        }
+    }
+
     companion object {
+        const val VERSION = 13
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -310,65 +358,35 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE saved_deadlines ADD COLUMN is_provisional INTEGER NOT NULL DEFAULT 1")
+            }
+        }
+
+        val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_saved_deadlines_final_deadline ON saved_deadlines(final_deadline)")
+                db.execSQL("ALTER TABLE saved_deadlines ADD COLUMN reminder_sent_for TEXT")
+            }
+        }
+
+        internal val migrations = arrayOf(
+            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5,
+            MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
+            MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
+            MIGRATION_1_4, MIGRATION_2_4
+        )
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
+                INSTANCE?.let { return@synchronized it }
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "egyptian_legal_deadlines.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_1_4, MIGRATION_2_4)
-                    .addCallback(object : Callback() {
-                        override fun onCreate(db: SupportSQLiteDatabase) {
-                            super.onCreate(db)
-                            seedIfEmpty(context)
-                        }
-
-                        override fun onOpen(db: SupportSQLiteDatabase) {
-                            super.onOpen(db)
-                            seedIfEmpty(context)
-                        }
-
-                        private fun seedIfEmpty(context: Context) {
-                            CoroutineScope(Dispatchers.IO).launch {
-                                try {
-                                    val database = getInstance(context)
-                                    val ruleDao = database.legalRuleDao()
-                                    val catalog = LegalRuleSeedData.getSeedRules()
-                                    if (ruleDao.count() == 0) {
-                                        ruleDao.insertAll(catalog.map { LegalRuleEntity.fromDomain(it) })
-                                    } else {
-                                        // Existing records are never overwritten. Only verified
-                                        // legacy IDs/names with revision=0 receive safety metadata.
-                                        for (rule in catalog) {
-                                            ruleDao.adoptSeedMetadata(
-                                                id = rule.id,
-                                                expectedName = rule.actionName,
-                                                expiresAt = rule.effectiveTo,
-                                                revision = rule.revision,
-                                                kind = rule.calculationKind
-                                            )
-                                        }
-                                    }
-                                    // Safe 169-rule review import (independent of Cassation cases).
-                                    ReviewedWorkbookImporter.apply(context.applicationContext, database)
-                                    // Merge sourced national dates into existing databases
-                                    // without replacing another officially verified decision.
-                                    val officialSeeds = LegalRuleSeedData.getInitialOfficialHolidays()
-                                    val holidayDao = database.holidayDao()
-                                    val missingOrUnverified = officialSeeds.filter { holiday ->
-                                        val current = holidayDao.getHoliday(holiday.holidayDate.toString())
-                                        current == null || current.verificationStatus != "VERIFIED_OFFICIAL"
-                                    }
-                                    if (missingOrUnverified.isNotEmpty()) {
-                                        holidayDao.insertAll(missingOrUnverified.map { HolidayEntity.fromDomain(it) })
-                                    }
-                                } catch (e: Exception) {
-                                    android.util.Log.e("AppDatabase", "Database seeding failed", e)
-                                }
-                            }
-                        }
-                    })
+                    .addMigrations(*migrations)
                     .build()
                 INSTANCE = instance
                 instance

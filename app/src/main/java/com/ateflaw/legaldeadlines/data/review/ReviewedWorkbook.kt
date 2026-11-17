@@ -90,7 +90,7 @@ data class ReviewedWorkbookRecord(
             "تقادم" -> "LIMITATION_OR_CONDITION"
             "حد سن" -> "AGE_THRESHOLD"
             "أخرى" -> "SPECIAL_UNSUPPORTED"
-            "ساعات" -> "FORWARD" // all five are recorded as 24h=1 day in the review
+            "ساعات" -> "EXACT_HOURS"
             else -> if (id == 132L || id == 17L) "SPECIAL_UNSUPPORTED" else "FORWARD"
         }
 }

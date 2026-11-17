@@ -22,5 +22,6 @@ data class SavedDeadline(
     val createdAt: Long = System.currentTimeMillis(),
     val proactiveReminderDays: Int? = null,
     val ruleSnapshot: String = "",
-    val distanceType: String = "NONE"
+    val distanceType: String = "NONE",
+    val isProvisional: Boolean = true
 )

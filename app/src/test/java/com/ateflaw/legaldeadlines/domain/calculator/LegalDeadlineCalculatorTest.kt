@@ -198,7 +198,7 @@ class LegalDeadlineCalculatorTest {
     fun test07_whenYearAdditionCrossesLeapYear_handlesCorrectly() {
         val announcementDate = LocalDate.of(2024, 2, 29)
         val rule = LegalRule(
-            id = 7,
+            id = 1007,
             actionName = "اختبار سنة كبيسة",
             duration = 1,
             unit = DurationUnit.YEARS,
@@ -581,7 +581,7 @@ class LegalDeadlineCalculatorTest {
         assertEquals(announcementDate.plusDays(1), milestones[1].date)
         assertTrue(milestones.any { it.title.contains("نهاية المدة") })
         assertTrue(milestones.any { it.title.contains("مسافة") })
-        assertEquals("الميعاد النهائي واجب الالتزام به", milestones.last().title)
+        assertEquals("تاريخ نهاية المدة المحسوبة", milestones.last().title)
     }
 
     /**
@@ -619,7 +619,7 @@ class LegalDeadlineCalculatorTest {
     fun test25_arabicExplanation_containsAllMandatoryElements() {
         val announcementDate = LocalDate.of(2026, 10, 1)
         val rule = LegalRule(
-            id = 24,
+            id = 1024,
             actionName = "الطعن بالاستئناف في المواد المدنية",
             duration = 40,
             unit = DurationUnit.DAYS,
@@ -641,8 +641,8 @@ class LegalDeadlineCalculatorTest {
         assertTrue(result.explanation.contains("٤. وحدة الاحتساب"))
         assertTrue(result.explanation.contains("٥. ميعاد المسافة"))
         assertTrue(result.explanation.contains("٦. الميعاد المبدئي"))
-        assertTrue(result.explanation.contains("٧. الأيام المستبعدة"))
-        assertTrue(result.explanation.contains("٨. الميعاد النهائي واجب الالتزام به"))
+        assertTrue(result.explanation.contains("٧. ") && result.explanation.contains("العطلات"))
+        assertTrue(result.explanation.contains("٨. تاريخ نهاية المدة المحسوبة"))
     }
 
     /**

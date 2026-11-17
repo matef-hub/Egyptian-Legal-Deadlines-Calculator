@@ -37,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,6 +53,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -67,7 +69,6 @@ import com.ateflaw.legaldeadlines.presentation.viewmodel.HolidaysViewModel
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils
 import com.ateflaw.legaldeadlines.utils.DateFormatterUtils.toArabicDigits
 import kotlinx.coroutines.delay
-import java.time.DayOfWeek
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
@@ -158,11 +159,11 @@ fun HolidaysScreenContent(
                     val today = LocalDate.now()
                     var selectedFilter by remember { mutableStateOf("ALL") }
 
-                    val filteredHolidays = remember(uiState.holidays, selectedFilter) {
+                    val filteredHolidays = remember(uiState.holidays, selectedFilter, today) {
                         when (selectedFilter) {
                             "UPCOMING" -> uiState.holidays.filter { it.holidayDate.isAfter(today) || it.holidayDate == today }
                             "PAST" -> uiState.holidays.filter { it.holidayDate.isBefore(today) }
-                            "THURSDAY" -> uiState.holidays.filter { it.holidayDate.dayOfWeek == DayOfWeek.THURSDAY }
+                            "VERIFIED" -> uiState.holidays.filter { it.isVerifiedOfficial }
                             else -> uiState.holidays
                         }
                     }
@@ -175,6 +176,10 @@ fun HolidaysScreenContent(
                         item(key = "calendar-overview") {
                             var selectedMonth by remember { mutableStateOf(YearMonth.now()) }
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                if (uiState.holidays.none { it.isVerifiedOfficial && it.holidayDate.year == selectedMonth.year }) {
+                                    Text("لم تُسجّل قرارات عطلات لهذه السنة. حدّث التقويم وراجع قرارات الجهة المختصة.",
+                                        color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                                }
                                 MonthlyHolidayCalendar(
                                     currentMonth = selectedMonth,
                                     onPreviousMonth = { selectedMonth = selectedMonth.minusMonths(1) },
@@ -305,7 +310,7 @@ fun HolidaysScreenContent(
                                         "ALL" to "الكل",
                                         "UPCOMING" to "القادمة",
                                         "PAST" to "المنقضية",
-                                        "THURSDAY" to "الخميس"
+                                        "VERIFIED" to "الموثّقة"
                                     ).forEach { (key, label) ->
                                         val isSelected = selectedFilter == key
                                         Box(
@@ -382,6 +387,7 @@ private fun HolidayCard(
     val today = LocalDate.now()
     val isToday = holiday.holidayDate == today
     val isFuture = holiday.holidayDate.isAfter(today)
+    val uriHandler = LocalUriHandler.current
 
     val dayName = DateFormatterUtils.getArabicDayName(holiday.holidayDate.dayOfWeek)
     val fullFormattedDate = DateFormatterUtils.formatArabicFullDate(holiday.holidayDate)
@@ -472,14 +478,23 @@ private fun HolidayCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = if (holiday.isVerifiedOfficial) "عطلة موثقة" else "عطلة مرشحة — تحتاج مراجعة",
-                style = MaterialTheme.typography.labelMedium,
-                color = if (holiday.isVerifiedOfficial) MaterialTheme.colorScheme.tertiary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Medium
-            )
+            if (holiday.isVerifiedOfficial && holiday.decision.isNotBlank()) {
+                Text(
+                    text = holiday.decision,
+                    modifier = Modifier.padding(top = 8.dp),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                TextButton(onClick = { runCatching { uriHandler.openUri(holiday.sourceUrl) } }) {
+                    Text("فتح سند العطلة")
+                }
+            } else {
+                Text(
+                    text = "عطلة مرشحة — تحتاج مراجعة",
+                    modifier = Modifier.padding(top = 8.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

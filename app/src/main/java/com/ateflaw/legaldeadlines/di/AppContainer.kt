@@ -2,7 +2,6 @@ package com.ateflaw.legaldeadlines.di
 
 import android.content.Context
 import com.ateflaw.legaldeadlines.data.database.AppDatabase
-import com.ateflaw.legaldeadlines.data.remote.RetrofitClient
 import com.ateflaw.legaldeadlines.data.repository.DeadlineRepositoryImpl
 import com.ateflaw.legaldeadlines.data.repository.HolidayRepositoryImpl
 import com.ateflaw.legaldeadlines.data.repository.LegalRuleRepositoryImpl
@@ -22,21 +21,22 @@ import com.ateflaw.legaldeadlines.domain.usecase.SyncHolidaysUseCase
 /**
  * Dependency container providing singletons for repositories, services, and use cases.
  */
-class AppContainer(private val context: Context) {
+class AppContainer(context: Context) {
+    private val appContext = context.applicationContext
 
     val database: AppDatabase by lazy {
-        AppDatabase.getInstance(context)
+        AppDatabase.getInstance(appContext)
     }
 
     val holidayService: OfficialHolidayService by lazy {
         OfficialHolidayService(
-            holidayDao = database.holidayDao(),
-            apiService = { RetrofitClient.apiService }
+            context = appContext,
+            holidayDao = database.holidayDao()
         )
     }
 
     val legalRuleRepository: LegalRuleRepository by lazy {
-        LegalRuleRepositoryImpl(database)
+        LegalRuleRepositoryImpl(database) { database.prepareRuleCatalog(appContext) }
     }
 
     val holidayRepository: HolidayRepository by lazy {
